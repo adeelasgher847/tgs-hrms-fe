@@ -637,7 +637,7 @@ const Navbar: React.FC<NavbarProps> = ({
   // Only searches routes that are allowed for current user role
   const searchRoutes = React.useCallback(
     (query: string): SearchResult[] => {
-      const queryWords = normalizeText(query);
+      const queryWords = query.toLowerCase().trim().split(/\s+/);
       if (queryWords.length === 0) return [];
 
       const exactQuery = query.toLowerCase().trim();
@@ -704,7 +704,7 @@ const Navbar: React.FC<NavbarProps> = ({
 
           // Bonus for consecutive word matches in label (phrase matching)
           if (queryWords.length > 1) {
-            const labelWords = normalizeText(label);
+            const labelWords = label.split(/\s+/);
             let consecutiveMatches = 0;
             let queryIndex = 0;
             for (

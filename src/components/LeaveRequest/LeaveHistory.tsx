@@ -361,7 +361,7 @@ const LeaveHistory: React.FC<LeaveHistoryProps> = ({
   }
 
   return (
-    <Box>
+    <Box sx={{ overflow: 'hidden' }}>
       {/* Header */}
       <Box
         sx={{
@@ -457,101 +457,171 @@ const LeaveHistory: React.FC<LeaveHistoryProps> = ({
           </Typography>
         </Box>
       ) : (
-          <AppTable sx={{ minWidth: 900 }}>
-            <TableHead>
-              <TableRow>
-                {!hideNameColumn && (isAdmin || isManager || showNames) && (
-                  <TableCell>Name</TableCell>
-                )}
-                <TableCell>Type</TableCell>
-                <TableCell>From</TableCell>
-                <TableCell>To</TableCell>
-                <TableCell>Applied</TableCell>
-                <TableCell>Reason</TableCell>
-                <TableCell>Documents</TableCell>
-                <TableCell>Status</TableCell>
-                {isAdmin && <TableCell>Manager Remarks</TableCell>}
-                <TableCell>Actions</TableCell>
-              </TableRow>
-            </TableHead>
+        <AppTable>
+          <TableHead>
+            <TableRow>
+              {!hideNameColumn && (isAdmin || isManager || showNames) && (
+                <TableCell>Name</TableCell>
+              )}
+              <TableCell>Type</TableCell>
+              <TableCell>From</TableCell>
+              <TableCell>To</TableCell>
+              <TableCell>Applied</TableCell>
+              <TableCell>Reason</TableCell>
+              <TableCell>Documents</TableCell>
+              <TableCell>Status</TableCell>
+              {isAdmin && <TableCell>Manager Remarks</TableCell>}
+              <TableCell>Actions</TableCell>
+            </TableRow>
+          </TableHead>
 
-            <TableBody>
-              {paginatedLeaves.map((leave, index) => (
-                <TableRow key={leave.id || index}>
-                  {!hideNameColumn && (isAdmin || isManager || showNames) && (
-                    <TableCell>{leave.employee?.first_name || 'N/A'}</TableCell>
-                  )}
-                  <TableCell>{leave.leaveType?.name || 'Unknown'}</TableCell>
-                  <TableCell>{formatDate(leave.startDate)}</TableCell>
-                  <TableCell>{formatDate(leave.endDate)}</TableCell>
-                  <TableCell>{formatDate(leave.createdAt)}</TableCell>
-                  <TableCell>
-                    <Tooltip
-                      title={leave.reason || 'N/A'}
-                      placement='top'
-                      arrow
-                      slotProps={{
-                        tooltip: {
-                          sx: {
-                            position: 'relative',
-                            left: '-115px',
-                          },
+          <TableBody>
+            {paginatedLeaves.map((leave, index) => (
+              <TableRow key={leave.id || index}>
+                {!hideNameColumn && (isAdmin || isManager || showNames) && (
+                  <TableCell>{leave.employee?.first_name || 'N/A'}</TableCell>
+                )}
+                <TableCell>{leave.leaveType?.name || 'Unknown'}</TableCell>
+                <TableCell>{formatDate(leave.startDate)}</TableCell>
+                <TableCell>{formatDate(leave.endDate)}</TableCell>
+                <TableCell>{formatDate(leave.createdAt)}</TableCell>
+                <TableCell>
+                  <Tooltip
+                    title={leave.reason || 'N/A'}
+                    placement='top'
+                    arrow
+                    slotProps={{
+                      tooltip: {
+                        sx: {
+                          position: 'relative',
+                          left: '-115px',
                         },
+                      },
+                    }}
+                  >
+                    <Typography
+                      sx={{
+                        fontSize: 14,
+                        maxWidth: { xs: 120, sm: 200, md: 260 },
+                        whiteSpace: 'nowrap',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
                       }}
                     >
+                      {leave.reason || 'N/A'}
+                    </Typography>
+                  </Tooltip>
+                </TableCell>
+                <TableCell>
+                  {leave.documents && leave.documents.length > 0 ? (
+                    <IconButton
+                      onClick={() => handleViewDocs(leave.documents || [])}
+                    >
+                      <img
+                        src={getIcon('password')}
+                        alt='View Documents'
+                        width={20}
+                        height={20}
+                      />
+                    </IconButton>
+                  ) : (
+                    <span style={{ fontStyle: 'italic', color: '#9e9e9e' }}>
+                      No Documents
+                    </span>
+                  )}
+                </TableCell>
+                <TableCell>
+                  <Chip
+                    icon={statusConfig[leave.status]?.icon}
+                    label={
+                      leave.status
+                        ? leave.status.charAt(0).toUpperCase() +
+                          leave.status.slice(1)
+                        : 'Unknown'
+                    }
+                    color={statusConfig[leave.status]?.color}
+                    sx={{ fontSize: 15, width: '100%' }}
+                  />
+                </TableCell>
+                {/* Manager Response - only visible to Admin/HR Admin */}
+                {/* Managers see their response in Actions/Remarks column only */}
+                {isAdmin && (
+                  <TableCell>
+                    {leave.managerRemarks ? (
+                      <Tooltip title={leave.managerRemarks} arrow>
+                        <Typography
+                          variant='body2'
+                          sx={{
+                            fontSize: 13,
+                            color: '#424242',
+                            maxWidth: 250,
+                            whiteSpace: 'nowrap',
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                          }}
+                        >
+                          {leave.managerRemarks.length > 50
+                            ? `${leave.managerRemarks.substring(0, 50)}...`
+                            : leave.managerRemarks}
+                        </Typography>
+                      </Tooltip>
+                    ) : (
                       <Typography
+                        variant='body2'
                         sx={{
-                          fontSize: 14,
-                          maxWidth: { xs: 120, sm: 200, md: 260 },
-                          whiteSpace: 'nowrap',
-                          overflow: 'hidden',
-                          textOverflow: 'ellipsis',
+                          color: '#9e9e9e',
+                          fontStyle: 'italic',
+                          fontSize: 13,
                         }}
                       >
-                        {leave.reason || 'N/A'}
+                        No response
                       </Typography>
-                    </Tooltip>
-                  </TableCell>
-                  <TableCell>
-                    {leave.documents && leave.documents.length > 0 ? (
-                      <IconButton
-                        onClick={() => handleViewDocs(leave.documents || [])}
-                      >
-                        <img
-                          src={getIcon('password')}
-                          alt='View Documents'
-                          width={20}
-                          height={20}
-                        />
-                      </IconButton>
-                    ) : (
-                      <span style={{ fontStyle: 'italic', color: '#9e9e9e' }}>
-                        No Documents
-                      </span>
                     )}
                   </TableCell>
-                  <TableCell>
-                    <Chip
-                      icon={statusConfig[leave.status]?.icon}
-                      label={
-                        leave.status
-                          ? leave.status.charAt(0).toUpperCase() +
-                            leave.status.slice(1)
-                          : 'Unknown'
-                      }
-                      color={statusConfig[leave.status]?.color}
-                      sx={{ fontSize: 15, width: '100%' }}
-                    />
-                  </TableCell>
-                  {/* Manager Response - only visible to Admin/HR Admin */}
-                  {/* Managers see their response in Actions/Remarks column only */}
-                  {isAdmin && (
-                    <TableCell>
-                      {leave.managerRemarks ? (
+                )}
+                <TableCell>
+                  <Box
+                    sx={{
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: 1,
+                    }}
+                  >
+                    {/* For admin/HR admin: Don't show remarks in Actions column, only show buttons */}
+                    {/* For non-admin users: Show rejection remarks */}
+                    {!isAdmin &&
+                      leave.status === 'rejected' &&
+                      leave.remarks && (
+                        <Tooltip title={leave.remarks} arrow>
+                          <Typography
+                            variant='body2'
+                            sx={{
+                              mt: 0.5,
+                              fontSize: 13,
+                              p: 0.5,
+                              borderRadius: 1,
+                              maxWidth: 250,
+                              whiteSpace: 'nowrap',
+                              overflow: 'hidden',
+                              textOverflow: 'ellipsis',
+                            }}
+                          >
+                            {leave.remarks.length > 50
+                              ? `${leave.remarks.substring(0, 50)}...`
+                              : leave.remarks}
+                          </Typography>
+                        </Tooltip>
+                      )}
+
+                    {/* Show manager response in Actions/Remarks column for managers */}
+                    {isManager &&
+                      viewMode === 'team' &&
+                      leave.managerRemarks && (
                         <Tooltip title={leave.managerRemarks} arrow>
                           <Typography
                             variant='body2'
                             sx={{
+                              mt: 0.5,
                               fontSize: 13,
                               color: '#424242',
                               maxWidth: 250,
@@ -565,305 +635,233 @@ const LeaveHistory: React.FC<LeaveHistoryProps> = ({
                               : leave.managerRemarks}
                           </Typography>
                         </Tooltip>
-                      ) : (
-                        <Typography
-                          variant='body2'
-                          sx={{
-                            color: '#9e9e9e',
-                            fontStyle: 'italic',
-                            fontSize: 13,
-                          }}
-                        >
-                          No response
-                        </Typography>
                       )}
-                    </TableCell>
-                  )}
-                  <TableCell>
-                    <Box
-                      sx={{
-                        display: 'flex',
-                        flexDirection: 'column',
-                        gap: 1,
-                      }}
-                    >
-                      {/* For admin/HR admin: Don't show remarks in Actions column, only show buttons */}
-                      {/* For non-admin users: Show rejection remarks */}
-                      {!isAdmin &&
-                        leave.status === 'rejected' &&
-                        leave.remarks && (
-                          <Tooltip title={leave.remarks} arrow>
-                            <Typography
-                              variant='body2'
-                              sx={{
-                                mt: 0.5,
-                                fontSize: 13,
-                                p: 0.5,
-                                borderRadius: 1,
-                                maxWidth: 250,
-                                whiteSpace: 'nowrap',
-                                overflow: 'hidden',
-                                textOverflow: 'ellipsis',
-                              }}
-                            >
-                              {leave.remarks.length > 50
-                                ? `${leave.remarks.substring(0, 50)}...`
-                                : leave.remarks}
-                            </Typography>
-                          </Tooltip>
-                        )}
 
-                      {/* Show manager response in Actions/Remarks column for managers */}
-                      {isManager &&
-                        viewMode === 'team' &&
-                        leave.managerRemarks && (
-                          <Tooltip title={leave.managerRemarks} arrow>
-                            <Typography
-                              variant='body2'
-                              sx={{
-                                mt: 0.5,
-                                fontSize: 13,
-                                color: '#424242',
-                                maxWidth: 250,
-                                whiteSpace: 'nowrap',
-                                overflow: 'hidden',
-                                textOverflow: 'ellipsis',
-                              }}
-                            >
-                              {leave.managerRemarks.length > 50
-                                ? `${leave.managerRemarks.substring(0, 50)}...`
-                                : leave.managerRemarks}
-                            </Typography>
-                          </Tooltip>
-                        )}
+                    {/* Show action menu icon if there are any actions available */}
+                    {(() => {
+                      const isManagerOwnLeave =
+                        isManager &&
+                        viewMode === 'you' &&
+                        (leave.employee?.id === currentUserId ||
+                          leave.employeeId === currentUserId);
 
-                      {/* Show action menu icon if there are any actions available */}
-                      {(() => {
-                        const isManagerOwnLeave =
-                          isManager &&
-                          viewMode === 'you' &&
-                          (leave.employee?.id === currentUserId ||
-                            leave.employeeId === currentUserId);
+                      const hasActions =
+                        // Admin actions
+                        (isAdmin &&
+                          leave.status === 'pending' &&
+                          (onAction || onWithdraw)) ||
+                        // Manager team actions
+                        (isManager &&
+                          viewMode === 'team' &&
+                          leave.status === 'pending' &&
+                          (onManagerAction ||
+                            onManagerResponse ||
+                            onWithdraw)) ||
+                        // Manager own leave actions (edit and withdraw)
+                        (isManagerOwnLeave &&
+                          leave.status === 'pending' &&
+                          (onWithdraw || true)) || // Always allow edit for manager's own leaves
+                        // Employee actions
+                        (!isAdmin &&
+                          !isManager &&
+                          leave.status === 'pending' &&
+                          onWithdraw);
 
-                        const hasActions =
-                          // Admin actions
-                          (isAdmin &&
-                            leave.status === 'pending' &&
-                            (onAction || onWithdraw)) ||
-                          // Manager team actions
-                          (isManager &&
-                            viewMode === 'team' &&
-                            leave.status === 'pending' &&
-                            (onManagerAction ||
-                              onManagerResponse ||
-                              onWithdraw)) ||
-                          // Manager own leave actions (edit and withdraw)
-                          (isManagerOwnLeave &&
-                            leave.status === 'pending' &&
-                            (onWithdraw || true)) || // Always allow edit for manager's own leaves
-                          // Employee actions
-                          (!isAdmin &&
-                            !isManager &&
-                            leave.status === 'pending' &&
-                            onWithdraw);
+                      if (!hasActions) return null;
 
-                        if (!hasActions) return null;
-
-                        return (
-                          <>
-                            <IconButton
-                              size='small'
-                              onClick={e => handleMenuClick(e, leave)}
-                              aria-label={`Actions for leave ${leave.id}`}
-                              aria-haspopup='true'
-                              aria-expanded={
-                                Boolean(menuAnchorEl) &&
-                                selectedLeaveForMenu?.id === leave.id
-                              }
-                            >
-                              <MoreVertIcon />
-                            </IconButton>
-                            <Menu
-                              anchorEl={menuAnchorEl}
-                              open={
-                                Boolean(menuAnchorEl) &&
-                                selectedLeaveForMenu?.id === leave.id
-                              }
-                              onClose={handleMenuClose}
-                            >
-                              {/* Admin actions for pending leaves */}
-                              {isAdmin &&
-                                leave.status === 'pending' &&
-                                onAction && (
-                                  <>
-                                    <MenuItem
-                                      onClick={() => {
-                                        onAction(leave.id, 'approved');
-                                        handleMenuClose();
-                                      }}
-                                    >
-                                      <ListItemIcon>
-                                        <CheckCircleIcon fontSize='small' />
-                                      </ListItemIcon>
-                                      <ListItemText>Approve</ListItemText>
-                                    </MenuItem>
-                                    <MenuItem
-                                      onClick={() => {
-                                        onAction(leave.id, 'rejected');
-                                        handleMenuClose();
-                                      }}
-                                    >
-                                      <ListItemIcon>
-                                        <CancelIcon fontSize='small' />
-                                      </ListItemIcon>
-                                      <ListItemText>Reject</ListItemText>
-                                    </MenuItem>
-                                  </>
-                                )}
-
-                              {/* Edit option for admin on pending leaves */}
-                              {isAdmin &&
-                                leave.status === 'pending' &&
-                                onWithdraw && (
+                      return (
+                        <>
+                          <IconButton
+                            size='small'
+                            onClick={e => handleMenuClick(e, leave)}
+                            aria-label={`Actions for leave ${leave.id}`}
+                            aria-haspopup='true'
+                            aria-expanded={
+                              Boolean(menuAnchorEl) &&
+                              selectedLeaveForMenu?.id === leave.id
+                            }
+                          >
+                            <MoreVertIcon />
+                          </IconButton>
+                          <Menu
+                            anchorEl={menuAnchorEl}
+                            open={
+                              Boolean(menuAnchorEl) &&
+                              selectedLeaveForMenu?.id === leave.id
+                            }
+                            onClose={handleMenuClose}
+                          >
+                            {/* Admin actions for pending leaves */}
+                            {isAdmin &&
+                              leave.status === 'pending' &&
+                              onAction && (
+                                <>
                                   <MenuItem
                                     onClick={() => {
-                                      handleEditLeave(leave);
+                                      onAction(leave.id, 'approved');
                                       handleMenuClose();
                                     }}
                                   >
                                     <ListItemIcon>
-                                      <EditIcon fontSize='small' />
+                                      <CheckCircleIcon fontSize='small' />
                                     </ListItemIcon>
-                                    <ListItemText>Edit</ListItemText>
+                                    <ListItemText>Approve</ListItemText>
                                   </MenuItem>
-                                )}
-
-                              {/* Manager team actions */}
-                              {isManager &&
-                                viewMode === 'team' &&
-                                leave.status === 'pending' &&
-                                onManagerAction && (
-                                  <>
-                                    <MenuItem
-                                      onClick={() => {
-                                        onManagerAction(leave.id, 'approved');
-                                        handleMenuClose();
-                                      }}
-                                    >
-                                      <ListItemIcon>
-                                        <CheckCircleIcon fontSize='small' />
-                                      </ListItemIcon>
-                                      <ListItemText>Approve</ListItemText>
-                                    </MenuItem>
-                                    <MenuItem
-                                      onClick={() => {
-                                        onManagerAction(leave.id, 'rejected');
-                                        handleMenuClose();
-                                      }}
-                                    >
-                                      <ListItemIcon>
-                                        <CancelIcon fontSize='small' />
-                                      </ListItemIcon>
-                                      <ListItemText>Reject</ListItemText>
-                                    </MenuItem>
-                                  </>
-                                )}
-
-                              {/* Manager response option */}
-                              {isManager &&
-                                viewMode === 'team' &&
-                                leave.status === 'pending' &&
-                                !onManagerAction &&
-                                !leave.managerRemarks &&
-                                onManagerResponse && (
                                   <MenuItem
                                     onClick={() => {
-                                      onManagerResponse(leave.id);
+                                      onAction(leave.id, 'rejected');
                                       handleMenuClose();
                                     }}
                                   >
                                     <ListItemIcon>
-                                      <EditIcon fontSize='small' />
+                                      <CancelIcon fontSize='small' />
                                     </ListItemIcon>
-                                    <ListItemText>
-                                      Manager Response
-                                    </ListItemText>
+                                    <ListItemText>Reject</ListItemText>
                                   </MenuItem>
-                                )}
+                                </>
+                              )}
 
-                              {/* Edit option for manager's own pending leaves */}
-                              {isManager &&
-                                viewMode === 'you' &&
-                                leave.status === 'pending' &&
-                                (leave.employee?.id === currentUserId ||
-                                  leave.employeeId === currentUserId) && (
-                                  <MenuItem
-                                    onClick={() => {
-                                      handleEditLeave(leave);
-                                      handleMenuClose();
-                                    }}
-                                  >
-                                    <ListItemIcon>
-                                      <EditIcon fontSize='small' />
-                                    </ListItemIcon>
-                                    <ListItemText>Edit</ListItemText>
-                                  </MenuItem>
-                                )}
-
-                              {/* Withdraw option for pending leaves */}
-                              {((isAdmin &&
-                                leave.status === 'pending' &&
-                                onWithdraw) ||
-                                (isManager &&
-                                  viewMode === 'you' &&
-                                  leave.status === 'pending' &&
-                                  onWithdraw) ||
-                                (!isAdmin &&
-                                  !isManager &&
-                                  leave.status === 'pending' &&
-                                  onWithdraw)) && (
+                            {/* Edit option for admin on pending leaves */}
+                            {isAdmin &&
+                              leave.status === 'pending' &&
+                              onWithdraw && (
                                 <MenuItem
                                   onClick={() => {
-                                    if (onWithdraw) {
-                                      onWithdraw(leave.id);
-                                    }
+                                    handleEditLeave(leave);
                                     handleMenuClose();
                                   }}
                                 >
                                   <ListItemIcon>
-                                    <UndoIcon fontSize='small' />
+                                    <EditIcon fontSize='small' />
                                   </ListItemIcon>
-                                  <ListItemText>Withdraw</ListItemText>
+                                  <ListItemText>Edit</ListItemText>
                                 </MenuItem>
                               )}
 
-                              {/* Edit option for employees on pending leaves */}
-                              {!isAdmin &&
-                                !isManager &&
-                                leave.status === 'pending' &&
-                                onWithdraw && (
+                            {/* Manager team actions */}
+                            {isManager &&
+                              viewMode === 'team' &&
+                              leave.status === 'pending' &&
+                              onManagerAction && (
+                                <>
                                   <MenuItem
                                     onClick={() => {
-                                      handleEditLeave(leave);
+                                      onManagerAction(leave.id, 'approved');
                                       handleMenuClose();
                                     }}
                                   >
                                     <ListItemIcon>
-                                      <EditIcon fontSize='small' />
+                                      <CheckCircleIcon fontSize='small' />
                                     </ListItemIcon>
-                                    <ListItemText>Edit</ListItemText>
+                                    <ListItemText>Approve</ListItemText>
                                   </MenuItem>
-                                )}
-                            </Menu>
-                          </>
-                        );
-                      })()}
-                    </Box>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </AppTable>
+                                  <MenuItem
+                                    onClick={() => {
+                                      onManagerAction(leave.id, 'rejected');
+                                      handleMenuClose();
+                                    }}
+                                  >
+                                    <ListItemIcon>
+                                      <CancelIcon fontSize='small' />
+                                    </ListItemIcon>
+                                    <ListItemText>Reject</ListItemText>
+                                  </MenuItem>
+                                </>
+                              )}
+
+                            {/* Manager response option */}
+                            {isManager &&
+                              viewMode === 'team' &&
+                              leave.status === 'pending' &&
+                              !onManagerAction &&
+                              !leave.managerRemarks &&
+                              onManagerResponse && (
+                                <MenuItem
+                                  onClick={() => {
+                                    onManagerResponse(leave.id);
+                                    handleMenuClose();
+                                  }}
+                                >
+                                  <ListItemIcon>
+                                    <EditIcon fontSize='small' />
+                                  </ListItemIcon>
+                                  <ListItemText>Manager Response</ListItemText>
+                                </MenuItem>
+                              )}
+
+                            {/* Edit option for manager's own pending leaves */}
+                            {isManager &&
+                              viewMode === 'you' &&
+                              leave.status === 'pending' &&
+                              (leave.employee?.id === currentUserId ||
+                                leave.employeeId === currentUserId) && (
+                                <MenuItem
+                                  onClick={() => {
+                                    handleEditLeave(leave);
+                                    handleMenuClose();
+                                  }}
+                                >
+                                  <ListItemIcon>
+                                    <EditIcon fontSize='small' />
+                                  </ListItemIcon>
+                                  <ListItemText>Edit</ListItemText>
+                                </MenuItem>
+                              )}
+
+                            {/* Withdraw option for pending leaves */}
+                            {((isAdmin &&
+                              leave.status === 'pending' &&
+                              onWithdraw) ||
+                              (isManager &&
+                                viewMode === 'you' &&
+                                leave.status === 'pending' &&
+                                onWithdraw) ||
+                              (!isAdmin &&
+                                !isManager &&
+                                leave.status === 'pending' &&
+                                onWithdraw)) && (
+                              <MenuItem
+                                onClick={() => {
+                                  if (onWithdraw) {
+                                    onWithdraw(leave.id);
+                                  }
+                                  handleMenuClose();
+                                }}
+                              >
+                                <ListItemIcon>
+                                  <UndoIcon fontSize='small' />
+                                </ListItemIcon>
+                                <ListItemText>Withdraw</ListItemText>
+                              </MenuItem>
+                            )}
+
+                            {/* Edit option for employees on pending leaves */}
+                            {!isAdmin &&
+                              !isManager &&
+                              leave.status === 'pending' &&
+                              onWithdraw && (
+                                <MenuItem
+                                  onClick={() => {
+                                    handleEditLeave(leave);
+                                    handleMenuClose();
+                                  }}
+                                >
+                                  <ListItemIcon>
+                                    <EditIcon fontSize='small' />
+                                  </ListItemIcon>
+                                  <ListItemText>Edit</ListItemText>
+                                </MenuItem>
+                              )}
+                          </Menu>
+                        </>
+                      );
+                    })()}
+                  </Box>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </AppTable>
       )}
 
       <Box

@@ -944,8 +944,8 @@ const AssetInventory: React.FC = () => {
             }}
           >
             <AppButton
-              variant='contained'
-              variantType='primary'
+              // variant='contained'
+              // variantType='primary'
               startIcon={<FilterIcon />}
               onClick={() => setFilters({})}
               sx={{
@@ -955,8 +955,10 @@ const AssetInventory: React.FC = () => {
                 fontSize: 'var(--body-font-size)',
                 lineHeight: 'var(--body-line-height)',
                 letterSpacing: 'var(--body-letter-spacing)',
-                bgcolor: 'var(--primary-dark-color)',
-                color: '#FFFFFF',
+                // bgcolor: 'var(--primary-dark-color)',
+                backgroundColor: 'transparent',
+                color: 'var(--primary-dark-color)',
+                border: '1px solid var(--primary-dark-color)',
                 boxShadow: 'none',
                 px: { xs: 1, sm: 1.25 },
                 py: { xs: 0.6, sm: 0.8 },

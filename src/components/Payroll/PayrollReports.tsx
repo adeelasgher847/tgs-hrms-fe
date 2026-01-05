@@ -210,6 +210,22 @@ const PayrollReports: React.FC = () => {
     return {
       chart: { type: 'bar', toolbar: { show: false } },
       plotOptions: { bar: { horizontal: true, borderRadius: 4 } },
+      chart: { type: 'bar', toolbar: { show: false }, offsetX: 0 },
+      grid: { padding: { left: 72, right: 16 } },
+      responsive: [
+        {
+          breakpoint: 900,
+          options: {
+            grid: { padding: { left: 48, right: 12 } },
+          },
+        },
+        {
+          breakpoint: 600,
+          options: {
+            grid: { padding: { left: 24, right: 8 } },
+          },
+        },
+      ],
       yaxis: {
         categories: categories,
         labels: {
@@ -219,7 +235,7 @@ const PayrollReports: React.FC = () => {
             if (val >= 0 && val < categories.length) {
               return categories[Math.floor(val)];
             }
-            return String(val);
+            return val;
           },
         },
       },
