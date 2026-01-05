@@ -104,7 +104,7 @@ const AppDropdown = React.forwardRef<HTMLDivElement, AppDropdownProps>(
               className={labelClassName}
               sx={{
                 fontWeight: 500,
-                fontSize: 'var(--subheading2-font-size)',
+                fontSize: 'var(--subheading3-font-size)',
                 lineHeight: 'var(--subheading2-line-height)',
                 letterSpacing: 'var(--subheading2-letter-spacing)',
                 color:
