@@ -35,6 +35,7 @@ import { formatDate } from '../../utils/dateUtils';
 import employeeApi from '../../api/employeeApi';
 import { PAGINATION } from '../../constants/appConstants';
 import AppTable from '../common/AppTable';
+import { Icons } from '../../assets/icons';
 
 type EmployeeWithTenantName = SystemEmployee & {
   tenantName: string;
@@ -70,7 +71,6 @@ const TenantBasedEmployeeManager: React.FC = () => {
 
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
-  const darkMode = theme.palette.mode === 'dark';
 
   // Fetch departments + tenants once on mount
   const fetchFiltersData = async () => {
@@ -302,8 +302,7 @@ const TenantBasedEmployeeManager: React.FC = () => {
     setOpenProfile(true);
   };
 
-  const filterBtn = darkMode ? '#888' : '#999';
-  const textColor = darkMode ? '#fff' : '#000';
+  // styling vars removed (unused)
 
   const hasMorePages = employees.length === itemsPerPage;
   const estimatedTotalRecords =
@@ -342,7 +341,7 @@ const TenantBasedEmployeeManager: React.FC = () => {
           <AppDropdown
             label='Tenant'
             options={[
-              { value: '', label: 'All Tenants' },
+              { value: 'All Tenants', label: 'All Tenants' },
               ...tenants.map(t => ({ value: t.id, label: t.name })),
             ]}
             value={filters.tenantId}
@@ -355,7 +354,7 @@ const TenantBasedEmployeeManager: React.FC = () => {
           <AppDropdown
             label='Department'
             options={[
-              { value: '', label: 'All Departments' },
+              { value: 'All Departments', label: 'All Departments' },
               ...departments.map(d => ({ value: d.id, label: d.name })),
             ]}
             value={filters.departmentId}
@@ -368,7 +367,7 @@ const TenantBasedEmployeeManager: React.FC = () => {
           <AppDropdown
             label='Designation'
             options={[
-              { value: '', label: 'All Designations' },
+              { value: 'All Designations', label: 'All Designations' },
               ...designations.map(des => ({ value: des.id, label: des.title })),
             ]}
             value={filters.designationId}
@@ -413,56 +412,60 @@ const TenantBasedEmployeeManager: React.FC = () => {
         </Tooltip>
       </Box>
 
-      <Paper sx={{ mt: 3, boxShadow: 'none' }}>
-        <AppTable>
-          <TableHead>
+      <AppTable>
+        <TableHead>
+          <TableRow>
+            <TableCell>Name</TableCell>
+            <TableCell>Tenant</TableCell>
+            <TableCell>Department</TableCell>
+            <TableCell>Designation</TableCell>
+            <TableCell>Status</TableCell>
+            <TableCell>Created At</TableCell>
+            <TableCell align='center'>Actions</TableCell>
+          </TableRow>
+        </TableHead>
+        <TableBody>
+          {loading ? (
             <TableRow>
-              <TableCell>Name</TableCell>
-              <TableCell>Tenant</TableCell>
-              <TableCell>Department</TableCell>
-              <TableCell>Designation</TableCell>
-              <TableCell>Status</TableCell>
-              <TableCell>Created At</TableCell>
-              <TableCell align='center'>Actions</TableCell>
+              <TableCell colSpan={7} align='center'>
+                <CircularProgress sx={{ color: 'var(--primary-dark-color)' }} />
+              </TableCell>
             </TableRow>
-          </TableHead>
-          <TableBody>
-            {loading ? (
-              <TableRow>
-                <TableCell colSpan={7} align='center'>
-                  <CircularProgress
-                    sx={{ color: 'var(--primary-dark-color)' }}
-                  />
+          ) : employees.length ? (
+            employees.map(emp => (
+              <TableRow key={emp.id}>
+                <TableCell>{emp.name}</TableCell>
+                <TableCell>{emp.tenantName || <em>—</em>}</TableCell>
+                <TableCell>{emp.departmentName || <em>—</em>}</TableCell>
+                <TableCell>{emp.designationTitle || <em>—</em>}</TableCell>
+                <TableCell>{emp.status}</TableCell>
+                <TableCell>
+                  {emp.createdAt ? formatDate(emp.createdAt) : 'N/A'}
+                </TableCell>
+                <TableCell align='center'>
+                  <IconButton onClick={() => handleOpenProfile(emp)}>
+                    <Box
+                      component='img'
+                      src={Icons.password}
+                      alt='View'
+                      sx={{
+                        width: { xs: 16, sm: 20 },
+                        height: { xs: 16, sm: 20 },
+                      }}
+                    />
+                  </IconButton>
                 </TableCell>
               </TableRow>
-            ) : employees.length ? (
-              employees.map(emp => (
-                <TableRow key={emp.id}>
-                  <TableCell>{emp.name}</TableCell>
-                  <TableCell>{emp.tenantName || <em>—</em>}</TableCell>
-                  <TableCell>{emp.departmentName || <em>—</em>}</TableCell>
-                  <TableCell>{emp.designationTitle || <em>—</em>}</TableCell>
-                  <TableCell>{emp.status}</TableCell>
-                  <TableCell>
-                    {emp.createdAt ? formatDate(emp.createdAt) : 'N/A'}
-                  </TableCell>
-                  <TableCell align='center'>
-                    <IconButton onClick={() => handleOpenProfile(emp)}>
-                      <VisibilityIcon />
-                    </IconButton>
-                  </TableCell>
-                </TableRow>
-              ))
-            ) : (
-              <TableRow>
-                <TableCell colSpan={7} align='center'>
-                  No employees found
-                </TableCell>
-              </TableRow>
-            )}
-          </TableBody>
-        </AppTable>
-      </Paper>
+            ))
+          ) : (
+            <TableRow>
+              <TableCell colSpan={7} align='center'>
+                No employees found
+              </TableCell>
+            </TableRow>
+          )}
+        </TableBody>
+      </AppTable>
 
       {openProfile && selectedEmployee && (
         <SystemEmployeeProfileView

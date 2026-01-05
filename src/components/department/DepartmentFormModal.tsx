@@ -14,7 +14,7 @@ import {
   useTheme,
 } from '@mui/material';
 import { Close as CloseIcon } from '@mui/icons-material';
-import { useOutletContext } from 'react-router-dom';
+// useOutletContext removed (darkMode not used)
 import type { SxProps, Theme } from '@mui/material/styles';
 import AppButton from '../common/AppButton';
 import type {
@@ -22,10 +22,7 @@ import type {
   DepartmentFormData,
   DepartmentFormErrors,
 } from '../../types';
-import {
-  TIMEOUTS,
-  VALIDATION_LIMITS,
-} from '../../constants/appConstants';
+import { TIMEOUTS, VALIDATION_LIMITS } from '../../constants/appConstants';
 
 interface DepartmentFormModalProps {
   open: boolean;
@@ -45,7 +42,7 @@ export const DepartmentFormModal: React.FC<DepartmentFormModalProps> = ({
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const isLargeScreen = useMediaQuery(theme.breakpoints.up('lg'));
-  const { darkMode } = useOutletContext<{ darkMode: boolean }>();
+  // darkMode not used
 
   const [formData, setFormData] = useState<DepartmentFormData>({
     name: '',
@@ -97,8 +94,10 @@ export const DepartmentFormModal: React.FC<DepartmentFormModalProps> = ({
 
   // Used to disable Create/Update until all required fields are valid
   const isFormValid =
-    formData.name.trim().length >= VALIDATION_LIMITS.MIN_DEPARTMENT_NAME_LENGTH &&
-    (formData.description || '').length <= VALIDATION_LIMITS.MAX_DESCRIPTION_LENGTH;
+    formData.name.trim().length >=
+      VALIDATION_LIMITS.MIN_DEPARTMENT_NAME_LENGTH &&
+    (formData.description || '').length <=
+      VALIDATION_LIMITS.MAX_DESCRIPTION_LENGTH;
 
   /* ---------- validation helpers ---------- */
   const validateForm = (): boolean => {
@@ -324,10 +323,10 @@ export const DepartmentFormModal: React.FC<DepartmentFormModalProps> = ({
 
   /* ---------- DESKTOP dialog ---------- */
   return (
-    <Dialog 
-      open={open} 
-      onClose={onClose} 
-      maxWidth={isLargeScreen ? 'md' : 'sm'} 
+    <Dialog
+      open={open}
+      onClose={onClose}
+      maxWidth={isLargeScreen ? 'md' : 'sm'}
       fullWidth
     >
       <DialogTitle sx={{ ...paperSx, position: 'relative' }}>

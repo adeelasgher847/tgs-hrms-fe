@@ -24,7 +24,6 @@ import TeamMemberList from './TeamMemberList';
 import AppButton from '../common/AppButton';
 import AppCard from '../common/AppCard';
 import AppDropdown from '../common/AppDropdown';
-import { COLORS } from '../../constants/appConstants';
 
 interface MyTeamsProps {
   teams: Team[];
@@ -263,12 +262,19 @@ const MyTeams: React.FC<MyTeamsProps> = ({ teams, darkMode = false }) => {
                   variant='outlined'
                   variantType='secondary'
                   size='small'
-                  startIcon={<GroupIcon />}
+                  startIcon={
+                    <GroupIcon sx={{ fontSize: { xs: 16, sm: 18 } }} />
+                  }
                   onClick={() => handleViewMembers(team)}
                   sx={{
+                    flex: 1,
                     borderColor: '#3083DC',
                     color: '#3083DC',
                     backgroundColor: 'transparent',
+                    fontSize: { xs: '0.75rem', sm: '0.875rem' },
+                    py: { xs: 0.75, sm: 1 },
+                    px: { xs: 1, sm: 1.5 },
+                    minWidth: 0,
                     '&:hover': {
                       borderColor: '#3083DC',
                       backgroundColor: 'rgba(48, 131, 220, 0.1)',
@@ -281,12 +287,17 @@ const MyTeams: React.FC<MyTeamsProps> = ({ teams, darkMode = false }) => {
                   variant='outlined'
                   variantType='secondary'
                   size='small'
-                  startIcon={<AddIcon />}
+                  startIcon={<AddIcon sx={{ fontSize: { xs: 16, sm: 18 } }} />}
                   onClick={() => handleAddMember(team)}
                   sx={{
+                    flex: 1,
                     borderColor: '#3083DC',
                     color: '#3083DC',
                     backgroundColor: 'transparent',
+                    fontSize: { xs: '0.75rem', sm: '0.875rem' },
+                    py: { xs: 0.75, sm: 1 },
+                    px: { xs: 1, sm: 1.5 },
+                    minWidth: 0,
                     '&:hover': {
                       borderColor: '#3083DC',
                       backgroundColor: 'rgba(48, 131, 220, 0.1)',
@@ -343,7 +354,6 @@ const MyTeams: React.FC<MyTeamsProps> = ({ teams, darkMode = false }) => {
             value={selectedEmployeeId || 'all'}
             onChange={e => setSelectedEmployeeId(String(e.target.value || ''))}
             disabled={loadingEmployees}
-            showLabel={false}
             align='left'
             containerSx={{ mt: 2, width: '100%' }}
             options={[

@@ -94,25 +94,56 @@ const EmployeeList: React.FC<EmployeeListProps> = ({
 
   return (
     <Box>
-      <AppTable>
+      <AppTable
+        sx={{
+          backgroundColor: 'transparent',
+          '& .MuiTableBody-root .MuiTableRow-root .MuiTableCell-root': {
+            whiteSpace: 'nowrap',
+            px: { xs: 1, sm: 1.5, md: 1 }, // Reduced horizontal padding
+            py: 1.5,
+            backgroundColor: 'transparent',
+          },
+          '& .MuiTableHead-root .MuiTableRow-root .MuiTableCell-root': {
+            whiteSpace: 'nowrap',
+            px: { xs: 1, sm: 1.5, md: 1 }, // Reduced horizontal padding
+            py: 1.5,
+          },
+        }}
+      >
         <TableHead>
           <TableRow>
-            <TableCell sx={{ color: textColor, fontWeight: 'bold' }}>
+            <TableCell
+              align={direction === 'rtl' ? 'right' : 'left'}
+              sx={{ color: textColor, fontWeight: 'bold' }}
+            >
               {direction === 'rtl' ? 'الاسم' : 'Name'}
             </TableCell>
-            <TableCell sx={{ color: textColor, fontWeight: 'bold' }}>
+            <TableCell
+              align={direction === 'rtl' ? 'right' : 'left'}
+              sx={{ color: textColor, fontWeight: 'bold' }}
+            >
               {direction === 'rtl' ? 'البريد الإلكتروني' : 'Email'}
             </TableCell>
-            <TableCell sx={{ color: textColor, fontWeight: 'bold' }}>
+            <TableCell
+              align={direction === 'rtl' ? 'right' : 'left'}
+              sx={{ color: textColor, fontWeight: 'bold' }}
+            >
               {direction === 'rtl' ? 'رقم الهاتف' : 'Phone'}
             </TableCell>
-            <TableCell sx={{ color: textColor, fontWeight: 'bold' }}>
+            <TableCell
+              align={direction === 'rtl' ? 'right' : 'left'}
+              sx={{ color: textColor, fontWeight: 'bold' }}
+            >
               {direction === 'rtl' ? 'القسم' : 'Department'}
             </TableCell>
-            <TableCell sx={{ color: textColor, fontWeight: 'bold' }}>
+            <TableCell
+              align={direction === 'rtl' ? 'right' : 'left'}
+              sx={{ color: textColor, fontWeight: 'bold' }}
+            >
               {direction === 'rtl' ? 'الوظيفة' : 'Designation'}
             </TableCell>
             <TableCell
+              align={direction === 'rtl' ? 'right' : 'left'}
               sx={{
                 color: textColor,
                 fontWeight: 'bold',
@@ -121,11 +152,15 @@ const EmployeeList: React.FC<EmployeeListProps> = ({
             >
               {direction === 'rtl' ? 'رقم الهوية' : 'CNIC Number'}
             </TableCell>
-            <TableCell sx={{ color: textColor, fontWeight: 'bold' }}>
+            <TableCell
+              align={direction === 'rtl' ? 'right' : 'left'}
+              sx={{ color: textColor, fontWeight: 'bold' }}
+            >
               {direction === 'rtl' ? 'الحالة' : 'Status'}
             </TableCell>
             {(onDelete || onEdit || onResendInvite || onView) && (
               <TableCell
+                align='center'
                 sx={{ color: textColor, fontWeight: 'bold', width: '120px' }}
               >
                 {direction === 'rtl' ? 'إجراءات' : 'Actions'}

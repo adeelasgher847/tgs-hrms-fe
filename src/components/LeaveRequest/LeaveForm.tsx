@@ -1,34 +1,82 @@
 import React, { useState, useEffect } from 'react';
-import { Box, TextField, Typography } from '@mui/material';
+import { Box, TextField } from '@mui/material';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
-import { leaveApi, type LeaveType } from '../../api/leaveApi';
-import AppButton from '../common/AppButton';
-import AppDropdown from '../common/AppDropdown';
 import type { SelectChangeEvent } from '@mui/material/Select';
 
+import AppButton from '../common/AppButton';
+import AppDropdown from '../common/AppDropdown';
+import DocumentUpload from '../common/DocumentUpload';
+import { leaveApi, type LeaveType } from '../../api/leaveApi';
+import AppPageTitle from '../common/AppPageTitle';
+import type { Leave } from '../../type/levetypes';
+
 interface LeaveFormProps {
+  /** create | edit */
+  mode?: 'create' | 'edit';
+
+  /** required for edit */
+  leaveId?: string;
+  initialData?: Leave;
+
+  /** create callback (optional – backward compatible) */
   onSubmit?: (data: {
+    employeeId?: string;
     leaveTypeId: string;
     startDate: string;
     endDate: string;
     reason: string;
+    documents?: File[];
   }) => void;
+
+  onSuccess?: () => void;
   onError?: (message: string) => void;
+  employees?: { id: string; name: string }[];
 }
 
-const LeaveForm: React.FC<LeaveFormProps> = ({ onSubmit, onError }) => {
+const LeaveForm: React.FC<LeaveFormProps> = ({
+  mode = 'create',
+  leaveId,
+  initialData,
+  onSubmit,
+  onSuccess,
+  onError,
+  employees,
+}) => {
   const [leaveTypes, setLeaveTypes] = useState<LeaveType[]>([]);
   const [loadingLeaveTypes, setLoadingLeaveTypes] = useState(true);
 
+  const [employeeId, setEmployeeId] = useState('');
   const [leaveTypeId, setLeaveTypeId] = useState('');
   const [startDate, setStartDate] = useState<Date | null>(null);
   const [endDate, setEndDate] = useState<Date | null>(null);
   const [reason, setReason] = useState('');
+  const [documents, setDocuments] = useState<File[]>([]);
+  const [existingDocuments, setExistingDocuments] = useState<string[]>([]);
+  const [documentsToRemove, setDocumentsToRemove] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
 
-  // ✅ Fetch leave types
+  /* ------------------ PREFILL (EDIT MODE) ------------------ */
+  useEffect(() => {
+    if (mode === 'edit' && initialData) {
+      setEmployeeId(initialData.employeeId || '');
+      setLeaveTypeId(initialData.leaveTypeId || '');
+      setStartDate(new Date(initialData.startDate));
+      setEndDate(new Date(initialData.endDate));
+      setReason(initialData.reason || '');
+      // Load existing documents if available
+      if (initialData.documents && Array.isArray(initialData.documents)) {
+        setExistingDocuments(initialData.documents as string[]);
+      }
+    } else {
+      // Reset when switching to create mode
+      setExistingDocuments([]);
+      setDocumentsToRemove([]);
+    }
+  }, [mode, initialData]);
+
+  /* ------------------ FETCH LEAVE TYPES ------------------ */
   useEffect(() => {
     const fetchLeaveTypes = async () => {
       try {
@@ -44,63 +92,142 @@ const LeaveForm: React.FC<LeaveFormProps> = ({ onSubmit, onError }) => {
     fetchLeaveTypes();
   }, [onError]);
 
-  // ✅ Allow same day leave
   const getToday = () => {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     return today;
   };
 
-  // Format date YYYY-MM-DD for backend
-  const formatDateLocal = (date: Date) => {
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const day = String(date.getDate()).padStart(2, '0');
-    return `${year}-${month}-${day}`;
+  const formatDate = (date: Date) => {
+    const y = date.getFullYear();
+    const m = String(date.getMonth() + 1).padStart(2, '0');
+    const d = String(date.getDate()).padStart(2, '0');
+    return `${y}-${m}-${d}`;
   };
 
-  // Submit form
+  /* ------------------ DOCUMENT HANDLING ------------------ */
+  const handleDocumentsChange = (data: { existing: string[]; new: File[] }) => {
+    setExistingDocuments(data.existing);
+    setDocuments(data.new);
+  };
+
+  const handleDocumentRemove = (type: 'existing' | 'new', index: number) => {
+    if (type === 'existing') {
+      const docUrl = existingDocuments[index];
+      setExistingDocuments(prev => prev.filter((_, i) => i !== index));
+      setDocumentsToRemove(prev => [...prev, docUrl]);
+    } else {
+      setDocuments(prev => prev.filter((_, i) => i !== index));
+    }
+  };
+
+  const handleDocumentReplace = (
+    type: 'existing' | 'new',
+    index: number,
+    file: File
+  ) => {
+    if (type === 'existing') {
+      // Remove existing document and add new file
+      const docUrl = existingDocuments[index];
+      setExistingDocuments(prev => prev.filter((_, i) => i !== index));
+      setDocumentsToRemove(prev => [...prev, docUrl]);
+      setDocuments(prev => [...prev, file]);
+    } else {
+      // Replace new file
+      setDocuments(prev => prev.map((f, i) => (i === index ? file : f)));
+    }
+  };
+
+  /* ------------------ SUBMIT ------------------ */
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!leaveTypeId.trim() || !startDate || !endDate || !reason.trim()) {
+    if (
+      !leaveTypeId ||
+      !startDate ||
+      !endDate ||
+      !reason.trim() ||
+      (employees && !employeeId)
+    ) {
       onError?.('Please fill in all required fields.');
       return;
     }
 
-    const payload = {
-      leaveTypeId,
-      startDate: formatDateLocal(startDate),
-      endDate: formatDateLocal(endDate),
-      reason: reason.trim(),
-    };
-
     setLoading(true);
 
     try {
-      await leaveApi.createLeave(payload);
+      /* -------- EDIT MODE (PATCH) -------- */
+      if (mode === 'edit' && leaveId && initialData) {
+        const payload: any = {};
+
+        if (leaveTypeId !== initialData.leaveTypeId)
+          payload.leaveTypeId = leaveTypeId;
+
+        if (formatDate(startDate) !== initialData.startDate)
+          payload.startDate = formatDate(startDate);
+
+        if (formatDate(endDate) !== initialData.endDate)
+          payload.endDate = formatDate(endDate);
+
+        if (reason.trim() !== initialData.reason)
+          payload.reason = reason.trim();
+
+        // Handle documents:
+        // - If new documents are added, send them (backend will replace all)
+        // - If documents were removed (existingDocuments changed), send new documents array
+        // - If all documents were removed, send empty array
+        const hasNewDocuments = documents.length > 0;
+        const hasRemovedDocuments = documentsToRemove.length > 0;
+        const allDocumentsRemoved =
+          existingDocuments.length === 0 &&
+          documentsToRemove.length > 0 &&
+          documents.length === 0;
+
+        if (hasNewDocuments || hasRemovedDocuments) {
+          // Send new documents array (backend will replace all existing documents)
+          payload.documents = documents;
+        } else if (allDocumentsRemoved) {
+          // All documents were removed, send empty array
+          payload.documents = [];
+        }
+
+        if (Object.keys(payload).length === 0) {
+          onError?.('No changes to update.');
+          return;
+        }
+
+        await leaveApi.updateLeave(leaveId, payload);
+        onSuccess?.();
+        return;
+      }
+
+      /* -------- CREATE MODE -------- */
+      const payload = {
+        employeeId: employees ? employeeId : undefined,
+        leaveTypeId,
+        startDate: formatDate(startDate),
+        endDate: formatDate(endDate),
+        reason: reason.trim(),
+        documents: documents.length > 0 ? documents : undefined,
+      };
+
       onSubmit?.(payload);
+      onSuccess?.();
+
+      setEmployeeId('');
       setLeaveTypeId('');
       setStartDate(null);
       setEndDate(null);
       setReason('');
-    } catch (error: unknown) {
-      let errorMessage = 'Failed to submit leave request.';
-      if (error && typeof error === 'object' && 'response' in error) {
-        const axiosError = error as {
-          response?: { data?: { message?: string } };
-        };
-        if (axiosError.response?.data?.message) {
-          errorMessage = axiosError.response.data.message;
-        }
-      }
-
-      onError?.(errorMessage);
+      setDocuments([]);
+    } catch {
+      onError?.('Failed to submit leave request.');
     } finally {
       setLoading(false);
     }
   };
 
+  /* ------------------ UI ------------------ */
   return (
     <LocalizationProvider dateAdapter={AdapterDateFns}>
       <Box
@@ -117,62 +244,73 @@ const LeaveForm: React.FC<LeaveFormProps> = ({ onSubmit, onError }) => {
           gap: 2,
         }}
       >
-        <Typography
-          variant='h5'
-          mb={2}
-          sx={{ color: 'var(--primary-dark-color)' }}
-        >
-          Apply for Leave
-        </Typography>
+        <AppPageTitle>
+          {mode === 'edit' ? 'Edit Leave' : 'Apply for Leave'}
+        </AppPageTitle>
+
+        {employees && mode === 'create' && (
+          <AppDropdown
+            label='Employee'
+            value={employeeId}
+            onChange={(e: SelectChangeEvent<string | number>) =>
+              setEmployeeId(String(e.target.value))
+            }
+            options={employees.map(emp => ({
+              value: emp.id,
+              label: emp.name,
+            }))}
+            required
+            containerSx={{ width: '100%' }}
+            placeholder='Select Employee'
+            showLabel
+          />
+        )}
 
         <AppDropdown
           label='Leave Type'
-          value={leaveTypeId || ''}
+          value={leaveTypeId}
           onChange={(e: SelectChangeEvent<string | number>) =>
-            setLeaveTypeId(String(e.target.value || ''))
+            setLeaveTypeId(String(e.target.value))
           }
-          options={
-            leaveTypes.length > 0
-              ? leaveTypes.map(type => ({ value: type.id, label: type.name }))
-              : [{ value: '', label: 'No leave types available' }]
-          }
-          disabled={loadingLeaveTypes || leaveTypes.length === 0}
+          options={leaveTypes.map(type => ({
+            value: type.id,
+            label: type.name,
+          }))}
+          disabled={loadingLeaveTypes}
           containerSx={{ width: '100%' }}
           placeholder='Leave Type'
           showLabel
         />
 
-        {/* Start Date */}
         <DatePicker
           label='Start Date'
           value={startDate}
           onChange={newValue => {
-            setStartDate(newValue);
-            if (newValue && endDate && newValue > endDate) {
-              setEndDate(newValue);
+            if (newValue instanceof Date) {
+              setStartDate(newValue);
+              if (newValue && endDate && newValue > endDate) {
+                setEndDate(newValue);
+              }
+            } else if (newValue === null) {
+              setStartDate(null);
             }
           }}
           minDate={getToday()}
-          slotProps={{
-            textField: {
-              fullWidth: true,
-              required: true,
-            },
-          }}
+          slotProps={{ textField: { fullWidth: true, required: true } }}
         />
 
-        {/* End Date */}
         <DatePicker
           label='End Date'
           value={endDate}
-          onChange={newValue => setEndDate(newValue)}
-          minDate={startDate || getToday()}
-          slotProps={{
-            textField: {
-              fullWidth: true,
-              required: true,
-            },
+          onChange={newValue => {
+            if (newValue instanceof Date) {
+              setEndDate(newValue);
+            } else if (newValue === null) {
+              setEndDate(null);
+            }
           }}
+          minDate={startDate || getToday()}
+          slotProps={{ textField: { fullWidth: true, required: true } }}
         />
 
         <TextField
@@ -184,12 +322,23 @@ const LeaveForm: React.FC<LeaveFormProps> = ({ onSubmit, onError }) => {
           required
         />
 
+        <DocumentUpload
+          label='Supporting Documents (Optional)'
+          existingDocuments={mode === 'edit' ? existingDocuments : []}
+          newDocuments={documents}
+          onDocumentsChange={handleDocumentsChange}
+          onDocumentRemove={handleDocumentRemove}
+          onDocumentReplace={handleDocumentReplace}
+          multiple
+          accept='image/*'
+        />
+
         <AppButton
           type='submit'
-          variantType='contained'
-          text={loading ? 'Submitting...' : 'Apply'}
+          variant='contained'
+          variantType='primary'
+          text={loading ? 'Saving...' : mode === 'edit' ? 'Update' : 'Apply'}
           disabled={loading}
-          sx={{ color: 'var(--primary-dark-color)' }}
         />
       </Box>
     </LocalizationProvider>

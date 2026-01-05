@@ -511,12 +511,12 @@ const TeamMembersAvatar: React.FC<TeamMembersAvatarProps> = ({
               sx={{
                 width: 38,
                 height: 38,
-                backgroundColor: '#4b4f73',
+                backgroundColor: 'var(--primary-dark-color)',
                 cursor: 'pointer',
                 border: '2px solid white',
                 transition: 'all 0.3s ease-in-out',
                 '&:hover': {
-                  backgroundColor: '#3a3f5f',
+                  backgroundColor: 'var(--primary-light-color)',
                   border: '2px solid #000',
                   boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
                 },
@@ -891,12 +891,12 @@ const TeamMembersAvatar: React.FC<TeamMembersAvatarProps> = ({
               sx={{
                 width: 38,
                 height: 38,
-                backgroundColor: '#4b4f73',
+                backgroundColor: 'var(--primary-dark-color)',
                 cursor: 'pointer',
                 border: '2px solid white',
                 transition: 'all 0.3s ease-in-out',
                 '&:hover': {
-                  backgroundColor: '#3a3f5f',
+                  backgroundColor: 'var(--primary-light-olor)',
                   border: '2px solid #000',
                   boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
                 },
@@ -1291,12 +1291,12 @@ const TeamMembersAvatar: React.FC<TeamMembersAvatarProps> = ({
             sx={{
               width: 38,
               height: 38,
-              backgroundColor: '#4b4f73',
+              backgroundColor: 'var(--primary-dark-color)',
               cursor: 'pointer',
               border: '2px solid white',
               transition: 'all 0.3s ease-in-out',
               '&:hover': {
-                backgroundColor: '#3a3f5f',
+                backgroundColor: 'var(--primary-light-color)',
                 border: '2px solid #000',
                 boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
               },
@@ -1322,12 +1322,12 @@ const TeamMembersAvatar: React.FC<TeamMembersAvatarProps> = ({
             sx={{
               width: 38,
               height: 38,
-              backgroundColor: '#4b4f73',
+              backgroundColor: 'var(--primary-dark-color)',
               cursor: 'pointer',
               border: '2px solid white',
               transition: 'all 0.3s ease-in-out',
               '&:hover': {
-                backgroundColor: '#3a3f5f',
+                backgroundColor: 'var(--primary-light-color)',
                 border: '2px solid #000',
                 boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
               },

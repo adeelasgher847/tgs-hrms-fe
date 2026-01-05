@@ -19,7 +19,7 @@ import systemEmployeeApiService, {
 import { useIsDarkMode } from '../../theme';
 import { snackbar } from '../../utils/snackbar';
 import AppDropdown from '../common/AppDropdown';
-import type { SelectChangeEvent } from '@mui/material/Select';
+// SelectChangeEvent import removed (unused)
 import AppPageTitle from '../common/AppPageTitle';
 
 const formatCurrency = (value: number | string | undefined) => {
@@ -210,6 +210,22 @@ const PayrollReports: React.FC = () => {
     return {
       chart: { type: 'bar', toolbar: { show: false } },
       plotOptions: { bar: { horizontal: true, borderRadius: 4 } },
+      chart: { type: 'bar', toolbar: { show: false }, offsetX: 0 },
+      grid: { padding: { left: 72, right: 16 } },
+      responsive: [
+        {
+          breakpoint: 900,
+          options: {
+            grid: { padding: { left: 48, right: 12 } },
+          },
+        },
+        {
+          breakpoint: 600,
+          options: {
+            grid: { padding: { left: 24, right: 8 } },
+          },
+        },
+      ],
       yaxis: {
         categories: categories,
         labels: {
@@ -219,7 +235,7 @@ const PayrollReports: React.FC = () => {
             if (val >= 0 && val < categories.length) {
               return categories[Math.floor(val)];
             }
-            return String(val);
+            return val;
           },
         },
       },
@@ -237,15 +253,15 @@ const PayrollReports: React.FC = () => {
         color: textColor,
         '& .MuiButton-contained': {
           backgroundColor: 'var(--primary-dark-color)',
-          '&:hover': { backgroundColor: 'var(--primary-dark-color)' },
+          // '&:hover': { backgroundColor: 'var(--primary-dark-color)' },
         },
         '& .MuiButton-outlined': {
           borderColor: 'var(--primary-dark-color)',
           color: 'var(--primary-dark-color)',
-          '&:hover': {
-            borderColor: 'var(--primary-dark-color)',
-            backgroundColor: 'var(--primary-color)',
-          },
+          // '&:hover': {
+          //   borderColor: 'var(--primary-dark-color)',
+          //   backgroundColor: 'var(--primary-color)',
+          // },
         },
       }}
     >
@@ -269,15 +285,11 @@ const PayrollReports: React.FC = () => {
             label='Tenant'
             options={tenants.map(t => ({ value: t.id, label: t.name }))}
             value={selectedTenantId}
-            onChange={(e: SelectChangeEvent<string | number>) =>
-              setSelectedTenantId(String(e.target.value || ''))
-            }
-            options={[
-              { value: '', label: 'All Tenants' },
-              ...tenants.map(t => ({ value: t.id, label: t.name })),
-            ]}
-            placeholder='Tenant'
-            showLabel={false}
+            onChange={e => setSelectedTenantId(String(e.target.value))}
+            containerSx={{ width: { xs: '100%', sm: 200 } }}
+            sx={{ width: '100%' }}
+            size='small'
+            showLabel={true}
             disabled={loadingTenants}
             containerSx={{ minWidth: { xs: '100%', md: 200 } }}
             inputBackgroundColor={effectiveDarkMode ? '#1e1e1e' : '#fff'}
@@ -338,8 +350,8 @@ const PayrollReports: React.FC = () => {
                   No department data
                 </Alert>
               ) : (
-                <Box sx={{ width: '100%', overflowX: 'auto' }}>
-                  <Box sx={{ minWidth: { xs: 520, sm: 0 } }}>
+                <Box sx={{ width: '100%', overflowX: 'auto', p: 0 }}>
+                  <Box sx={{ minWidth: { xs: 520, sm: 0 }, p: 0 }}>
                     <Chart
                       options={departmentOptions}
                       series={departmentSeries}

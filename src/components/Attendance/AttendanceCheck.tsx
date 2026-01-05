@@ -173,7 +173,8 @@ const AttendanceCheck = () => {
             }
             aria-label={loading ? 'Checking in...' : 'Check in for attendance'}
             sx={{
-              minWidth: { xs: 100, sm: 120, md: 140 },
+              width: { xs: '100%', sm: 'auto' },
+              minWidth: { xs: 'auto', sm: 120, md: 140 },
               height: { xs: 36, sm: 40 },
               fontSize: '1.1rem',
               fontWeight: 600,
@@ -198,7 +199,8 @@ const AttendanceCheck = () => {
               loading ? 'Checking out...' : 'Check out from attendance'
             }
             sx={{
-              minWidth: { xs: 100, sm: 120, md: 140 },
+              width: { xs: '100%', sm: 'auto' },
+              minWidth: { xs: 'auto', sm: 120, md: 140 },
               height: { xs: 36, sm: 40 },
               fontSize: '1.1rem',
               fontWeight: 600,

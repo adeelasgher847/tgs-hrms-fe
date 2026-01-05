@@ -221,9 +221,8 @@ const SystemAdminTenantTeams: React.FC<SystemAdminTenantTeamsProps> = ({
             gap: 2,
           }}
         >
-          <Box sx={{ minWidth: 200, maxWidth: { xs: '100%', sm: '400px' } }}>
+          <Box sx={{ minWidth: { xs: '100%', sm: '200px' }, maxWidth: { xs: '100%', sm: '400px' } }}>
             <AppDropdown
-              label={lang.selectTenant}
               showLabel={false}
               value={selectedTenantId}
               onChange={e => handleTenantChange(e.target.value)}

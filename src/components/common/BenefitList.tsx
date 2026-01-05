@@ -23,8 +23,6 @@ import AppButton from '../common/AppButton';
 import AppDropdown from '../common/AppDropdown';
 import AppTable from '../common/AppTable';
 import { DeleteConfirmationDialog } from '../common/DeleteConfirmationDialog';
-import { getUserRole } from '../../utils/auth';
-import { normalizeRole } from '../../utils/permissions';
 
 const ITEMS_PER_PAGE = 25; // Backend returns 25 records per page
 
@@ -38,8 +36,6 @@ interface Benefit {
 }
 
 const BenefitList: React.FC = () => {
-  const role = normalizeRole(getUserRole());
-  const isManager = role === 'manager';
   const [loading, setLoading] = useState(true);
   const [benefits, setBenefits] = useState<Benefit[]>([]);
   const [page, setPage] = useState(1);
@@ -232,50 +228,44 @@ const BenefitList: React.FC = () => {
         flexWrap='wrap'
         gap={2}
       >
-        <Box display='flex' flexWrap='wrap' gap={2} sx={{ width: { xs: '100%', sm: 'auto' } }}>
-          <AppDropdown
-            label='Type'
-            showLabel={false}
-            options={[
-              { value: 'all', label: 'All Types' },
-              ...types.map(t => ({ value: t, label: t })),
-            ]}
-            value={filterType}
-            onChange={e => {
-              setFilterType(String(e.target.value || 'all'));
-              setPage(1);
-            }}
-            containerSx={{
-              minWidth: { xs: '100%', sm: 160 },
-              maxWidth: { xs: '100%', sm: 220 },
-              width: { xs: '100%', sm: 'auto' },
-            }}
-          />
+        <Box display='flex' flexWrap='wrap' gap={2}>
+          <Box sx={{ minWidth: 160, maxWidth: 220 }}>
+            <AppDropdown
+              label='Type'
+              options={[
+                { value: 'all', label: 'All Types' },
+                ...types.map(t => ({ value: t, label: t })),
+              ]}
+              value={filterType}
+              onChange={e => {
+                setFilterType(String(e.target.value || 'all'));
+                setPage(1);
+              }}
+              showLabel
+            />
+          </Box>
 
-          <AppDropdown
-            label='Status'
-            showLabel={false}
-            options={[
-              { value: 'all', label: 'All Status' },
-              ...statuses.map(s => ({
-                value: s,
-                label: s.charAt(0).toUpperCase() + s.slice(1),
-              })),
-            ]}
-            value={filterStatus}
-            onChange={e => {
-              setFilterStatus(String(e.target.value || 'all'));
-              setPage(1);
-            }}
-            containerSx={{
-              minWidth: { xs: '100%', sm: 160 },
-              maxWidth: { xs: '100%', sm: 220 },
-              width: { xs: '100%', sm: 'auto' },
-            }}
-          />
+          <Box sx={{ minWidth: 160, maxWidth: 220 }}>
+            <AppDropdown
+              label='Status'
+              options={[
+                { value: 'all', label: 'All Status' },
+                ...statuses.map(s => ({
+                  value: s,
+                  label: s.charAt(0).toUpperCase() + s.slice(1),
+                })),
+              ]}
+              value={filterStatus}
+              onChange={e => {
+                setFilterStatus(String(e.target.value || 'all'));
+                setPage(1);
+              }}
+              showLabel
+            />
+          </Box>
         </Box>
 
-        <Box display='flex' gap={1} flexWrap='wrap' sx={{ width: { xs: '100%', sm: 'auto' } }}>
+        <Box display='flex' gap={1} flexWrap='wrap'>
           <AppButton
             variant='contained'
             startIcon={<AddIcon />}
@@ -295,7 +285,6 @@ const BenefitList: React.FC = () => {
               color: '#FFFFFF',
               boxShadow: 'none',
               minWidth: { xs: 'auto', sm: 200 },
-              width: { xs: '100%', sm: 'auto' },
               px: { xs: 1.5, sm: 2 },
               py: { xs: 0.75, sm: 1 },
               '& .MuiButton-startIcon': {
@@ -310,47 +299,30 @@ const BenefitList: React.FC = () => {
             Create
           </AppButton>
 
-          {isManager ? (
-            <AppButton
-              variant='contained'
-              variantType='primary'
+          <Tooltip title='Export Benefit List'>
+            <IconButton
+              disableRipple
               onClick={handleDownload}
-              sx={{
-                borderRadius: '6px',
-                minWidth: 0,
-                padding: '6px',
-                height: 'auto',
-              }}
               aria-label='Export benefit list'
+              sx={{
+                backgroundColor: 'var(--primary-dark-color)',
+                borderRadius: '6px',
+                padding: '6px',
+                color: 'white',
+                transition: 'none',
+                '&:hover': {
+                  backgroundColor: 'var(--primary-dark-color)',
+                  boxShadow: 'none',
+                },
+                '&:active': { backgroundColor: 'var(--primary-dark-color)' },
+                '&.Mui-focusVisible': {
+                  backgroundColor: 'var(--primary-dark-color)',
+                },
+              }}
             >
               <FileDownloadIcon aria-hidden='true' />
-            </AppButton>
-          ) : (
-            <Tooltip title='Export Benefit List'>
-              <IconButton
-                disableRipple
-                onClick={handleDownload}
-                aria-label='Export benefit list'
-                sx={{
-                  backgroundColor: 'var(--primary-dark-color)',
-                  borderRadius: '6px',
-                  padding: '6px',
-                  color: 'white',
-                  transition: 'none',
-                  '&:hover': {
-                    backgroundColor: 'var(--primary-dark-color)',
-                    boxShadow: 'none',
-                  },
-                  '&:active': { backgroundColor: 'var(--primary-dark-color)' },
-                  '&.Mui-focusVisible': {
-                    backgroundColor: 'var(--primary-dark-color)',
-                  },
-                }}
-              >
-                <FileDownloadIcon aria-hidden='true' />
-              </IconButton>
-            </Tooltip>
-          )}
+            </IconButton>
+          </Tooltip>
         </Box>
       </Box>
 
@@ -496,8 +468,9 @@ const BenefitList: React.FC = () => {
       <DeleteConfirmationDialog
         open={deleteDialogOpen}
         title='Delete Benefit'
-        message={`Are you sure you want to delete the benefit "${selectedBenefit?.name || ''
-          }"? This action cannot be undone.`}
+        message={`Are you sure you want to delete the benefit "${
+          selectedBenefit?.name || ''
+        }"? This action cannot be undone.`}
         confirmText='Delete'
         cancelText='Cancel'
         onConfirm={handleConfirmDelete}

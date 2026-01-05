@@ -32,4 +32,5 @@ export interface Leave {
   updatedAt?: string;
   approvedAt?: string | null;
   approvedBy?: string | null;
+  documents?: string[];
 }

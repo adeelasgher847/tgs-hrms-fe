@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import {
   Typography,
-  Stack,
   useTheme,
   Grid,
   TableHead,
@@ -278,7 +277,7 @@ const PerformanceTrend: React.FC<PerformanceTrendProps> = ({ tenantId }) => {
           Overview gauge by tenant
         </Typography>
         {/* Labels row to align with controls (hidden on small screens) */}
-        <Box
+        {/* <Box
           sx={{
             display: { xs: 'none', sm: 'flex' },
             gap: 2,
@@ -309,7 +308,7 @@ const PerformanceTrend: React.FC<PerformanceTrendProps> = ({ tenantId }) => {
               End Date
             </Typography>
           </Box>
-        </Box>
+        </Box> */}
 
         <Box
           sx={{
@@ -321,19 +320,9 @@ const PerformanceTrend: React.FC<PerformanceTrendProps> = ({ tenantId }) => {
             alignItems: { xs: 'stretch', sm: 'center' },
           }}
         >
-          <Box sx={{ minWidth: { xs: '100%', sm: 220 }, maxWidth: 420 }}>
-            <Typography
-              className='subheading2'
-              sx={{
-                fontWeight: 500,
-                display: { xs: 'block', sm: 'none' },
-                mb: 0.5,
-              }}
-            >
-              Employee
-            </Typography>
+          <Box sx={{ minWidth: { xs: '100%', sm: 190 }, maxWidth: 190 }}>
             <AppDropdown
-              label='Select Employee'
+              label='Employee'
               options={[
                 { value: '', label: 'All Employees' },
                 ...employees.map(emp => ({
@@ -345,26 +334,15 @@ const PerformanceTrend: React.FC<PerformanceTrendProps> = ({ tenantId }) => {
               onChange={e => setSelectedEmployee(e.target.value as string)}
               containerSx={{ width: '100%' }}
               size='small'
-              showLabel={false}
+
               // placeholder='Employee'
             />
           </Box>
 
-          <Box sx={{ minWidth: { xs: '100%', sm: 220 }, maxWidth: 420 }}>
-            <Typography
-              className='subheading2'
-              sx={{
-                fontWeight: 500,
-                display: { xs: 'block', sm: 'none' },
-                mb: 0.5,
-              }}
-            >
-              Status
-            </Typography>
+          <Box sx={{ minWidth: { xs: '100%', sm: 190 }, maxWidth: 190 }}>
             <AppDropdown
-              // label='Status'
+              label='Status'
               options={[
-                // { value: '', label: 'All Statuses' },
                 { value: 'completed', label: 'Completed' },
                 { value: 'under_review', label: 'Under Review' },
                 { value: 'pending', label: 'Pending' },
@@ -373,19 +351,13 @@ const PerformanceTrend: React.FC<PerformanceTrendProps> = ({ tenantId }) => {
               onChange={e => setStatusFilter(e.target.value as string)}
               containerSx={{ width: '100%' }}
               size='small'
-              showLabel={false}
-              // placeholder='Status'
             />
           </Box>
 
-          <Box sx={{ minWidth: { xs: '100%', sm: 220 }, maxWidth: 420 }}>
+          <Box sx={{ minWidth: { xs: '100%', sm: 200 }, maxWidth: 200 }}>
             <Typography
               className='subheading2'
-              sx={{
-                fontWeight: 500,
-                display: { xs: 'block', sm: 'none' },
-                mb: 0.5,
-              }}
+              sx={{ fontWeight: 500, color: theme.palette.text.primary }}
             >
               Start Date
             </Typography>
@@ -399,9 +371,11 @@ const PerformanceTrend: React.FC<PerformanceTrendProps> = ({ tenantId }) => {
               }
               size='small'
               sx={{
+                mt: 1,
                 '& .MuiOutlinedInput-root': {
                   minHeight: '48px',
                   borderRadius: '12px',
+                  color: theme.palette.text.primary,
                 },
                 '& input[type="date"]': {
                   padding: '10px 12px',
@@ -412,14 +386,10 @@ const PerformanceTrend: React.FC<PerformanceTrendProps> = ({ tenantId }) => {
             />
           </Box>
 
-          <Box sx={{ minWidth: { xs: '100%', sm: 220 }, maxWidth: 420 }}>
+          <Box sx={{ minWidth: { xs: '100%', sm: 200 }, maxWidth: 200 }}>
             <Typography
               className='subheading2'
-              sx={{
-                fontWeight: 500,
-                display: { xs: 'block', sm: 'none' },
-                mb: 0.5,
-              }}
+              sx={{ fontWeight: 500, color: theme.palette.text.primary }}
             >
               End Date
             </Typography>
@@ -433,9 +403,11 @@ const PerformanceTrend: React.FC<PerformanceTrendProps> = ({ tenantId }) => {
               }
               size='small'
               sx={{
+                mt: 1,
                 '& .MuiOutlinedInput-root': {
                   minHeight: '48px',
                   borderRadius: '12px',
+                  color: theme.palette.text.primary,
                 },
                 '& input[type="date"]': {
                   padding: '10px 12px',
