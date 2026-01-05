@@ -457,7 +457,6 @@ const LeaveHistory: React.FC<LeaveHistoryProps> = ({
           </Typography>
         </Box>
       ) : (
-        <Paper elevation={1} sx={{ boxShadow: 'none', overflowX: 'auto' }}>
           <AppTable sx={{ minWidth: 900 }}>
             <TableHead>
               <TableRow>
@@ -865,7 +864,6 @@ const LeaveHistory: React.FC<LeaveHistoryProps> = ({
               ))}
             </TableBody>
           </AppTable>
-        </Paper>
       )}
 
       <Box

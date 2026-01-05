@@ -732,7 +732,7 @@ const PayrollRecords: React.FC = () => {
             p: 3,
             backgroundColor: cardBg,
             borderRadius: 2,
-            border: `1px solid ${theme.palette.divider}`,
+            // border: `1px solid ${theme.palette.divider}`,
           }}
         >
           <Box
@@ -804,8 +804,8 @@ const PayrollRecords: React.FC = () => {
       >
         <Box
           sx={{
-            p: 2,
-            borderBottom: `1px solid ${theme.palette.divider}`,
+            py: 2,
+            // borderBottom: `1px solid ${theme.palette.divider}`,
             display: 'flex',
             justifyContent: 'flex-start',
             alignItems: 'center',

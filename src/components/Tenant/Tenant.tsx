@@ -21,7 +21,7 @@ import {
 import type { SelectChangeEvent } from '@mui/material/Select';
 import AddIcon from '@mui/icons-material/Add';
 import RestoreIcon from '@mui/icons-material/Restore';
-import VisibilityIcon from '@mui/icons-material/Visibility';
+import { getIcon } from '../../assets/icons';
 import CloseIcon from '@mui/icons-material/Close';
 import {
   SystemTenantApi,
@@ -40,6 +40,7 @@ import AppDropdown from '../common/AppDropdown';
 import { Icons } from '../../assets/icons';
 import DeleteConfirmationDialog from '../common/DeleteConfirmationDialog';
 import { PAGINATION } from '../../constants/appConstants';
+import AppPageTitle from '../common/AppPageTitle';
 
 type StatusFilterOption = 'all' | 'active' | 'suspended' | 'deleted';
 
@@ -92,6 +93,8 @@ export const TenantPage: React.FC = () => {
   const [totalPages, setTotalPages] = useState(1);
   const [totalRecords, setTotalRecords] = useState(0);
   const itemsPerPage = PAGINATION.DEFAULT_PAGE_SIZE;
+
+  const viewIcon = getIcon('password');
 
   const fetchTenants = useCallback(async () => {
     try {
@@ -461,9 +464,7 @@ export const TenantPage: React.FC = () => {
         gap={2}
         mb={3}
       >
-        <Typography variant='h5' fontWeight={700}>
-          Tenant Management
-        </Typography>
+        <AppPageTitle>Tenant Management</AppPageTitle>
 
         <Box display='flex' flexWrap='wrap' gap={2} alignItems='center'>
           <AppDropdown
@@ -565,10 +566,19 @@ export const TenantPage: React.FC = () => {
                     <>
                       <Tooltip title='View Details'>
                         <IconButton
+                          color='primary'
                           onClick={() => handleViewDetails(t)}
                           aria-label={`View details for tenant ${t.name}`}
                         >
-                          <VisibilityIcon aria-hidden='true' />
+                          <Box
+                            component='img'
+                            src={Icons.password}
+                            alt='View'
+                            sx={{
+                              width: { xs: 16, sm: 20 },
+                              height: { xs: 16, sm: 20 },
+                            }}
+                          />
                         </IconButton>
                       </Tooltip>
                       <Tooltip title='Edit Tenant'>

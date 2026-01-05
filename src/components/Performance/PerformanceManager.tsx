@@ -95,11 +95,11 @@ const PerformanceDashboard: React.FC = () => {
             <PerformanceKpiGrid tenantId={selectedTenant} />
           </Paper>
 
-          <Paper sx={{ mb: 3, boxShadow: 'none' }}>
+          {/* <Paper sx={{ mb: 3, boxShadow: 'none', p: 0 }}> */}
             <PerformanceTrendChart tenantId={selectedTenant} />
-          </Paper>
+          {/* </Paper> */}
 
-          <Paper sx={{ p: 2, boxShadow: 'none' }}>
+          <Paper sx={{ mt: 3, p: 2, boxShadow: 'none' }}>
             <PromotionsList tenantId={selectedTenant} />
           </Paper>
         </>

@@ -411,7 +411,6 @@ const TenantBasedEmployeeManager: React.FC = () => {
         </Tooltip>
       </Box>
 
-      <Paper sx={{ mt: 3, boxShadow: 'none' }}>
         <AppTable>
           <TableHead>
             <TableRow>
@@ -460,7 +459,6 @@ const TenantBasedEmployeeManager: React.FC = () => {
             )}
           </TableBody>
         </AppTable>
-      </Paper>
 
       {openProfile && selectedEmployee && (
         <SystemEmployeeProfileView
