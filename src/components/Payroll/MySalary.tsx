@@ -541,9 +541,15 @@ const MySalary: React.FC = () => {
         <Paper
           elevation={0}
           sx={{
-            p: 3,
-            borderRadius: 1,
-            backgroundColor: effectiveDarkMode ? '#1a1a1a' : '#fff',
+            p: role === 'employee' ? 0 : 3,
+            borderRadius: role === 'employee' ? 0 : 1,
+            backgroundColor:
+              role === 'employee'
+                ? 'unset'
+                : effectiveDarkMode
+                ? '#1a1a1a'
+                : '#fff',
+            boxShadow: role === 'employee' ? 'none' : undefined,
           }}
         >
           {historyTable}

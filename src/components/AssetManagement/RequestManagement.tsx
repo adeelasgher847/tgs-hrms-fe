@@ -21,7 +21,7 @@ import {
   Pagination,
   Alert,
 } from '@mui/material';
-import { useTheme } from '../../theme/hooks';
+
 import {
   CheckCircle as ApproveIcon,
   Cancel as RejectIcon,
@@ -173,7 +173,6 @@ const RequestManagement: React.FC = () => {
   const [selectedRequestId, setSelectedRequestId] = useState<string | null>(
     null
   );
-  const { mode } = useTheme();
 
   // Get status filter based on active tab
   const getStatusFilter = (tabIndex: number): string | undefined => {

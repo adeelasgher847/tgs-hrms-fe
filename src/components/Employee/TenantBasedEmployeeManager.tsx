@@ -1,7 +1,6 @@
 import React, { useEffect, useState, useRef } from 'react';
 import {
   Box,
-  Paper,
   Typography,
   TableHead,
   TableRow,
@@ -17,7 +16,7 @@ import {
 import AppDropdown from '../common/AppDropdown';
 import AppButton from '../common/AppButton';
 import FileDownloadIcon from '@mui/icons-material/FileDownload';
-import VisibilityIcon from '@mui/icons-material/Visibility';
+
 import { useTheme } from '@mui/material/styles';
 import systemEmployeeApiService, {
   type SystemEmployee,

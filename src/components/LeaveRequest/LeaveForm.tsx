@@ -158,7 +158,7 @@ const LeaveForm: React.FC<LeaveFormProps> = ({
     try {
       /* -------- EDIT MODE (PATCH) -------- */
       if (mode === 'edit' && leaveId && initialData) {
-        const payload: any = {};
+        const payload: Record<string, unknown> = {};
 
         if (leaveTypeId !== initialData.leaveTypeId)
           payload.leaveTypeId = leaveTypeId;

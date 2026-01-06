@@ -234,7 +234,6 @@ const BenefitFormModal: React.FC<BenefitFormModalProps> = ({
       value: watchedValues.status || 'Active',
       onChange: v => setValue('status', String(v)),
       error: errors.status?.message,
-      error: errors.status?.message,
       component: (
         <Controller
           name='status'

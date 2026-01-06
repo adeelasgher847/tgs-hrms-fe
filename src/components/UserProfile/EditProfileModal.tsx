@@ -267,7 +267,6 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({
     }
   };
 
-  const darkMode = theme.palette.mode === 'dark';
   const controlBg =
     theme.palette.mode === 'dark'
       ? theme.palette.background.default
