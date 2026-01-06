@@ -51,7 +51,7 @@ const PayrollReports: React.FC = () => {
   const bgColor = effectiveDarkMode
     ? '#121212'
     : theme.palette.background.default;
-  const textColor = effectiveDarkMode ? '#fff' : '#000';
+  const textColor = theme.palette.text.primary;
 
   useEffect(() => {
     const loadInitialData = async () => {

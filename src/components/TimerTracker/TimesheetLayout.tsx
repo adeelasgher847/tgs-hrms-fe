@@ -1,20 +1,18 @@
 import React from 'react';
-import { Box, Paper, Typography, IconButton } from '@mui/material';
+import { Box, Paper, Typography, IconButton, useTheme } from '@mui/material';
 import { useOutletContext } from 'react-router-dom';
 import SheetList from './SheetList';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import { useNavigate } from 'react-router-dom';
-import { COLORS } from '../../constants/appConstants';
 
 const TimesheetLayout: React.FC = () => {
   const navigate = useNavigate();
-  const { darkMode } = useOutletContext<{ darkMode: boolean }>();
-
+  const theme = useTheme();
   return (
     <Box>
       {/* Back Arrow */}
       <IconButton
-        sx={{ p: 0, mb: 2 }}
+        sx={{ p: 0, mb: 2, color: theme.palette.text.primary }}
         onClick={() => navigate('/dashboard/AttendanceCheck')}
       >
         <ArrowBackIcon />
@@ -24,7 +22,7 @@ const TimesheetLayout: React.FC = () => {
           <Typography
             variant='h5'
             component='h1'
-            sx={{ color: darkMode ? COLORS.DARK_TEXT : COLORS.LIGHT_TEXT }}
+            sx={{ color: theme.palette.text.primary }}
           >
             My Timesheet
           </Typography>

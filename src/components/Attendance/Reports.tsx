@@ -583,10 +583,7 @@ const Reports: React.FC = () => {
           width: '100%',
         }}
       >
-        <AppPageTitle
-        >
-          Leave Reports
-        </AppPageTitle>
+        <AppPageTitle>Leave Reports</AppPageTitle>
         <Box
           sx={{
             display: 'flex',
@@ -600,13 +597,29 @@ const Reports: React.FC = () => {
           {/* Month picker should be visible only to admin roles (hide for managers and employees) */}
           {isAdminView && (
             <TextField
-              // label='Month'
               type='month'
               size='small'
               value={`${selectedYear}-${String(selectedMonth).padStart(2, '0')}`}
               onChange={handleMonthChange}
               InputLabelProps={{ shrink: true }}
-              sx={{ minWidth: { xs: '100%', sm: 180 } }}
+              sx={theme => ({
+                minWidth: { xs: '100%', sm: 180 },
+
+                '& input': {
+                  color: theme.palette.text.primary,
+                },
+
+                '& label': {
+                  color: theme.palette.text.secondary,
+                },
+
+                '& input::-webkit-calendar-picker-indicator': {
+                  filter:
+                    theme.palette.mode === 'dark' ? 'invert(1)' : 'invert(0)',
+                  opacity: 0.7,
+                  cursor: 'pointer',
+                },
+              })}
             />
           )}
 
@@ -1018,8 +1031,10 @@ const Reports: React.FC = () => {
 
               <AppCard
                 sx={{
+                  p: 0,
                   boxShadow: 'none',
-                  backgroundColor: darkMode ? '#1e1e1e' : '#ffffff',
+                  borderRadius: 0,
+                  backgroundColor: 'unset',
                   overflowX: 'auto',
                 }}
               >

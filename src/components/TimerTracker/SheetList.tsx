@@ -5,7 +5,6 @@ import {
   TableRow,
   TableCell,
   TableBody,
-  Paper,
   CircularProgress,
   Typography,
   Pagination,
@@ -70,40 +69,40 @@ const SheetList: React.FC = () => {
   };
   return (
     <Box>
-        <AppTable>
-          <TableHead>
-              <TableRow>
-                <TableCell>Employee</TableCell>
-                <TableCell>Start Time</TableCell>
-                <TableCell>End Time</TableCell>
-                <TableCell>Duration (hrs)</TableCell>
+      <AppTable>
+        <TableHead>
+          <TableRow>
+            <TableCell>Employee</TableCell>
+            <TableCell>Start Time</TableCell>
+            <TableCell>End Time</TableCell>
+            <TableCell>Duration (hrs)</TableCell>
+          </TableRow>
+        </TableHead>
+        <TableBody>
+          {loading ? (
+            <TableRow>
+              <TableCell colSpan={4} align='center'>
+                <CircularProgress />
+              </TableCell>
+            </TableRow>
+          ) : timesheet.length > 0 ? (
+            timesheet.map(row => (
+              <TableRow key={row.id}>
+                <TableCell>{row.employee_full_name}</TableCell>
+                <TableCell>{formatDateTime(row.start_time)}</TableCell>
+                <TableCell>{formatDateTime(row.end_time)}</TableCell>
+                <TableCell>{row.duration_hours ?? '—'}</TableCell>
               </TableRow>
-            </TableHead>
-            <TableBody>
-              {loading ? (
-                <TableRow>
-                  <TableCell colSpan={4} align='center'>
-                    <CircularProgress />
-                  </TableCell>
-                </TableRow>
-              ) : timesheet.length > 0 ? (
-                timesheet.map(row => (
-                  <TableRow key={row.id}>
-                    <TableCell>{row.employee_full_name}</TableCell>
-                    <TableCell>{formatDateTime(row.start_time)}</TableCell>
-                    <TableCell>{formatDateTime(row.end_time)}</TableCell>
-                    <TableCell>{row.duration_hours ?? '—'}</TableCell>
-                  </TableRow>
-                ))
-              ) : (
-                <TableRow>
-                  <TableCell colSpan={4} align='center'>
-                    <Typography>No timesheet sessions found.</Typography>
-                  </TableCell>
-                </TableRow>
-              )}
-            </TableBody>
-        </AppTable>
+            ))
+          ) : (
+            <TableRow>
+              <TableCell colSpan={4} align='center'>
+                <Typography>No timesheet sessions found.</Typography>
+              </TableCell>
+            </TableRow>
+          )}
+        </TableBody>
+      </AppTable>
 
       {/* Pagination */}
       {totalPages > 1 && (

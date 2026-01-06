@@ -17,6 +17,7 @@ import {
   DialogContent,
   DialogActions,
   Pagination,
+  useTheme,
 } from '@mui/material';
 import {
   Business as BusinessIcon,
@@ -36,6 +37,7 @@ import AppDropdown from '../common/AppDropdown';
 import AppSearch from '../common/AppSearch';
 import AppButton from '../common/AppButton';
 import AppPageTitle from '../common/AppPageTitle';
+import { themeColors } from '../../theme';
 
 interface AssetCategory {
   id: string;
@@ -73,7 +75,7 @@ const SystemAdminAssets: React.FC = () => {
   const [totalPages, setTotalPages] = useState(1);
   const [totalRecords, setTotalRecords] = useState(0);
   const itemsPerPage = PAGINATION.DEFAULT_PAGE_SIZE;
-
+  const theme = useTheme();
   const fetchCategories = async () => {
     try {
       const data = await assetApi.getAllAssetCategories();
@@ -459,8 +461,8 @@ const SystemAdminAssets: React.FC = () => {
                   color: 'var(--primary-dark-color)',
                   borderColor: 'var(--primary-dark-color)',
                   '&:hover': {
-                    borderColor: 'var(--primary-dark-color)', 
-                    backgroundColor: 'transparent', 
+                    borderColor: 'var(--primary-dark-color)',
+                    backgroundColor: 'transparent',
                   },
                 }}
               >
@@ -478,7 +480,9 @@ const SystemAdminAssets: React.FC = () => {
         maxWidth='xl'
         fullWidth
       >
-        <DialogTitle>All Tenants</DialogTitle>
+        <DialogTitle sx={{ color: theme.palette.text.primary }}>
+          All Tenants
+        </DialogTitle>
         <DialogContent>
           <Box
             sx={{

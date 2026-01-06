@@ -144,6 +144,7 @@ const BenefitFormModal: React.FC<BenefitFormModalProps> = ({
               value={field.value}
               onChange={e => field.onChange(e.target.value)}
               label='Benefit Name'
+              placeholder='Health Insurance'
               error={!!errors.name}
               helperText={errors.name?.message}
             />
@@ -157,7 +158,6 @@ const BenefitFormModal: React.FC<BenefitFormModalProps> = ({
       type: 'text',
       value: watchedValues.type || '',
       onChange: v => setValue('type', String(v)),
-      error: errors.type?.message,
       error: errors.type?.message,
       component: (
         <Controller
@@ -184,7 +184,6 @@ const BenefitFormModal: React.FC<BenefitFormModalProps> = ({
       value: watchedValues.description || '',
       onChange: v => setValue('description', String(v)),
       error: errors.description?.message,
-      error: errors.description?.message,
       component: (
         <Controller
           name='description'
@@ -195,6 +194,7 @@ const BenefitFormModal: React.FC<BenefitFormModalProps> = ({
               value={field.value}
               onChange={e => field.onChange(e.target.value)}
               label='Description'
+              placeholder='Provide a brief description of the benefit'
               multiline
               rows={2}
               error={!!errors.description}
@@ -210,7 +210,6 @@ const BenefitFormModal: React.FC<BenefitFormModalProps> = ({
       type: 'dropdown',
       value: watchedValues.eligibilityCriteria || 'All employees',
       onChange: v => setValue('eligibilityCriteria', String(v)),
-      error: errors.eligibilityCriteria?.message,
       error: errors.eligibilityCriteria?.message,
       component: (
         <Controller
@@ -234,7 +233,6 @@ const BenefitFormModal: React.FC<BenefitFormModalProps> = ({
       type: 'dropdown',
       value: watchedValues.status || 'Active',
       onChange: v => setValue('status', String(v)),
-      error: errors.status?.message,
       error: errors.status?.message,
       component: (
         <Controller

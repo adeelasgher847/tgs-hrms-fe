@@ -18,6 +18,7 @@ import {
   DialogActions,
   TextField,
   InputAdornment,
+  useTheme,
 } from '@mui/material';
 import UserAvatar from '../common/UserAvatar';
 import {
@@ -71,6 +72,7 @@ const AvailableEmployees: React.FC<AvailableEmployeesProps> = ({
     null
   );
   const { language } = useLanguage();
+  const theme = useTheme();
 
   const labels = {
     en: {
@@ -368,7 +370,7 @@ const AvailableEmployees: React.FC<AvailableEmployeesProps> = ({
             alignItems: 'center',
             justifyContent: 'center',
             py: 4,
-            color: darkMode ? '#ccc' : '#666',
+            color: theme.palette.text.secondary,
           }}
         >
           <PersonIcon sx={{ fontSize: 48, mb: 2, opacity: 0.5 }} />
@@ -386,7 +388,7 @@ const AvailableEmployees: React.FC<AvailableEmployeesProps> = ({
               InputProps={{
                 startAdornment: (
                   <InputAdornment position='start'>
-                    <SearchIcon sx={{ color: darkMode ? '#ccc' : '#666' }} />
+                    <SearchIcon sx={{ color: theme.palette.text.secondary }} />
                   </InputAdornment>
                 ),
               }}
@@ -394,7 +396,7 @@ const AvailableEmployees: React.FC<AvailableEmployeesProps> = ({
                 backgroundColor: darkMode ? '#2d2d2d' : '#fff',
                 borderRadius: 2,
                 '& .MuiOutlinedInput-root': {
-                  color: darkMode ? '#fff' : '#000',
+                  color: theme.palette.text.primary,
                   '& fieldset': {
                     borderColor: darkMode ? '#555' : '#ccc',
                   },
@@ -406,7 +408,7 @@ const AvailableEmployees: React.FC<AvailableEmployeesProps> = ({
                   },
                 },
                 '& .MuiInputBase-input::placeholder': {
-                  color: darkMode ? '#999' : '#999',
+                  color: theme.palette.text.secondary,
                   opacity: 1,
                 },
               }}
@@ -422,27 +424,27 @@ const AvailableEmployees: React.FC<AvailableEmployeesProps> = ({
             <TableHead>
               <TableRow>
                 <TableCell
-                  sx={{ color: darkMode ? '#fff' : '#000', fontWeight: 600 }}
+                  sx={{ color: theme.palette.text.primary, fontWeight: 600 }}
                 >
                   {lang.name}
                 </TableCell>
                 <TableCell
-                  sx={{ color: darkMode ? '#fff' : '#000', fontWeight: 600 }}
+                  sx={{ color: theme.palette.text.primary, fontWeight: 600 }}
                 >
                   {lang.email}
                 </TableCell>
                 <TableCell
-                  sx={{ color: darkMode ? '#fff' : '#000', fontWeight: 600 }}
+                  sx={{ color: theme.palette.text.primary, fontWeight: 600 }}
                 >
                   {lang.designation}
                 </TableCell>
                 <TableCell
-                  sx={{ color: darkMode ? '#fff' : '#000', fontWeight: 600 }}
+                  sx={{ color: theme.palette.text.primary, fontWeight: 600 }}
                 >
                   {lang.department}
                 </TableCell>
                 <TableCell
-                  sx={{ color: darkMode ? '#fff' : '#000', fontWeight: 600 }}
+                  sx={{ color: theme.palette.text.primary, fontWeight: 600 }}
                 >
                   {lang.actions}
                 </TableCell>
@@ -469,13 +471,13 @@ const AvailableEmployees: React.FC<AvailableEmployeesProps> = ({
                           clickable={false}
                           sx={{ mr: 2 }}
                         />
-                        <Typography sx={{ color: darkMode ? '#fff' : '#000' }}>
+                        <Typography sx={{ color: theme.palette.text.primary }}>
                           {employee.user?.first_name || 'Unknown'}{' '}
                           {employee.user?.last_name || 'User'}
                         </Typography>
                       </Box>
                     </TableCell>
-                    <TableCell sx={{ color: darkMode ? '#ccc' : '#666' }}>
+                    <TableCell sx={{ color: theme.palette.text.secondary }}>
                       {employee.user?.email || 'N/A'}
                     </TableCell>
                     <TableCell>
@@ -489,7 +491,7 @@ const AvailableEmployees: React.FC<AvailableEmployeesProps> = ({
                         }}
                       />
                     </TableCell>
-                    <TableCell sx={{ color: darkMode ? '#ccc' : '#666' }}>
+                    <TableCell sx={{ color: theme.palette.text.secondary }}>
                       {employee.department?.name || 'N/A'}
                     </TableCell>
                     <TableCell>
@@ -516,9 +518,9 @@ const AvailableEmployees: React.FC<AvailableEmployeesProps> = ({
             onRowsPerPageChange={handleChangeRowsPerPage}
             rowsPerPageOptions={[5, 10, 25]}
             sx={{
-              color: darkMode ? '#fff' : '#000',
+              color: theme.palette.text.primary,
               '& .MuiTablePagination-selectIcon': {
-                color: darkMode ? '#fff' : '#000',
+                color: theme.palette.text.primary,
               },
             }}
           />
@@ -532,7 +534,7 @@ const AvailableEmployees: React.FC<AvailableEmployeesProps> = ({
         maxWidth='sm'
         fullWidth
       >
-        <DialogTitle sx={{ color: darkMode ? '#fff' : '#000' }}>
+        <DialogTitle sx={{ color: theme.palette.text.primary }}>
           Select Team to Add Employee
         </DialogTitle>
         <DialogContent>
@@ -576,11 +578,11 @@ const AvailableEmployees: React.FC<AvailableEmployeesProps> = ({
         PaperProps={{
           sx: {
             backgroundColor: darkMode ? '#2d2d2d' : '#fff',
-            color: darkMode ? '#fff' : '#000',
+            color: theme.palette.text.primary,
           },
         }}
       >
-        <DialogTitle sx={{ color: darkMode ? '#fff' : '#000' }}>
+        <DialogTitle sx={{ color: theme.palette.text.primary }}>
           Confirm Add to Team
         </DialogTitle>
         <DialogContent>
@@ -602,20 +604,20 @@ const AvailableEmployees: React.FC<AvailableEmployeesProps> = ({
               >
                 <Typography
                   variant='body2'
-                  sx={{ color: darkMode ? '#ccc' : '#666' }}
+                  sx={{ color: theme.palette.text.secondary }}
                 >
                   <strong>Employee:</strong> {selectedEmployee.user?.first_name}{' '}
                   {selectedEmployee.user?.last_name}
                 </Typography>
                 <Typography
                   variant='body2'
-                  sx={{ color: darkMode ? '#ccc' : '#666' }}
+                  sx={{ color: theme.palette.text.secondary }}
                 >
                   <strong>Email:</strong> {selectedEmployee.user?.email}
                 </Typography>
                 <Typography
                   variant='body2'
-                  sx={{ color: darkMode ? '#ccc' : '#666' }}
+                  sx={{ color: theme.palette.text.secondary }}
                 >
                   <strong>Designation:</strong>{' '}
                   {selectedEmployee.designation?.title}
@@ -623,7 +625,7 @@ const AvailableEmployees: React.FC<AvailableEmployeesProps> = ({
                 <Typography
                   variant='body2'
                   sx={{
-                    color: darkMode ? '#ccc' : '#666',
+                    color: theme.palette.text.secondary,
                     fontSize: 'var(--body-font-size)',
                   }}
                 >
