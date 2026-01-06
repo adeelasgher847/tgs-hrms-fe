@@ -116,21 +116,21 @@ interface SearchResult {
   path: string;
   category: string;
   type:
-  | 'route'
-  | 'employee'
-  | 'asset'
-  | 'team'
-  | 'department'
-  | 'designation'
-  | 'benefit'
-  | 'leave'
-  | 'policy'
-  | 'holiday'
-  | 'tenant'
-  | 'project'
-  | 'asset-request'
-  | 'attendance'
-  | 'payroll';
+    | 'route'
+    | 'employee'
+    | 'asset'
+    | 'team'
+    | 'department'
+    | 'designation'
+    | 'benefit'
+    | 'leave'
+    | 'policy'
+    | 'holiday'
+    | 'tenant'
+    | 'project'
+    | 'asset-request'
+    | 'attendance'
+    | 'payroll';
   id?: string;
   icon?: React.ReactNode;
   subtitle?: string;
@@ -639,15 +639,7 @@ const Navbar: React.FC<NavbarProps> = ({
     setTeamMembersModalOpen(false);
   };
 
-  // Helper to normalize text for search (tokenize)
-  const normalizeText = (text: string): string[] => {
-    if (!text) return [];
-    return text
-      .toLowerCase()
-      .trim()
-      .split(/[\s_-]+/)
-      .filter(word => word.length > 0);
-  };
+  // (removed unused `normalizeText` helper)
 
   // Memoized route search with relevance scoring for better matching
   // Only searches routes that are allowed for current user role
@@ -956,11 +948,13 @@ const Navbar: React.FC<NavbarProps> = ({
             try {
               // Check if user is network admin
               // Using optional chaining and fallback to false for safety
-              const isNetAdmin = isNetworkAdmin && isNetworkAdmin(currentUserRole);
+              const isNetAdmin =
+                isNetworkAdmin && isNetworkAdmin(currentUserRole);
 
               if (isNetAdmin) {
                 if (typeof searchApiService.searchNetworkAdmin === 'function') {
-                  apiResponse = await searchApiService.searchNetworkAdmin(searchParams);
+                  apiResponse =
+                    await searchApiService.searchNetworkAdmin(searchParams);
                 } else {
                   apiResponse = await searchApiService.search(searchParams);
                 }

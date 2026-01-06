@@ -9,7 +9,6 @@ import {
   TableRow,
   Typography,
   IconButton,
-  TextField,
   Chip,
   CircularProgress,
   Alert,
@@ -45,7 +44,6 @@ import AppFormModal from '../common/AppFormModal';
 import AppPageTitle from '../common/AppPageTitle';
 import AppButton from '../common/AppButton';
 import AppInputField from '../common/AppInputField';
-import { max } from 'date-fns';
 
 const monthOptions = [
   { label: 'January', value: 1 },
@@ -1707,7 +1705,11 @@ const EmployeeSalaryPage: React.FC = () => {
         cancelLabel='Cancel'
         hasChanges={isFormValid() && (!selectedSalary || hasChanges())}
         maxWidth='md'
-        paperSx={{ backgroundColor: darkMode ? '#1e1e1e' : '#fff', width: '800px', maxWidth: '800px' }}
+        paperSx={{
+          backgroundColor: darkMode ? '#1e1e1e' : '#fff',
+          width: '800px',
+          maxWidth: '800px',
+        }}
       >
         <Box sx={{ pr: 1 }}>
           {!selectedSalary && payrollConfig && (
@@ -2162,7 +2164,7 @@ const EmployeeSalaryPage: React.FC = () => {
                           color: theme.palette.text.secondary,
                         },
                         '& .MuiSvgIcon-root': {
-                          color: theme.palette.text.primary, 
+                          color: theme.palette.text.primary,
                         },
                         '& fieldset': {
                           borderColor: darkMode ? '#555' : undefined,

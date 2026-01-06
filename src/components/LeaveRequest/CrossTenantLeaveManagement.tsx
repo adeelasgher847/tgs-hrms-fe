@@ -11,14 +11,11 @@ import {
   Typography,
   CircularProgress,
   Paper,
-  Divider,
   Pagination,
-  Table,
   TableHead,
   TableBody,
   TableRow,
   TableCell,
-  TableContainer,
   Stack,
   Tooltip,
   useMediaQuery,
@@ -822,12 +819,16 @@ const CrossTenantLeaveManagement: React.FC = () => {
   return (
     <LocalizationProvider dateAdapter={AdapterDayjs}>
       <Box sx={{ minHeight: '100vh' }} onKeyDown={handleKeyDown}>
-        <Paper sx={{ p: 3, mb: 3, boxShadow: 'none', backgroundColor: 'transparent' }}>
+        <Paper
+          sx={{
+            p: 3,
+            mb: 3,
+            boxShadow: 'none',
+            backgroundColor: 'transparent',
+          }}
+        >
           <AppPageTitle>Tenant Leave Management</AppPageTitle>
-          <Stack
-            direction={isMobile ? 'column' : 'row'}
-            flexWrap='wrap'
-          >
+          <Stack direction={isMobile ? 'column' : 'row'} flexWrap='wrap'>
             {isSystemAdminUser && (
               <Box
                 sx={{ minWidth: 200, maxWidth: { xs: '100%', sm: '400px' } }}

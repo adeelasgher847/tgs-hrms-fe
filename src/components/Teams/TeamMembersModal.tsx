@@ -49,7 +49,6 @@ const TeamMembersModal: React.FC<TeamMembersModalProps> = ({
   open,
   onClose,
   onOpenInviteModal,
-  darkMode = false,
 }) => {
   const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
   const [adminTeamMembers, setAdminTeamMembers] = useState<AdminTeamMember[]>(
