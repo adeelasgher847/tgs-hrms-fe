@@ -1696,7 +1696,7 @@ const PayrollConfiguration: React.FC = () => {
         isSubmitting={saving}
         hasChanges={isFormValid() && hasChanges()}
         maxWidth='md'
-        paperSx={{ backgroundColor: darkMode ? '#1e1e1e' : '#fff' }}
+        paperSx={{ backgroundColor: darkMode ? '#1e1e1e' : '#fff', width: '600px', maxWidth: '90%' }}
       >
         <Box sx={{ pr: 1 }}>
           {error && (
