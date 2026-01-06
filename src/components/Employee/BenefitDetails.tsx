@@ -21,8 +21,8 @@ import BenefitCard from '../Benefits/BenefitCard';
 import { formatDate } from '../../utils/dateUtils';
 import { getUserRole } from '../../utils/auth';
 import { normalizeRole } from '../../utils/permissions';
-import AppButton from '../common/AppButton';
 import AppTable from '../common/AppTable';
+import AppPageTitle from '../common/AppPageTitle';
 import { IoEyeOutline } from 'react-icons/io5';
 
 const ITEMS_PER_PAGE = 10;
@@ -218,86 +218,97 @@ const BenefitDetails: React.FC = () => {
 
   return (
     <Box>
-      <Box display='flex' justifyContent='space-between' alignItems='center'>
-        <Typography
-          fontWeight={500}
-          fontSize={{ xs: '32px', lg: '48px' }}
-          lineHeight='44px'
-          letterSpacing='-2%'
-        >
-          My Benefits
-        </Typography>
+      <Box
+        sx={{
+          display: 'flex',
+          flexDirection: { xs: 'column', sm: 'row' },
+          justifyContent: 'space-between',
+          alignItems: { xs: 'flex-start', sm: 'center' },
+          mb: 3,
+        }}
+      >
+        <Box>
+          <AppPageTitle>My Benefits</AppPageTitle>
+        </Box>
 
-        {isManager ? (
-          <AppButton
-            variant='contained'
-            variantType='primary'
-            onClick={handleDownload}
-            sx={{
-              borderRadius: '6px',
-              minWidth: 0,
-              padding: '6px',
-              height: 'auto',
-            }}
-            aria-label='Download My Benefits'
-          >
-            <FileDownloadIcon aria-hidden='true' />
-          </AppButton>
-        ) : (
+        <Box
+          sx={{
+            mt: { xs: 1, sm: 0 },
+            alignSelf: { xs: 'flex-start', sm: 'auto' },
+          }}
+        >
           <Tooltip title='Download My Benefits'>
-            <AppButton
-              variant='contained'
-              variantType='primary'
+            <IconButton
               onClick={handleDownload}
               sx={{
+                backgroundColor: '#3083DC',
                 borderRadius: '6px',
-                minWidth: 0,
-                padding: '6px',
-                height: 'auto',
+                padding: { xs: '8px', sm: '6px' },
+                color: 'white',
+                // keep intrinsic width on small screens; align left under heading
+                justifyContent: { xs: 'flex-start', sm: 'center' },
+                '&:hover': {
+                  backgroundColor: '#3083DC',
+                },
               }}
               aria-label='Download My Benefits'
             >
               <FileDownloadIcon aria-hidden='true' />
-            </AppButton>
+            </IconButton>
           </Tooltip>
-        )}
+        </Box>
       </Box>
 
-      {loading ? (
-        <Box
-          display='flex'
-          justifyContent='center'
-          alignItems='center'
-          minHeight='200px'
-        >
-          <CircularProgress />
-        </Box>
-      ) : shouldUseAppTable ? (
-        <AppTable>{tableContent}</AppTable>
-      ) : (
-        <Paper sx={{ mt: 2, overflowX: 'auto', boxShadow: 'none' }}>
-          <Table>{tableContent}</Table>
-        </Paper>
-      )}
+      <Paper
+        sx={{
+          p: role === 'employee' ? 0 : 2,
+          borderRadius: role === 'employee' ? 0 : 2,
+          boxShadow: role === 'employee' ? 'none' : undefined,
+          background: role === 'employee' ? 'unset' : undefined,
+          mt: role === 'employee' ? 0 : undefined,
+        }}
+      >
+        {loading ? (
+          <Box
+            display='flex'
+            justifyContent='center'
+            alignItems='center'
+            minHeight='200px'
+          >
+            <CircularProgress />
+          </Box>
+        ) : shouldUseAppTable ? (
+          <AppTable>{tableContent}</AppTable>
+        ) : (
+          <Paper sx={{ mt: 2, overflowX: 'auto', boxShadow: 'none' }}>
+            <Table>{tableContent}</Table>
+          </Paper>
+        )}
 
-      {totalPages > 1 && (
-        <Box display='flex' justifyContent='center' alignItems='center' py={2}>
-          <Pagination
-            count={totalPages}
-            page={page}
-            onChange={handlePageChange}
-            color='primary'
-          />
-        </Box>
-      )}
+        {totalPages > 1 && (
+          <Box
+            display='flex'
+            justifyContent='center'
+            alignItems='center'
+            py={2}
+          >
+            <Pagination
+              count={totalPages}
+              page={page}
+              onChange={handlePageChange}
+              color='primary'
+            />
+          </Box>
+        )}
 
-      {totalRecords > 0 && (
-        <Box textAlign='center' my={2}>
-          <Typography variant='body2' color='text.secondary'>
-            Showing page {page} of {totalPages} ({totalRecords} total records)
-          </Typography>
-        </Box>
-      )}
+        {totalRecords > 0 && (
+          <Box textAlign='center' my={2}>
+            <Typography variant='body2' color='text.secondary'>
+              Showing page {page} of {totalPages} ({totalRecords} total records)
+            </Typography>
+          </Box>
+        )}
+      </Paper>
 
       <Dialog
         open={!!selectedBenefit}

@@ -68,6 +68,35 @@ class SearchApiService {
 
     return response.data;
   }
+
+  async searchNetworkAdmin(params: SearchParams = {}): Promise<SearchResponse> {
+    const queryParams: Record<string, string | number> = {};
+
+    if (params.query && params.query.trim().length >= 2) {
+      queryParams.query = params.query.trim();
+    }
+
+    if (params.module) {
+      queryParams.module = params.module;
+    }
+
+    if (params.limit) {
+      queryParams.limit = params.limit;
+    }
+
+    if (params.tenantId) {
+      queryParams.tenantId = params.tenantId;
+    }
+
+    const response = await axiosInstance.get<SearchResponse>(
+      `${this.baseUrl}/network-admin`,
+      {
+        params: queryParams,
+      }
+    );
+
+    return response.data;
+  }
 }
 
 export const searchApiService = new SearchApiService();
