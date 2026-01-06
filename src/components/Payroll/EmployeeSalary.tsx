@@ -1707,14 +1707,18 @@ const EmployeeSalaryPage: React.FC = () => {
         cancelLabel='Cancel'
         hasChanges={isFormValid() && (!selectedSalary || hasChanges())}
         maxWidth='md'
-        paperSx={{ backgroundColor: darkMode ? '#1e1e1e' : '#fff', width: '800px', maxWidth: '800px' }}
+        paperSx={{
+          backgroundColor: darkMode ? '#1e1e1e' : '#fff',
+          width: '800px',
+          maxWidth: '800px',
+        }}
       >
         <Box sx={{ pr: 1 }}>
           {!selectedSalary && payrollConfig && (
             <Typography
               variant='caption'
               sx={{
-                color: darkMode ? '#8f8f8f' : '#666',
+                color: theme.palette.text.secondary,
                 display: 'block',
                 fontStyle: 'italic',
                 mb: 1,
@@ -1914,7 +1918,7 @@ const EmployeeSalaryPage: React.FC = () => {
               <Typography
                 variant='caption'
                 sx={{
-                  color: darkMode ? '#8f8f8f' : '#666',
+                  color: theme.palette.text.secondary,
                   mt: 1,
                   display: 'block',
                 }}
@@ -2000,6 +2004,10 @@ const EmployeeSalaryPage: React.FC = () => {
                     <IconButton
                       onClick={() => handleRemoveAllowance(index)}
                       size='small'
+                      sx={{
+                        color: theme.palette.text.primary,
+                        ':hover': { backgroundColor: 'transparent' },
+                      }}
                     >
                       <CloseIcon />
                     </IconButton>
@@ -2090,6 +2098,7 @@ const EmployeeSalaryPage: React.FC = () => {
                     <IconButton
                       onClick={() => handleRemoveDeduction(index)}
                       size='small'
+                      sx={{ color: theme.palette.text.primary, ':hover': { backgroundColor: 'transparent' }, }}
                     >
                       <CloseIcon />
                     </IconButton>
@@ -2162,7 +2171,7 @@ const EmployeeSalaryPage: React.FC = () => {
                           color: theme.palette.text.secondary,
                         },
                         '& .MuiSvgIcon-root': {
-                          color: theme.palette.text.primary, 
+                          color: theme.palette.text.primary,
                         },
                         '& fieldset': {
                           borderColor: darkMode ? '#555' : undefined,

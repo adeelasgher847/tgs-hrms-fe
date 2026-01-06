@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, use } from 'react';
 import {
   Box,
   Typography,
@@ -9,6 +9,7 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
+  useTheme,
 } from '@mui/material';
 
 import {
@@ -40,6 +41,7 @@ const MyTeams: React.FC<MyTeamsProps> = ({ teams, darkMode = false }) => {
   );
   const [loadingEmployees, setLoadingEmployees] = useState(false);
   const { language } = useLanguage();
+  const theme = useTheme();
 
   const labels = {
     en: {
@@ -161,7 +163,7 @@ const MyTeams: React.FC<MyTeamsProps> = ({ teams, darkMode = false }) => {
           alignItems: 'center',
           justifyContent: 'center',
           py: 8,
-          color: darkMode ? '#ccc' : '#666',
+          color: theme.palette.text.secondary,
         }}
       >
         <GroupIcon sx={{ fontSize: 64, mb: 2, opacity: 0.5 }} />
@@ -214,13 +216,13 @@ const MyTeams: React.FC<MyTeamsProps> = ({ teams, darkMode = false }) => {
                 <Box sx={{ flexGrow: 1 }}>
                   <Typography
                     variant='h6'
-                    sx={{ color: darkMode ? '#fff' : '#000', fontWeight: 600 }}
+                    sx={{ color: theme.palette.text.primary, fontWeight: 600 }}
                   >
                     {team.name}
                   </Typography>
                   <Typography
                     variant='body2'
-                    sx={{ color: darkMode ? '#ccc' : '#666' }}
+                    sx={{ color: theme.palette.text.secondary }}
                   >
                     {team.manager?.first_name} {team.manager?.last_name}
                   </Typography>
@@ -231,7 +233,7 @@ const MyTeams: React.FC<MyTeamsProps> = ({ teams, darkMode = false }) => {
                 <Typography
                   variant='body2'
                   sx={{
-                    color: darkMode ? '#ccc' : '#666',
+                    color: theme.palette.text.secondary,
                     fontSize: 'var(--body-font-size)',
                     mb: 2,
                     lineHeight: 1.5,
@@ -248,10 +250,10 @@ const MyTeams: React.FC<MyTeamsProps> = ({ teams, darkMode = false }) => {
                   icon={<PersonIcon />}
                   sx={{
                     backgroundColor: '#3083DC',
-                    color: '#FFFFFF',
+                    color: theme.palette.text.primary,
                     fontSize: '0.75rem',
                     '& .MuiChip-icon': {
-                      color: '#F8F8F8',
+                      color: theme.palette.text.primary,
                     },
                   }}
                 />
@@ -319,7 +321,7 @@ const MyTeams: React.FC<MyTeamsProps> = ({ teams, darkMode = false }) => {
         maxWidth='md'
         fullWidth
       >
-        <DialogTitle sx={{ color: darkMode ? '#fff' : '#000' }}>
+        <DialogTitle sx={{ color: theme.palette.text.primary }}>
           {selectedTeam?.name} - {lang.teamMembers}
         </DialogTitle>
         <DialogContent>
@@ -345,7 +347,7 @@ const MyTeams: React.FC<MyTeamsProps> = ({ teams, darkMode = false }) => {
         maxWidth='sm'
         fullWidth
       >
-        <DialogTitle sx={{ color: darkMode ? '#fff' : '#000' }}>
+        <DialogTitle sx={{ color: theme.palette.text.primary }}>
           {lang.addMemberToTeam}
         </DialogTitle>
         <DialogContent>

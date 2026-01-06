@@ -16,6 +16,7 @@ import {
   TableRow,
   Paper,
   CircularProgress,
+  useTheme,
 } from '@mui/material';
 import AppButton from '../common/AppButton';
 import AppTable from '../common/AppTable';
@@ -39,6 +40,7 @@ const SystemAdminTenantTeams: React.FC<SystemAdminTenantTeamsProps> = ({
   data,
   darkMode = false,
 }) => {
+  const theme = useTheme();
   const [selectedTeam, setSelectedTeam] = useState<TenantTeam | null>(null);
   const [showMemberDialog, setShowMemberDialog] = useState(false);
   const [selectedTenantId, setSelectedTenantId] = useState<string>('all');
@@ -48,7 +50,6 @@ const SystemAdminTenantTeams: React.FC<SystemAdminTenantTeamsProps> = ({
 
   const bgColor = darkMode ? '#111' : '#fff';
   const borderColor = darkMode ? '#252525' : '#f0f0f0';
-  const textColor = darkMode ? '#8f8f8f' : '#000';
 
   useEffect(() => {
     // Extract tenant list from GET:/teams/all-tenants API response
@@ -184,7 +185,7 @@ const SystemAdminTenantTeams: React.FC<SystemAdminTenantTeamsProps> = ({
           alignItems: 'center',
           justifyContent: 'center',
           py: 8,
-          color: darkMode ? '#ccc' : '#666',
+          color: theme.palette.text.secondary,
         }}
       >
         <BusinessIcon sx={{ fontSize: 64, mb: 2, opacity: 0.5 }} />
@@ -221,7 +222,12 @@ const SystemAdminTenantTeams: React.FC<SystemAdminTenantTeamsProps> = ({
             gap: 2,
           }}
         >
-          <Box sx={{ minWidth: { xs: '100%', sm: '200px' }, maxWidth: { xs: '100%', sm: '400px' } }}>
+          <Box
+            sx={{
+              minWidth: { xs: '100%', sm: '200px' },
+              maxWidth: { xs: '100%', sm: '400px' },
+            }}
+          >
             <AppDropdown
               showLabel={false}
               value={selectedTenantId}
@@ -237,7 +243,7 @@ const SystemAdminTenantTeams: React.FC<SystemAdminTenantTeamsProps> = ({
               ]}
               sx={{
                 '& .MuiSelect-select': {
-                  color: textColor,
+                  color: theme.palette.text.primary,
                 },
                 '& .MuiOutlinedInput-notchedOutline': {
                   borderColor: borderColor,
@@ -272,7 +278,7 @@ const SystemAdminTenantTeams: React.FC<SystemAdminTenantTeamsProps> = ({
                 <Typography
                   variant='h6'
                   sx={{
-                    color: theme => theme.palette.text.primary,
+                    color: theme.palette.text.primary,
                     fontWeight: 600,
                   }}
                 >
@@ -362,7 +368,7 @@ const SystemAdminTenantTeams: React.FC<SystemAdminTenantTeamsProps> = ({
                       <Typography
                         variant='h6'
                         sx={{
-                          color: theme => theme.palette.text.primary,
+                          color: theme.palette.text.primary,
                           fontWeight: 600,
                           fontSize: { xs: '1rem', sm: '1.25rem' },
                           overflow: 'hidden',
@@ -378,7 +384,7 @@ const SystemAdminTenantTeams: React.FC<SystemAdminTenantTeamsProps> = ({
                       <Typography
                         variant='body2'
                         sx={{
-                          color: theme => theme.palette.text.secondary,
+                          color: theme.palette.text.secondary,
                           fontSize: { xs: '0.75rem', sm: '0.875rem' },
                           overflow: 'hidden',
                           textOverflow: 'ellipsis',
@@ -397,7 +403,7 @@ const SystemAdminTenantTeams: React.FC<SystemAdminTenantTeamsProps> = ({
                     <Typography
                       variant='body2'
                       sx={{
-                        color: theme => theme.palette.text.secondary,
+                        color: theme.palette.text.secondary,
                         mb: 3,
                         lineHeight: 1.6,
                         fontSize: 'var(--body-font-size)',
@@ -428,13 +434,20 @@ const SystemAdminTenantTeams: React.FC<SystemAdminTenantTeamsProps> = ({
                       icon={
                         <PersonIcon sx={{ fontSize: { xs: 16, sm: 18 } }} />
                       }
+                      color='primary'
                       sx={{
                         backgroundColor: '#3083DC',
-                        color: '#FFFFFF',
+                        color:
+                          theme.palette.mode === 'dark'
+                            ? theme.palette.text.primary
+                            : theme.palette.common.white,
                         fontSize: { xs: '0.7rem', sm: '0.75rem' },
                         height: { xs: 24, sm: 28 },
                         '& .MuiChip-icon': {
-                          color: '#F8F8F8',
+                          color:
+                            theme.palette.mode === 'dark'
+                              ? theme.palette.text.primary
+                              : theme.palette.common.white,
                         },
                       }}
                     />
@@ -485,7 +498,7 @@ const SystemAdminTenantTeams: React.FC<SystemAdminTenantTeamsProps> = ({
               alignItems: 'center',
               justifyContent: 'center',
               py: 8,
-              color: darkMode ? '#ccc' : '#666',
+              color: theme.palette.text.secondary,
             }}
           >
             <GroupIcon sx={{ fontSize: 64, mb: 2, opacity: 0.5 }} />
@@ -502,7 +515,7 @@ const SystemAdminTenantTeams: React.FC<SystemAdminTenantTeamsProps> = ({
         maxWidth='md'
         fullWidth
       >
-        <DialogTitle sx={{ color: darkMode ? '#fff' : '#000' }}>
+        <DialogTitle sx={{ color: theme.palette.text.primary }}>
           {selectedTeam?.name} - {lang.teamMembers}
         </DialogTitle>
         <DialogContent>

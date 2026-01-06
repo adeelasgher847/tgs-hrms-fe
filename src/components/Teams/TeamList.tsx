@@ -13,6 +13,7 @@ import {
   DialogContent,
   DialogActions,
   Tooltip,
+  useTheme,
 } from '@mui/material';
 
 import {
@@ -65,7 +66,7 @@ const TeamList: React.FC<TeamListProps> = ({
 
   const token = localStorage.getItem('token') || undefined;
   const filters = { page: '1' };
-
+  const theme = useTheme();
   const labels = {
     en: {
       noTeams: 'No teams found.',
@@ -483,11 +484,17 @@ const TeamList: React.FC<TeamListProps> = ({
                       }
                       sx={{
                         backgroundColor: '#3083DC',
-                        color: '#FFFFFF',
+                        color:
+                          theme.palette.mode === 'dark'
+                            ? theme.palette.text.primary
+                            : theme.palette.common.white,
                         fontSize: { xs: '0.7rem', sm: '0.75rem' },
                         height: { xs: 24, sm: 28 },
                         '& .MuiChip-icon': {
-                          color: '#F8F8F8',
+                          color:
+                            theme.palette.mode === 'dark'
+                              ? theme.palette.text.primary
+                              : theme.palette.common.white,
                         },
                       }}
                     />
@@ -495,7 +502,7 @@ const TeamList: React.FC<TeamListProps> = ({
                       <Typography
                         variant='caption'
                         sx={{
-                          color: theme => theme.palette.text.disabled,
+                          color: theme.palette.text.disabled,
                           fontStyle: 'italic',
                           fontSize: { xs: '0.65rem', sm: '0.75rem' },
                         }}
@@ -601,7 +608,7 @@ const TeamList: React.FC<TeamListProps> = ({
           maxWidth='md'
           fullWidth
         >
-          <DialogTitle sx={{ color: darkMode ? '#fff' : '#000' }}>
+          <DialogTitle sx={{ color: theme.palette.text.primary }}>
             {selectedTeam?.name} - {lang.teamMembers}
           </DialogTitle>
           <DialogContent>
@@ -627,7 +634,7 @@ const TeamList: React.FC<TeamListProps> = ({
             fullWidth
           >
             <DialogTitle
-              sx={{ color: darkMode ? COLORS.LIGHT_BG : COLORS.LIGHT_TEXT }}
+              sx={{ color: theme.palette.text.primary }}
             >
               {employeePoolTeam?.name
                 ? `${employeePoolTeam.name} - ${lang.viewMembers}`
@@ -662,7 +669,7 @@ const TeamList: React.FC<TeamListProps> = ({
             fullWidth
           >
             <DialogTitle
-              sx={{ color: darkMode ? COLORS.LIGHT_BG : COLORS.LIGHT_TEXT }}
+              sx={{ color: theme.palette.text.primary }}
             >
               {lang.addMember} - {selectedTeam?.name}
             </DialogTitle>

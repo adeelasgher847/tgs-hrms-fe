@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback, useRef } from 'react';
-import { Box, Typography, IconButton, Tooltip } from '@mui/material';
+import { Box, Typography, IconButton, Tooltip, useTheme } from '@mui/material';
 import AccessTimeIcon from '@mui/icons-material/AccessTime';
 import RefreshIcon from '@mui/icons-material/Refresh';
 import timesheetApi, { type TimesheetEntry } from '../../api/timesheetApi';
@@ -44,6 +44,7 @@ const MyTimerCard: React.FC<MyTimerCardProps> = ({
   const hasCheckedInRef = useRef<boolean>(false);
   const isComponentMountedRef = useRef<boolean>(true);
   const lastFetchTimeRef = useRef<number>(0);
+  const theme = useTheme();
 
   // Update refs when state changes
   useEffect(() => {
@@ -319,7 +320,7 @@ const MyTimerCard: React.FC<MyTimerCardProps> = ({
           position: 'relative',
           flex: 1,
           height: '100%',
-          color: darkMode ? '#ffffff' : '#000000',
+          color: theme.palette.text.primary,
           overflow: 'hidden',
           border: 'none',
           p: 3,
@@ -361,9 +362,7 @@ const MyTimerCard: React.FC<MyTimerCardProps> = ({
               color:
                 currentSession && !currentSession.end_time
                   ? '#4CAF50'
-                  : darkMode
-                    ? '#b0b0b0'
-                    : '#666666',
+                  : theme.palette.text.secondary,
             }}
           />
           <Typography
@@ -371,9 +370,7 @@ const MyTimerCard: React.FC<MyTimerCardProps> = ({
             color={
               currentSession && !currentSession.end_time
                 ? '#4CAF50'
-                : darkMode
-                  ? '#b0b0b0'
-                  : '#666666'
+                : theme.palette.text.secondary
             }
             sx={{ fontSize: '0.75rem', fontWeight: 500 }}
           >
@@ -411,7 +408,7 @@ const MyTimerCard: React.FC<MyTimerCardProps> = ({
               <RefreshIcon
                 sx={{
                   fontSize: '1rem',
-                  color: darkMode ? '#b0b0b0' : '#666666',
+                  color: theme.palette.text.secondary,
                   animation: refreshing ? 'spin 1s linear infinite' : 'none',
                   '@keyframes spin': {
                     '0%': { transform: 'rotate(0deg)' },
@@ -442,7 +439,7 @@ const MyTimerCard: React.FC<MyTimerCardProps> = ({
             <Typography
               variant='h2'
               fontWeight={700}
-              color={darkMode ? '#ffffff' : '#000000'}
+              color={theme.palette.text.primary}
               sx={{
                 fontSize: { xs: '2rem', sm: '2.5rem' },
                 textAlign: 'center',
@@ -540,7 +537,7 @@ const MyTimerCard: React.FC<MyTimerCardProps> = ({
           {/* Status Text */}
           <Typography
             variant='body1'
-            color={darkMode ? '#b0b0b0' : '#666666'}
+            color={theme.palette.text.secondary}
             textAlign='center'
             sx={{ fontSize: '1rem' }}
           >
@@ -655,10 +652,10 @@ const MyTimerCard: React.FC<MyTimerCardProps> = ({
               fontSize: '0.9rem',
               fontWeight: 400,
               textTransform: 'none',
-              color: darkMode ? '#b0b0b0' : '#666666',
+              color: theme.palette.text.secondary,
               '&:hover': {
                 backgroundColor: 'transparent',
-                color: darkMode ? '#ffffff' : '#000000',
+                color: theme.palette.text.primary,
               },
             }}
           >

@@ -223,35 +223,35 @@ const AddEmployeeForm: React.FC<AddEmployeeFormProps> = ({
   // Check if form has changes
   const hasChanges = initialData
     ? values.first_name !== originalValues.first_name ||
-    values.last_name !== originalValues.last_name ||
-    values.email !== originalValues.email ||
-    values.phone !== originalValues.phone ||
-    values.designationId !== originalValues.designationId ||
-    values.departmentId !== originalValues.departmentId ||
-    values.gender !== originalValues.gender ||
-    values.role !== originalValues.role ||
-    values.role_name !== originalValues.role_name ||
-    // values.role_id !== originalValues.role_id ||
-    values.team_id !== originalValues.team_id ||
-    values.cnicNumber !== originalValues.cnicNumber ||
-    values.profilePicture !== null ||
-    values.cnicFrontPicture !== null ||
-    values.cnicBackPicture !== null
+      values.last_name !== originalValues.last_name ||
+      values.email !== originalValues.email ||
+      values.phone !== originalValues.phone ||
+      values.designationId !== originalValues.designationId ||
+      values.departmentId !== originalValues.departmentId ||
+      values.gender !== originalValues.gender ||
+      values.role !== originalValues.role ||
+      values.role_name !== originalValues.role_name ||
+      // values.role_id !== originalValues.role_id ||
+      values.team_id !== originalValues.team_id ||
+      values.cnicNumber !== originalValues.cnicNumber ||
+      values.profilePicture !== null ||
+      values.cnicFrontPicture !== null ||
+      values.cnicBackPicture !== null
     : values.first_name.trim() !== '' ||
-    values.last_name.trim() !== '' ||
-    values.email.trim() !== '' ||
-    values.phone.trim() !== '' ||
-    values.designationId !== '' ||
-    values.departmentId !== '' ||
-    values.gender !== '' ||
-    values.role !== 'Employee' ||
-    values.role_name !== '' ||
-    // values.role_id !== '' ||
-    values.team_id !== '' ||
-    values.cnicNumber !== '' ||
-    values.profilePicture !== null ||
-    values.cnicFrontPicture !== null ||
-    values.cnicBackPicture !== null;
+      values.last_name.trim() !== '' ||
+      values.email.trim() !== '' ||
+      values.phone.trim() !== '' ||
+      values.designationId !== '' ||
+      values.departmentId !== '' ||
+      values.gender !== '' ||
+      values.role !== 'Employee' ||
+      values.role_name !== '' ||
+      // values.role_id !== '' ||
+      values.team_id !== '' ||
+      values.cnicNumber !== '' ||
+      values.profilePicture !== null ||
+      values.cnicFrontPicture !== null ||
+      values.cnicBackPicture !== null;
 
   // Remove filtering: always show all designations in the dropdown
   // const filteredDesignations = designations;
@@ -330,9 +330,9 @@ const AddEmployeeForm: React.FC<AddEmployeeFormProps> = ({
 
   const handleChange =
     (field: keyof FormValues) =>
-      (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-        setFieldValue(field, (e.target.value ?? '').toString());
-      };
+    (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+      setFieldValue(field, (e.target.value ?? '').toString());
+    };
 
   const handlePhoneChange = (value: string | undefined) => {
     const phoneValue = value || '';
@@ -349,52 +349,52 @@ const AddEmployeeForm: React.FC<AddEmployeeFormProps> = ({
   // Handle image uploads
   const handleImageUpload =
     (type: 'profile' | 'cnicFront' | 'cnicBack') =>
-      (event: React.ChangeEvent<HTMLInputElement>) => {
-        const file = event.target.files?.[0];
-        if (file) {
-          // Validate file type
-          if (!file.type.startsWith('image/')) {
-            setErrors(prev => ({
-              ...prev,
-              general: 'Please select a valid image file',
-            }));
-            return;
-          }
-
-          // Validate file size (max 5MB)
-          if (file.size > 5 * 1024 * 1024) {
-            setErrors(prev => ({
-              ...prev,
-              general: 'Image size should not exceed 5MB',
-            }));
-            return;
-          }
-
-          setValues(prev => ({
+    (event: React.ChangeEvent<HTMLInputElement>) => {
+      const file = event.target.files?.[0];
+      if (file) {
+        // Validate file type
+        if (!file.type.startsWith('image/')) {
+          setErrors(prev => ({
             ...prev,
-            [type === 'profile'
-              ? 'profilePicture'
-              : type === 'cnicFront'
-                ? 'cnicFrontPicture'
-                : 'cnicBackPicture']: file,
+            general: 'Please select a valid image file',
           }));
-
-          // Clear errors
-          setErrors(prev => {
-            const newErrors = { ...prev };
-            delete newErrors.general;
-            // Clear the specific picture error
-            if (type === 'profile') {
-              delete newErrors.profilePicture;
-            } else if (type === 'cnicFront') {
-              delete newErrors.cnicFrontPicture;
-            } else if (type === 'cnicBack') {
-              delete newErrors.cnicBackPicture;
-            }
-            return newErrors;
-          });
+          return;
         }
-      };
+
+        // Validate file size (max 5MB)
+        if (file.size > 5 * 1024 * 1024) {
+          setErrors(prev => ({
+            ...prev,
+            general: 'Image size should not exceed 5MB',
+          }));
+          return;
+        }
+
+        setValues(prev => ({
+          ...prev,
+          [type === 'profile'
+            ? 'profilePicture'
+            : type === 'cnicFront'
+              ? 'cnicFrontPicture'
+              : 'cnicBackPicture']: file,
+        }));
+
+        // Clear errors
+        setErrors(prev => {
+          const newErrors = { ...prev };
+          delete newErrors.general;
+          // Clear the specific picture error
+          if (type === 'profile') {
+            delete newErrors.profilePicture;
+          } else if (type === 'cnicFront') {
+            delete newErrors.cnicFrontPicture;
+          } else if (type === 'cnicBack') {
+            delete newErrors.cnicBackPicture;
+          }
+          return newErrors;
+        });
+      }
+    };
 
   // Handle CNIC number formatting
   const handleCnicChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -707,14 +707,14 @@ const AddEmployeeForm: React.FC<AddEmployeeFormProps> = ({
                       outline: 'none',
                       padding: '0',
                       margin: '0',
-                      fontSize: '1rem',
+                      fontSize: '0.8rem',
                       fontFamily: '"Roboto", "Helvetica", "Arial", sans-serif',
                       backgroundColor: 'transparent',
                       width: '100%',
                       boxSizing: 'border-box',
                       flex: 1,
                       height: '100%',
-                      color: darkMode ? '#eeeeee' : '#2C2C2C',
+                      color: theme.palette.text.primary,
                     }}
                     countrySelectorStyleProps={{
                       buttonStyle: {
@@ -725,7 +725,7 @@ const AddEmployeeForm: React.FC<AddEmployeeFormProps> = ({
                         cursor: 'pointer',
                         display: 'flex',
                         alignItems: 'center',
-                        color: darkMode ? '#eeeeee' : '#2C2C2C',
+                        color: theme.palette.text.primary,
                       },
                     }}
                     className='phone-input-textfield-adornment'
@@ -795,9 +795,9 @@ const AddEmployeeForm: React.FC<AddEmployeeFormProps> = ({
               ...(roleOptions.length === 0
                 ? []
                 : roleOptions.map(name => ({
-                  value: name,
-                  label: name.charAt(0).toUpperCase() + name.slice(1),
-                }))),
+                    value: name,
+                    label: name.charAt(0).toUpperCase() + name.slice(1),
+                  }))),
             ]}
           />
         </Box>
@@ -894,6 +894,10 @@ const AddEmployeeForm: React.FC<AddEmployeeFormProps> = ({
                         height: '100%',
                         boxShadow: 'none',
                         minWidth: '80px',
+                        color:
+                          theme.palette.mode === 'dark'
+                            ? theme.palette.text.primary
+                            : theme.palette.common.white,
                         '&:hover': {
                           backgroundColor: 'primary.main',
                           boxShadow: 'none',
@@ -953,6 +957,10 @@ const AddEmployeeForm: React.FC<AddEmployeeFormProps> = ({
                         height: '100%',
                         boxShadow: 'none',
                         minWidth: '80px',
+                        color:
+                          theme.palette.mode === 'dark'
+                            ? theme.palette.text.primary
+                            : theme.palette.common.white,
                         '&:hover': {
                           backgroundColor: 'primary.main',
                           boxShadow: 'none',
@@ -1015,6 +1023,10 @@ const AddEmployeeForm: React.FC<AddEmployeeFormProps> = ({
                         height: '100%',
                         boxShadow: 'none',
                         minWidth: '80px',
+                        color:
+                          theme.palette.mode === 'dark'
+                            ? theme.palette.text.primary
+                            : theme.palette.common.white,
                         '&:hover': {
                           backgroundColor: 'primary.main',
                           boxShadow: 'none',
@@ -1050,145 +1062,142 @@ const AddEmployeeForm: React.FC<AddEmployeeFormProps> = ({
           initialData?.profilePicture ||
           initialData?.cnicFrontPicture ||
           initialData?.cnicBackPicture) && (
-            <Box flex='1 1 100%' sx={{ mt: 2 }}>
-              <Box display='flex' flexWrap='wrap' gap={2} justifyContent='center'>
-                {/* Profile Picture Preview */}
-                {(values.profilePicture || initialData?.profilePicture) && (
-                  <Box sx={{ textAlign: 'center' }}>
-                    <Box
-                      component='img'
-                      src={
+          <Box flex='1 1 100%' sx={{ mt: 2 }}>
+            <Box display='flex' flexWrap='wrap' gap={2} justifyContent='center'>
+              {(values.profilePicture || initialData?.profilePicture) && (
+                <Box sx={{ textAlign: 'center' }}>
+                  <Box
+                    component='img'
+                    src={
+                      values.profilePicture
+                        ? URL.createObjectURL(values.profilePicture)
+                        : initialData?.profilePicture || ''
+                    }
+                    alt='Profile Preview'
+                    sx={{
+                      width: 150,
+                      height: 150,
+                      objectFit: 'cover',
+                      borderRadius: 2,
+                      border: '2px solid',
+                      borderColor: 'primary.main',
+                      mb: 1,
+                      cursor: 'pointer',
+                      '&:hover': {
+                        opacity: 0.8,
+                        transform: 'scale(1.05)',
+                        transition: 'all 0.2s ease-in-out',
+                      },
+                    }}
+                    onClick={() =>
+                      handleImagePreviewClick(
                         values.profilePicture
                           ? URL.createObjectURL(values.profilePicture)
-                          : initialData?.profilePicture || ''
-                      }
-                      alt='Profile Preview'
-                      sx={{
-                        width: 150,
-                        height: 150,
-                        objectFit: 'cover',
-                        borderRadius: 2,
-                        border: '2px solid',
-                        borderColor: 'primary.main',
-                        mb: 1,
-                        cursor: 'pointer',
-                        '&:hover': {
-                          opacity: 0.8,
-                          transform: 'scale(1.05)',
-                          transition: 'all 0.2s ease-in-out',
-                        },
-                      }}
-                      onClick={() =>
-                        handleImagePreviewClick(
-                          values.profilePicture
-                            ? URL.createObjectURL(values.profilePicture)
-                            : initialData?.profilePicture || '',
-                          label('Profile Picture', 'الصورة الشخصية')
-                        )
-                      }
-                    />
-                    <Typography
-                      variant='caption'
-                      display='block'
-                      sx={{ fontWeight: 600 }}
-                    >
-                      {label('Profile Picture', 'الصورة الشخصية')}
-                    </Typography>
-                  </Box>
-                )}
+                          : initialData?.profilePicture || '',
+                        label('Profile Picture', 'الصورة الشخصية')
+                      )
+                    }
+                  />
+                  <Typography
+                    variant='caption'
+                    display='block'
+                    sx={{ fontWeight: 600 }}
+                  >
+                    {label('Profile Picture', 'الصورة الشخصية')}
+                  </Typography>
+                </Box>
+              )}
 
-                {/* CNIC Front Picture Preview */}
-                {(values.cnicFrontPicture || initialData?.cnicFrontPicture) && (
-                  <Box sx={{ textAlign: 'center' }}>
-                    <Box
-                      component='img'
-                      src={
+              {(values.cnicFrontPicture || initialData?.cnicFrontPicture) && (
+                <Box sx={{ textAlign: 'center' }}>
+                  <Box
+                    component='img'
+                    src={
+                      values.cnicFrontPicture
+                        ? URL.createObjectURL(values.cnicFrontPicture)
+                        : initialData?.cnicFrontPicture || ''
+                    }
+                    alt='CNIC Front Preview'
+                    sx={{
+                      width: 150,
+                      height: 150,
+                      objectFit: 'cover',
+                      borderRadius: 2,
+                      border: '2px solid',
+                      borderColor: 'success.main',
+                      mb: 1,
+                      cursor: 'pointer',
+                      '&:hover': {
+                        opacity: 0.8,
+                        transform: 'scale(1.05)',
+                        transition: 'all 0.2s ease-in-out',
+                      },
+                    }}
+                    onClick={() =>
+                      handleImagePreviewClick(
                         values.cnicFrontPicture
                           ? URL.createObjectURL(values.cnicFrontPicture)
-                          : initialData?.cnicFrontPicture || ''
-                      }
-                      alt='CNIC Front Preview'
-                      sx={{
-                        width: 150,
-                        height: 150,
-                        objectFit: 'cover',
-                        borderRadius: 2,
-                        border: '2px solid',
-                        borderColor: 'success.main',
-                        mb: 1,
-                        cursor: 'pointer',
-                        '&:hover': {
-                          opacity: 0.8,
-                          transform: 'scale(1.05)',
-                          transition: 'all 0.2s ease-in-out',
-                        },
-                      }}
-                      onClick={() =>
-                        handleImagePreviewClick(
-                          values.cnicFrontPicture
-                            ? URL.createObjectURL(values.cnicFrontPicture)
-                            : initialData?.cnicFrontPicture || '',
-                          label('CNIC Front Side', 'الوجه الأمامي للهوية')
-                        )
-                      }
-                    />
-                    <Typography
-                      variant='caption'
-                      display='block'
-                      sx={{ fontWeight: 600 }}
-                    >
-                      {label('CNIC Front Side', 'الوجه الأمامي للهوية')}
-                    </Typography>
-                  </Box>
-                )}
+                          : initialData?.cnicFrontPicture || '',
+                        label('CNIC Front Side', 'الوجه الأمامي للهوية')
+                      )
+                    }
+                  />
+                  <Typography
+                    variant='caption'
+                    display='block'
+                    sx={{ fontWeight: 600 }}
+                  >
+                    {label('CNIC Front Side', 'الوجه الأمامي للهوية')}
+                  </Typography>
+                </Box>
+              )}
 
-                {/* CNIC Back Picture Preview */}
-                {(values.cnicBackPicture || initialData?.cnicBackPicture) && (
-                  <Box sx={{ textAlign: 'center' }}>
-                    <Box
-                      component='img'
-                      src={
+              {(values.cnicBackPicture || initialData?.cnicBackPicture) && (
+                <Box sx={{ textAlign: 'center' }}>
+                  <Box
+                    component='img'
+                    src={
+                      values.cnicBackPicture
+                        ? URL.createObjectURL(values.cnicBackPicture)
+                        : initialData?.cnicBackPicture || ''
+                    }
+                    alt='CNIC Back Preview'
+                    sx={{
+                      width: 150,
+                      height: 150,
+                      objectFit: 'cover',
+                      borderRadius: 2,
+                      border: '2px solid',
+                      borderColor: 'warning.main',
+                      mb: 1,
+                      cursor: 'pointer',
+                      '&:hover': {
+                        opacity: 0.8,
+                        transform: 'scale(1.05)',
+                        transition: 'all 0.2s ease-in-out',
+                      },
+                    }}
+                    onClick={() =>
+                      handleImagePreviewClick(
                         values.cnicBackPicture
                           ? URL.createObjectURL(values.cnicBackPicture)
-                          : initialData?.cnicBackPicture || ''
-                      }
-                      alt='CNIC Back Preview'
-                      sx={{
-                        width: 150,
-                        height: 150,
-                        objectFit: 'cover',
-                        borderRadius: 2,
-                        border: '2px solid',
-                        borderColor: 'warning.main',
-                        mb: 1,
-                        cursor: 'pointer',
-                        '&:hover': {
-                          opacity: 0.8,
-                          transform: 'scale(1.05)',
-                          transition: 'all 0.2s ease-in-out',
-                        },
-                      }}
-                      onClick={() =>
-                        handleImagePreviewClick(
-                          values.cnicBackPicture
-                            ? URL.createObjectURL(values.cnicBackPicture)
-                            : initialData?.cnicBackPicture || '',
-                          label('CNIC Back Side', 'الوجه الخلفي للهوية')
-                        )
-                      }
-                    />
-                    <Typography
-                      variant='caption'
-                      display='block'
-                      sx={{ fontWeight: 600 }}
-                    >
-                      {label('CNIC Back Side', 'الوجه الخلفي للهوية')}
-                    </Typography>
-                  </Box>
-                )}
-              </Box>
+                          : initialData?.cnicBackPicture || '',
+                        label('CNIC Back Side', 'الوجه الخلفي للهوية')
+                      )
+                    }
+                  />
+                  <Typography
+                    variant='caption'
+                    display='block'
+                    sx={{ fontWeight: 600 }}
+                  >
+                    {label('CNIC Back Side', 'الوجه الخلفي للهوية')}
+                  </Typography>
+                </Box>
+              )}
             </Box>
-          )}
+          </Box>
+        )}
 
         {/* Password reset info - show only on create (no initialData) */}
         {!initialData && (
@@ -1197,7 +1206,10 @@ const AddEmployeeForm: React.FC<AddEmployeeFormProps> = ({
               sx={{
                 p: 2,
                 bgcolor: theme.palette.primary.main,
-                color: theme.palette.primary.contrastText,
+                color:
+                  theme.palette.mode === 'dark'
+                    ? theme.palette.text.primary
+                    : theme.palette.common.white,
                 borderRadius: 1,
                 textAlign: 'center',
               }}
@@ -1259,29 +1271,29 @@ const AddEmployeeForm: React.FC<AddEmployeeFormProps> = ({
             text={
               submitting
                 ? label(
-                  initialData
-                    ? 'Updating...'
-                    : values.role === 'manager'
-                      ? 'Adding Manager...'
-                      : 'Adding Employee...',
-                  initialData
-                    ? 'جاري التحديث...'
-                    : values.role === 'manager'
-                      ? 'جاري إضافة المدير...'
-                      : 'جاري إضافة الموظف...'
-                )
+                    initialData
+                      ? 'Updating...'
+                      : values.role === 'manager'
+                        ? 'Adding Manager...'
+                        : 'Adding Employee...',
+                    initialData
+                      ? 'جاري التحديث...'
+                      : values.role === 'manager'
+                        ? 'جاري إضافة المدير...'
+                        : 'جاري إضافة الموظف...'
+                  )
                 : label(
-                  initialData
-                    ? 'Update Employee'
-                    : values.role === 'manager'
-                      ? 'Add Manager'
-                      : 'Add Employee',
-                  initialData
-                    ? 'تحديث الموظف'
-                    : values.role === 'manager'
-                      ? 'إضافة مدير'
-                      : 'إضافة موظف'
-                )
+                    initialData
+                      ? 'Update Employee'
+                      : values.role === 'manager'
+                        ? 'Add Manager'
+                        : 'Add Employee',
+                    initialData
+                      ? 'تحديث الموظف'
+                      : values.role === 'manager'
+                        ? 'إضافة مدير'
+                        : 'إضافة موظف'
+                  )
             }
           />
         </Box>

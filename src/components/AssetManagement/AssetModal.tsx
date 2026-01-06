@@ -25,6 +25,7 @@ import type { Asset, MockUser } from '../../types/asset';
 import { assetApi, type AssetSubcategory } from '../../api/assetApi';
 import AppButton from '../common/AppButton';
 import { Close as CloseIcon } from '@mui/icons-material';
+import AppInputField from '../common/AppInputField';
 
 interface AssetCategory {
   id: string;
@@ -351,6 +352,8 @@ const AssetModal: React.FC<AssetModalProps> = ({
             maxHeight: '90vh',
           },
         }}
+        disableAutoFocus
+        disableEnforceFocus
         sx={{
           '& .MuiDialog-paper': {
             margin: { xs: '16px', lg: 'auto' },
@@ -398,7 +401,7 @@ const AssetModal: React.FC<AssetModalProps> = ({
                       name='name'
                       control={control}
                       render={({ field }) => (
-                        <TextField
+                        <AppInputField
                           {...field}
                           fullWidth
                           label='Asset Name'

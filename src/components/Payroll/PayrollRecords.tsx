@@ -887,7 +887,7 @@ const PayrollRecords: React.FC = () => {
                     </Typography>
                     <Typography
                       variant='caption'
-                      sx={{ color: effectiveDarkMode ? '#b5b5b5' : '#666' }}
+                      sx={{ color: theme.palette.text.secondary }}
                     >
                       {record.employee?.user?.email || '—'}
                     </Typography>
@@ -938,6 +938,7 @@ const PayrollRecords: React.FC = () => {
                         <IconButton
                           size='small'
                           onClick={() => openDetails(record)}
+                          sx={{ color: theme.palette.text.primary }}
                         >
                           <IoEyeOutline size={18} />
                         </IconButton>
@@ -1295,7 +1296,7 @@ const PayrollRecords: React.FC = () => {
           <Stack spacing={2}>
             <Typography
               variant='body2'
-              sx={{ color: effectiveDarkMode ? '#b5b5b5' : '#555' }}
+              sx={{ color: theme.palette.text.secondary }}
             >
               {statusRecord.employee?.user
                 ? `${statusRecord.employee.user.first_name} ${statusRecord.employee.user.last_name}`

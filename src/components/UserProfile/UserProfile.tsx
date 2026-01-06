@@ -188,7 +188,7 @@ const UserProfileComponent = React.memo(() => {
         <Box
           sx={{
             display: 'flex',
-            flexDirection: 'row',
+            flexDirection: { xs: 'column', sm: 'row' },
             justifyContent: 'space-between',
             alignItems: { xs: 'flex-start', sm: 'center' },
             gap: 2,
@@ -215,7 +215,7 @@ const UserProfileComponent = React.memo(() => {
                 alt=''
                 aria-hidden='true'
                 sx={{
-                  width: { xs: 16, sm: 20 },
+                  width: { xs: '100%', sm: 20 },
                   height: { xs: 16, sm: 20 },
                   filter: 'brightness(0) invert(1)',
                 }}
@@ -227,7 +227,7 @@ const UserProfileComponent = React.memo(() => {
               letterSpacing: 'var(--body-letter-spacing)',
               boxShadow: 'none',
               minWidth: { xs: 'auto', sm: 200 },
-              px: { xs: 1.5, sm: 2 },
+              px: { xs: '46%', sm: 2 },
               py: { xs: 0.75, sm: 1 },
               '& .MuiButton-startIcon': {
                 marginRight: { xs: 0.5, sm: 1 },

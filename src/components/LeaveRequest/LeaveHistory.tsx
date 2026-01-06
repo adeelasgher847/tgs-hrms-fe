@@ -19,6 +19,7 @@ import {
   MenuItem,
   ListItemIcon,
   ListItemText,
+  useTheme,
 } from '@mui/material';
 import AccessTimeIcon from '@mui/icons-material/AccessTime';
 import CancelIcon from '@mui/icons-material/Cancel';
@@ -153,7 +154,7 @@ const LeaveHistory: React.FC<LeaveHistoryProps> = ({
   const [menuAnchorEl, setMenuAnchorEl] = useState<null | HTMLElement>(null);
   const [selectedLeaveForMenu, setSelectedLeaveForMenu] =
     useState<Leave | null>(null);
-
+  const theme = useTheme();
   // Reset page to 1 when employee filter changes
   useEffect(() => {
     setPage(1);
@@ -623,7 +624,7 @@ const LeaveHistory: React.FC<LeaveHistoryProps> = ({
                             sx={{
                               mt: 0.5,
                               fontSize: 13,
-                              color: '#424242',
+                              color: theme.palette.text.secondary,
                               maxWidth: 250,
                               whiteSpace: 'nowrap',
                               overflow: 'hidden',
@@ -680,6 +681,12 @@ const LeaveHistory: React.FC<LeaveHistoryProps> = ({
                               Boolean(menuAnchorEl) &&
                               selectedLeaveForMenu?.id === leave.id
                             }
+                            sx={{
+                              color: theme.palette.text.primary,
+                              '&:hover': {
+                                backgroundColor: 'transparent', 
+                              },
+                            }}
                           >
                             <MoreVertIcon />
                           </IconButton>

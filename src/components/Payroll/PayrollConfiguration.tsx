@@ -590,7 +590,7 @@ const PayrollConfiguration: React.FC = () => {
           cancelLabel='Cancel'
           isSubmitting={saving}
           hasChanges={isFormValid()}
-          maxWidth='md'
+          maxWidth='lg'
           paperSx={{ backgroundColor: darkMode ? '#1e1e1e' : '#fff' }}
         >
           <Box sx={{ pr: 1 }}>
@@ -1696,7 +1696,11 @@ const PayrollConfiguration: React.FC = () => {
         isSubmitting={saving}
         hasChanges={isFormValid() && hasChanges()}
         maxWidth='md'
-        paperSx={{ backgroundColor: darkMode ? '#1e1e1e' : '#fff', width: '600px', maxWidth: '90%' }}
+        paperSx={{
+          backgroundColor: darkMode ? '#1e1e1e' : '#fff',
+          width: '700px',
+          maxWidth: '90%',
+        }}
       >
         <Box sx={{ pr: 1 }}>
           {error && (
@@ -1818,7 +1822,11 @@ const PayrollConfiguration: React.FC = () => {
                         component='img'
                         src={Icons.delete}
                         alt='Delete'
-                        sx={{ width: 18, height: 18 }}
+                        sx={{
+                          width: 18,
+                          height: 18,
+                          ':hover': { backgroundColor: 'transparent' },
+                        }}
                       />
                     </IconButton>
                   </Box>

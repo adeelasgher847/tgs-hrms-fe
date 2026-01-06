@@ -8,6 +8,7 @@ import {
   CardContent,
   Skeleton,
   Alert,
+  useTheme,
 } from '@mui/material';
 
 import {
@@ -79,7 +80,8 @@ const TeamManager: React.FC<TeamManagerProps> = ({
   const [error, setError] = useState<string | null>(null);
   const [showCreateForm, setShowCreateForm] = useState(false);
   const { language } = useLanguage();
-
+  const theme = useTheme();
+  
   const labels = {
     en: {
       title: 'Team Management',
@@ -314,7 +316,7 @@ const TeamManager: React.FC<TeamManagerProps> = ({
           fontWeight={600}
           fontSize={{ xs: '32px', lg: '48px' }}
           sx={{
-            color: theme => theme.palette.text.primary,
+            color: theme.palette.text.primary,
             textAlign: { xs: 'left', sm: 'left' },
           }}
         >
@@ -349,9 +351,7 @@ const TeamManager: React.FC<TeamManagerProps> = ({
             mb: 3,
           }}
         >
-          <Card
-            sx={{ backgroundColor: theme => theme.palette.background.paper }}
-          >
+          <Card sx={{ backgroundColor: theme.palette.background.paper }}>
             <CardContent sx={{ p: { xs: 2, sm: 3 } }}>
               <Box
                 sx={{
@@ -364,7 +364,7 @@ const TeamManager: React.FC<TeamManagerProps> = ({
                   <Typography
                     variant='h4'
                     sx={{
-                      color: theme => theme.palette.text.primary,
+                      color: theme.palette.text.primary,
                       fontSize: { xs: '1.75rem', sm: '2.125rem' },
                     }}
                   >
@@ -373,7 +373,7 @@ const TeamManager: React.FC<TeamManagerProps> = ({
                   <Typography
                     variant='body2'
                     sx={{
-                      color: theme => theme.palette.text.secondary,
+                      color: theme.palette.text.secondary,
                       fontSize: { xs: '0.75rem', sm: '0.875rem' },
                     }}
                   >
@@ -392,9 +392,7 @@ const TeamManager: React.FC<TeamManagerProps> = ({
 
           {/* Only show Members Count Card for Managers */}
           {isManager() && (
-            <Card
-              sx={{ backgroundColor: theme => theme.palette.background.paper }}
-            >
+            <Card sx={{ backgroundColor: theme.palette.background.paper }}>
               <CardContent>
                 <Box
                   sx={{
@@ -407,7 +405,7 @@ const TeamManager: React.FC<TeamManagerProps> = ({
                     <Typography
                       variant='h4'
                       sx={{
-                        color: theme => theme.palette.text.primary,
+                        color: theme.palette.text.primary,
                         fontSize: { xs: '1.75rem', sm: '2.125rem' },
                       }}
                     >
@@ -416,7 +414,7 @@ const TeamManager: React.FC<TeamManagerProps> = ({
                     <Typography
                       variant='body2'
                       sx={{
-                        color: theme => theme.palette.text.secondary,
+                        color: theme.palette.text.secondary,
                         fontSize: { xs: '0.75rem', sm: '0.875rem' },
                       }}
                     >
@@ -455,7 +453,7 @@ const TeamManager: React.FC<TeamManagerProps> = ({
                   justifyContent: 'flex-start', // Always align to start on all screen sizes
                 },
                 '& .MuiTab-root': {
-                  color: theme => theme.palette.text.secondary,
+                  color: theme.palette.text.secondary,
                   fontSize: { xs: '0.875rem', sm: '1rem' },
                   minHeight: { xs: 48, sm: 56 },
                   minWidth: 'auto',
@@ -466,7 +464,7 @@ const TeamManager: React.FC<TeamManagerProps> = ({
                     },
                   },
                   '& .MuiSvgIcon-root': {
-                    color: theme => theme.palette.text.secondary,
+                    color: theme.palette.text.secondary,
                   },
                 },
               }}
