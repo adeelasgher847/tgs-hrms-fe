@@ -459,6 +459,7 @@ const MySalary: React.FC = () => {
                       <IconButton
                         size='small'
                         onClick={() => handleSelectRecord(record)}
+                        sx={{ color: theme => theme.palette.text.primary }}
                         disabled={
                           detailLoading && record.id !== selectedRecordId
                         }
@@ -518,7 +519,7 @@ const MySalary: React.FC = () => {
           ? '#121212'
           : theme.palette.background.default,
         minHeight: '100vh',
-        color: effectiveDarkMode ? '#fff' : '#000',
+        color: theme.palette.text.primary,
         '& .MuiButton-contained': {
           backgroundColor: 'var(--primary-dark-color)',
           '&:hover': { backgroundColor: 'var(--primary-dark-color)' },
@@ -541,15 +542,9 @@ const MySalary: React.FC = () => {
         <Paper
           elevation={0}
           sx={{
-            p: role === 'employee' ? 0 : 3,
-            borderRadius: role === 'employee' ? 0 : 1,
-            backgroundColor:
-              role === 'employee'
-                ? 'unset'
-                : effectiveDarkMode
-                ? '#1a1a1a'
-                : '#fff',
-            boxShadow: role === 'employee' ? 'none' : undefined,
+            p: 0,
+            borderRadius: 0,
+            backgroundColor: 'transparent',
           }}
         >
           {historyTable}
@@ -568,7 +563,7 @@ const MySalary: React.FC = () => {
             >
               <Typography
                 variant='body2'
-                sx={{ color: effectiveDarkMode ? '#b5b5b5' : '#666' }}
+                sx={{ color: theme.palette.text.secondary }}
               >
                 Showing page {currentPage} of {totalPages} ({totalRecords} total
                 records)

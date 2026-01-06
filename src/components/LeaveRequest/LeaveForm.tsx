@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Box, TextField } from '@mui/material';
+import { Box, TextField, useTheme } from '@mui/material';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
@@ -56,7 +56,7 @@ const LeaveForm: React.FC<LeaveFormProps> = ({
   const [existingDocuments, setExistingDocuments] = useState<string[]>([]);
   const [documentsToRemove, setDocumentsToRemove] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
-
+  const theme = useTheme();
   /* ------------------ PREFILL (EDIT MODE) ------------------ */
   useEffect(() => {
     if (mode === 'edit' && initialData) {
@@ -296,7 +296,48 @@ const LeaveForm: React.FC<LeaveFormProps> = ({
             }
           }}
           minDate={getToday()}
-          slotProps={{ textField: { fullWidth: true, required: true } }}
+          slotProps={{
+            textField: {
+              fullWidth: true,
+              required: true,
+              sx: {
+                '& .MuiSvgIcon-root': {
+                  color: theme.palette.text.primary,
+                },
+                '& .MuiInputAdornment-root svg': {
+                  color: theme.palette.text.primary,
+                },
+              },
+            },
+            desktopPaper: {
+              sx: {
+                backgroundColor: '#FFFFFF', // popup background
+              },
+            },
+            popper: {
+              sx: {
+                '& .MuiPaper-root': {
+                  borderRadius: '12px', // match modal radius
+                },
+              },
+            },
+            day: {
+              sx: {
+                '&.MuiPickersDay-root.Mui-selected, &.MuiPickersDay-root.Mui-selected:hover':
+                  {
+                    backgroundColor: 'var(--primary-dark-color) !important',
+                    color: '#FFFFFF !important',
+                  },
+                '&.MuiPickersDay-root.MuiPickersDay-today:not(.Mui-selected)': {
+                  backgroundColor: 'var(--primary-dark-color) !important',
+                  color: '#FFFFFF !important',
+                },
+                '&.MuiPickersDay-root.MuiPickersDay-today': {
+                  borderColor: 'var(--primary-dark-color) !important',
+                },
+              },
+            },
+          }}
         />
 
         <DatePicker
@@ -310,7 +351,42 @@ const LeaveForm: React.FC<LeaveFormProps> = ({
             }
           }}
           minDate={startDate || getToday()}
-          slotProps={{ textField: { fullWidth: true, required: true } }}
+          slotProps={{
+            textField: {
+              fullWidth: true,
+              required: true,
+              sx: {
+                '& .MuiSvgIcon-root': {
+                  color: theme.palette.text.primary,
+                },
+                '& .MuiInputAdornment-root svg': {
+                  color: theme.palette.text.primary,
+                },
+              },
+            },
+            desktopPaper: {
+              sx: { backgroundColor: '#FFFFFF' },
+            },
+            popper: {
+              sx: { '& .MuiPaper-root': { borderRadius: '12px' } },
+            },
+            day: {
+              sx: {
+                '&.MuiPickersDay-root.Mui-selected, &.MuiPickersDay-root.Mui-selected:hover':
+                  {
+                    backgroundColor: 'var(--primary-dark-color) !important',
+                    color: '#FFFFFF !important',
+                  },
+                '&.MuiPickersDay-root.MuiPickersDay-today:not(.Mui-selected)': {
+                  backgroundColor: 'var(--primary-dark-color) !important',
+                  color: '#FFFFFF !important',
+                },
+                '&.MuiPickersDay-root.MuiPickersDay-today': {
+                  borderColor: 'var(--primary-dark-color) !important',
+                },
+              },
+            },
+          }}
         />
 
         <TextField

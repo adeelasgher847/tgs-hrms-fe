@@ -196,7 +196,7 @@ const BenefitDetails: React.FC = () => {
                   <IconButton
                     size='small'
                     onClick={() => setSelectedBenefit(b)}
-                    sx={{ color: theme => theme.palette.primary.main }}
+                    sx={{ color: theme => theme.palette.text.primary }}
                     aria-label='View benefit details'
                   >
                     <IoEyeOutline size={20} aria-hidden='true' />
@@ -261,11 +261,10 @@ const BenefitDetails: React.FC = () => {
 
       <Paper
         sx={{
-          p: role === 'employee' ? 0 : 2,
-          borderRadius: role === 'employee' ? 0 : 2,
-          boxShadow: role === 'employee' ? 'none' : undefined,
-          background: role === 'employee' ? 'unset' : undefined,
-          mt: role === 'employee' ? 0 : undefined,
+          p: 0,
+          borderRadius: 0,
+          background: 'transparent',
+          boxShadow: 'none',
         }}
       >
         {loading ? (
@@ -278,7 +277,9 @@ const BenefitDetails: React.FC = () => {
             <CircularProgress />
           </Box>
         ) : shouldUseAppTable ? (
+          <Paper sx={{ overflowX: 'auto', boxShadow: 'none' }}>
           <AppTable>{tableContent}</AppTable>
+          </Paper>
         ) : (
           <Paper sx={{ mt: 2, overflowX: 'auto', boxShadow: 'none' }}>
             <Table>{tableContent}</Table>
