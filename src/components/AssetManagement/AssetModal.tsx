@@ -4,7 +4,6 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
-  TextField,
   FormControl,
   InputLabel,
   Select,
@@ -74,7 +73,6 @@ const AssetModal: React.FC<AssetModalProps> = ({
   const [categories, setCategories] = useState<AssetCategory[]>([]);
   const [subcategories, setSubcategories] = useState<AssetSubcategory[]>([]);
   const [loadingData, setLoadingData] = useState(false);
-  const iconColor = theme.palette.text.primary;
   type ExtendedAsset = Asset & {
     category_id?: string;
     subcategory_id?: string;

@@ -106,7 +106,7 @@ const AddEmployeeForm: React.FC<AddEmployeeFormProps> = ({
 }) => {
   const theme = useTheme();
   const isSm = useMediaQuery(theme.breakpoints.down('sm'));
-  const { darkMode, language } = useOutletContext<OutletContext>();
+  const { language } = useOutletContext<OutletContext>();
 
   const [values, setValues] = useState<FormValues>({
     first_name: initialData?.firstName ?? '',
