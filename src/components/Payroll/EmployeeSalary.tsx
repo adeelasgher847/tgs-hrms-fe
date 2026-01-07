@@ -9,7 +9,6 @@ import {
   TableRow,
   Typography,
   IconButton,
-  TextField,
   Chip,
   CircularProgress,
   Alert,
@@ -43,6 +42,8 @@ import AppTable from '../common/AppTable';
 import AppDropdown from '../common/AppDropdown';
 import AppFormModal from '../common/AppFormModal';
 import AppPageTitle from '../common/AppPageTitle';
+import AppButton from '../common/AppButton';
+import AppInputField from '../common/AppInputField';
 
 const monthOptions = [
   { label: 'January', value: 1 },
@@ -824,7 +825,7 @@ const EmployeeSalaryPage: React.FC = () => {
         >
           <Typography
             variant='h4'
-            sx={{ fontWeight: 600, color: darkMode ? '#fff' : '#000' }}
+            sx={{ fontWeight: 600, color: theme.palette.text.primary }}
           >
             My Salary Structure
           </Typography>
@@ -851,13 +852,13 @@ const EmployeeSalaryPage: React.FC = () => {
           >
             <Typography
               variant='h6'
-              sx={{ mb: 2, fontWeight: 600, color: darkMode ? '#fff' : '#000' }}
+              sx={{ mb: 2, fontWeight: 600, color: theme.palette.text.primary }}
             >
               Base Salary
             </Typography>
             <Typography
               variant='h4'
-              sx={{ color: darkMode ? '#fff' : '#000', fontWeight: 600 }}
+              sx={{ color: theme.palette.text.primary, fontWeight: 600 }}
             >
               {formatCurrency(mySalary.baseSalary)}
             </Typography>
@@ -878,7 +879,7 @@ const EmployeeSalaryPage: React.FC = () => {
                 sx={{
                   mb: 2,
                   fontWeight: 600,
-                  color: darkMode ? '#fff' : '#000',
+                  color: theme.palette.text.primary,
                 }}
               >
                 Allowances
@@ -908,7 +909,7 @@ const EmployeeSalaryPage: React.FC = () => {
                     <Typography
                       variant='subtitle2'
                       sx={{
-                        color: darkMode ? '#fff' : '#000',
+                        color: theme.palette.text.primary,
                         fontWeight: 600,
                         mb: 1,
                       }}
@@ -960,7 +961,7 @@ const EmployeeSalaryPage: React.FC = () => {
                 sx={{
                   mb: 2,
                   fontWeight: 600,
-                  color: darkMode ? '#fff' : '#000',
+                  color: theme.palette.text.primary,
                 }}
               >
                 Deductions
@@ -990,7 +991,7 @@ const EmployeeSalaryPage: React.FC = () => {
                     <Typography
                       variant='subtitle2'
                       sx={{
-                        color: darkMode ? '#fff' : '#000',
+                        color: theme.palette.text.primary,
                         fontWeight: 600,
                         mb: 1,
                       }}
@@ -1038,7 +1039,7 @@ const EmployeeSalaryPage: React.FC = () => {
           >
             <Typography
               variant='h6'
-              sx={{ mb: 2, fontWeight: 600, color: darkMode ? '#fff' : '#000' }}
+              sx={{ mb: 2, fontWeight: 600, color: theme.palette.text.primary }}
             >
               Additional Information
             </Typography>
@@ -1058,7 +1059,7 @@ const EmployeeSalaryPage: React.FC = () => {
                 </Typography>
                 <Typography
                   variant='body1'
-                  sx={{ color: darkMode ? '#fff' : '#000', fontWeight: 500 }}
+                  sx={{ color: theme.palette.text.primary, fontWeight: 500 }}
                 >
                   {dayjs(mySalary.effectiveDate).format('MMM DD, YYYY')}
                 </Typography>
@@ -1073,7 +1074,7 @@ const EmployeeSalaryPage: React.FC = () => {
                   </Typography>
                   <Typography
                     variant='body1'
-                    sx={{ color: darkMode ? '#fff' : '#000', fontWeight: 500 }}
+                    sx={{ color: theme.palette.text.primary, fontWeight: 500 }}
                   >
                     {dayjs(mySalary.endDate).format('MMM DD, YYYY')}
                   </Typography>
@@ -1102,7 +1103,7 @@ const EmployeeSalaryPage: React.FC = () => {
                   </Typography>
                   <Typography
                     variant='body1'
-                    sx={{ color: darkMode ? '#fff' : '#000' }}
+                    sx={{ color: theme.palette.text.primary }}
                   >
                     {mySalary.notes}
                   </Typography>
@@ -1138,31 +1139,43 @@ const EmployeeSalaryPage: React.FC = () => {
         sx={{
           mb: 3,
           display: 'flex',
+          flexDirection: { xs: 'column', sm: 'row' },
           justifyContent: 'space-between',
-          alignItems: 'center',
+          alignItems: { xs: 'flex-start', sm: 'center' },
+          gap: { xs: 2, sm: 0 },
         }}
       >
         <AppPageTitle>Employee Salary Structure</AppPageTitle>
-        <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
-          <Button
-            variant='contained'
+        <Box
+          sx={{
+            display: 'flex',
+            gap: 2,
+            alignItems: 'center',
+            width: { xs: '100%', sm: 'auto' },
+          }}
+        >
+          <AppButton
+            variantType='primary'
             startIcon={<AddIcon />}
             onClick={handleAddSalary}
             sx={{
-              backgroundColor: darkMode ? '#464b8a' : '#484c7f',
+              width: { xs: '100%', sm: 'auto' },
+              backgroundColor: 'var(--primary-dark-color)',
+              color: '#fff',
               '&:hover': {
-                backgroundColor: darkMode ? '#464b8a' : '#5b56a0',
+                backgroundColor: 'var(--primary-dark-color)',
+                opacity: 0.9,
               },
             }}
           >
             Add Salary Structure
-          </Button>
+          </AppButton>
         </Box>
       </Box>
 
       <Paper
         sx={{
-          backgroundColor: darkMode ? '#1a1a1a' : '#fff',
+          backgroundColor: 'transparent',
           boxShadow: 'none',
         }}
       >
@@ -1175,32 +1188,32 @@ const EmployeeSalaryPage: React.FC = () => {
             <TableHead>
               <TableRow>
                 <TableCell
-                  sx={{ color: darkMode ? '#fff' : '#000', fontWeight: 600 }}
+                  sx={{ color: theme.palette.text.primary, fontWeight: 600 }}
                 >
                   Employee
                 </TableCell>
                 <TableCell
-                  sx={{ color: darkMode ? '#fff' : '#000', fontWeight: 600 }}
+                  sx={{ color: theme.palette.text.primary, fontWeight: 600 }}
                 >
                   Department
                 </TableCell>
                 <TableCell
-                  sx={{ color: darkMode ? '#fff' : '#000', fontWeight: 600 }}
+                  sx={{ color: theme.palette.text.primary, fontWeight: 600 }}
                 >
                   Designation
                 </TableCell>
                 <TableCell
-                  sx={{ color: darkMode ? '#fff' : '#000', fontWeight: 600 }}
+                  sx={{ color: theme.palette.text.primary, fontWeight: 600 }}
                 >
                   Base Salary
                 </TableCell>
                 <TableCell
-                  sx={{ color: darkMode ? '#fff' : '#000', fontWeight: 600 }}
+                  sx={{ color: theme.palette.text.primary, fontWeight: 600 }}
                 >
                   Status
                 </TableCell>
                 <TableCell
-                  sx={{ color: darkMode ? '#fff' : '#000', fontWeight: 600 }}
+                  sx={{ color: theme.palette.text.primary, fontWeight: 600 }}
                 >
                   Actions
                 </TableCell>
@@ -1215,7 +1228,7 @@ const EmployeeSalaryPage: React.FC = () => {
                         <Typography
                           variant='body2'
                           sx={{
-                            color: darkMode ? '#fff' : '#000',
+                            color: theme.palette.text.primary,
                             fontWeight: 500,
                           }}
                         >
@@ -1223,7 +1236,7 @@ const EmployeeSalaryPage: React.FC = () => {
                         </Typography>
                         <Typography
                           variant='caption'
-                          sx={{ color: darkMode ? '#8f8f8f' : '#666' }}
+                          sx={{ color: theme.palette.text.secondary }}
                         >
                           {item.employee.user.email}
                         </Typography>
@@ -1234,7 +1247,7 @@ const EmployeeSalaryPage: React.FC = () => {
                   <TableCell>{item.employee.designation.title}</TableCell>
                   <TableCell
                     sx={{
-                      color: darkMode ? '#fff' : '#000',
+                      color: theme.palette.text.primary,
                       fontWeight: 500,
                     }}
                   >
@@ -1264,7 +1277,7 @@ const EmployeeSalaryPage: React.FC = () => {
                           <IconButton
                             size='small'
                             onClick={() => handleViewSalary(item)}
-                            sx={{ color: theme.palette.primary.main }}
+                            sx={{ color: theme.palette.text.primary }}
                           >
                             <IoEyeOutline size={20} />
                           </IconButton>
@@ -1282,9 +1295,9 @@ const EmployeeSalaryPage: React.FC = () => {
                           </IconButton>
                         </>
                       ) : (
-                        <Button
+                        <AppButton
                           size='small'
-                          variant='outlined'
+                          variantType='secondary'
                           onClick={async () => {
                             setSelectedEmployee(item);
                             setSelectedEmployeeId(item.employee.id);
@@ -1315,7 +1328,7 @@ const EmployeeSalaryPage: React.FC = () => {
                           }}
                         >
                           Assign
-                        </Button>
+                        </AppButton>
                       )}
                     </Stack>
                   </TableCell>
@@ -1372,13 +1385,13 @@ const EmployeeSalaryPage: React.FC = () => {
               >
                 <Typography
                   variant='h6'
-                  sx={{ mb: 1, color: darkMode ? '#fff' : '#000' }}
+                  sx={{ mb: 1, color: theme.palette.text.primary }}
                 >
                   Base Salary
                 </Typography>
                 <Typography
                   variant='h4'
-                  sx={{ color: darkMode ? '#fff' : '#000', fontWeight: 600 }}
+                  sx={{ color: theme.palette.text.primary, fontWeight: 600 }}
                 >
                   {formatCurrency(selectedSalary.baseSalary)}
                 </Typography>
@@ -1389,7 +1402,7 @@ const EmployeeSalaryPage: React.FC = () => {
                   <Box>
                     <Typography
                       variant='h6'
-                      sx={{ mb: 2, color: darkMode ? '#fff' : '#000' }}
+                      sx={{ mb: 2, color: theme.palette.text.primary }}
                     >
                       Allowances
                     </Typography>
@@ -1408,7 +1421,7 @@ const EmployeeSalaryPage: React.FC = () => {
                           <Typography
                             variant='subtitle2'
                             sx={{
-                              color: darkMode ? '#fff' : '#000',
+                              color: theme.palette.text.primary,
                               fontWeight: 600,
                             }}
                           >
@@ -1443,7 +1456,7 @@ const EmployeeSalaryPage: React.FC = () => {
                   <Box>
                     <Typography
                       variant='h6'
-                      sx={{ mb: 2, color: darkMode ? '#fff' : '#000' }}
+                      sx={{ mb: 2, color: theme.palette.text.primary }}
                     >
                       Deductions
                     </Typography>
@@ -1462,7 +1475,7 @@ const EmployeeSalaryPage: React.FC = () => {
                           <Typography
                             variant='subtitle2'
                             sx={{
-                              color: darkMode ? '#fff' : '#000',
+                              color: theme.palette.text.primary,
                               fontWeight: 600,
                             }}
                           >
@@ -1508,7 +1521,7 @@ const EmployeeSalaryPage: React.FC = () => {
                   </Typography>
                   <Typography
                     variant='body1'
-                    sx={{ color: darkMode ? '#fff' : '#000' }}
+                    sx={{ color: theme.palette.text.primary }}
                   >
                     {dayjs(selectedSalary.effectiveDate).format('MMM DD, YYYY')}
                   </Typography>
@@ -1523,7 +1536,7 @@ const EmployeeSalaryPage: React.FC = () => {
                     </Typography>
                     <Typography
                       variant='body1'
-                      sx={{ color: darkMode ? '#fff' : '#000' }}
+                      sx={{ color: theme.palette.text.primary }}
                     >
                       {dayjs(selectedSalary.endDate).format('MMM DD, YYYY')}
                     </Typography>
@@ -1554,7 +1567,7 @@ const EmployeeSalaryPage: React.FC = () => {
                     </Typography>
                     <Typography
                       variant='body1'
-                      sx={{ color: darkMode ? '#fff' : '#000' }}
+                      sx={{ color: theme.palette.text.primary }}
                     >
                       {selectedSalary.notes}
                     </Typography>
@@ -1569,7 +1582,7 @@ const EmployeeSalaryPage: React.FC = () => {
                     variant='h6'
                     sx={{
                       mb: 2,
-                      color: darkMode ? '#fff' : '#000',
+                      color: theme.palette.text.primary,
                       fontWeight: 600,
                     }}
                   >
@@ -1593,7 +1606,7 @@ const EmployeeSalaryPage: React.FC = () => {
                         <TableRow>
                           <TableCell
                             sx={{
-                              color: darkMode ? '#fff' : '#000',
+                              color: theme.palette.text.primary,
                               fontWeight: 600,
                             }}
                           >
@@ -1601,7 +1614,7 @@ const EmployeeSalaryPage: React.FC = () => {
                           </TableCell>
                           <TableCell
                             sx={{
-                              color: darkMode ? '#fff' : '#000',
+                              color: theme.palette.text.primary,
                               fontWeight: 600,
                             }}
                           >
@@ -1609,7 +1622,7 @@ const EmployeeSalaryPage: React.FC = () => {
                           </TableCell>
                           <TableCell
                             sx={{
-                              color: darkMode ? '#fff' : '#000',
+                              color: theme.palette.text.primary,
                               fontWeight: 600,
                             }}
                           >
@@ -1617,7 +1630,7 @@ const EmployeeSalaryPage: React.FC = () => {
                           </TableCell>
                           <TableCell
                             sx={{
-                              color: darkMode ? '#fff' : '#000',
+                              color: theme.palette.text.primary,
                               fontWeight: 600,
                             }}
                           >
@@ -1646,7 +1659,7 @@ const EmployeeSalaryPage: React.FC = () => {
                               </TableCell>
                               <TableCell
                                 sx={{
-                                  color: darkMode ? '#fff' : '#000',
+                                  color: theme.palette.text.primary,
                                   fontWeight: 500,
                                 }}
                               >
@@ -1692,14 +1705,18 @@ const EmployeeSalaryPage: React.FC = () => {
         cancelLabel='Cancel'
         hasChanges={isFormValid() && (!selectedSalary || hasChanges())}
         maxWidth='md'
-        paperSx={{ backgroundColor: darkMode ? '#1e1e1e' : '#fff' }}
+        paperSx={{
+          backgroundColor: darkMode ? '#1e1e1e' : '#fff',
+          width: '800px',
+          maxWidth: '800px',
+        }}
       >
         <Box sx={{ pr: 1 }}>
           {!selectedSalary && payrollConfig && (
             <Typography
               variant='caption'
               sx={{
-                color: darkMode ? '#8f8f8f' : '#666',
+                color: theme.palette.text.secondary,
                 display: 'block',
                 fontStyle: 'italic',
                 mb: 1,
@@ -1708,19 +1725,14 @@ const EmployeeSalaryPage: React.FC = () => {
               Pre-filled with current payroll configuration defaults
             </Typography>
           )}
-          <Box
-            sx={{
-              display: 'flex',
-              flexDirection: 'column',
-              gap: 3,
-              marginTop: 2,
-            }}
-          >
+
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3, mt: 2 }}>
             {configLoading && (
               <Box sx={{ display: 'flex', justifyContent: 'center', p: 2 }}>
                 <CircularProgress size={24} />
               </Box>
             )}
+
             {!selectedSalary && payrollConfig && (
               <Alert
                 severity='info'
@@ -1749,9 +1761,10 @@ const EmployeeSalaryPage: React.FC = () => {
                 </Typography>
               </Alert>
             )}
+
+            {/* Employee Selection */}
             {!selectedSalary && (
               <AppDropdown
-                label='Select Employee'
                 value={selectedEmployeeId || ''}
                 onChange={async (e: SelectChangeEvent<string | number>) => {
                   const employeeId = String(e.target.value || '');
@@ -1759,56 +1772,43 @@ const EmployeeSalaryPage: React.FC = () => {
 
                   if (employeeId) {
                     try {
-                      // Load defaults for the selected employee
                       const response =
                         await payrollApi.getEmployeeSalary(employeeId);
-
-                      // Load payroll config to get basePayComponents structure
                       const config = await payrollApi.getConfig();
                       setPayrollConfig(config);
 
                       if (response.salary) {
-                        // Employee has an active salary - use actual saved data
                         setSelectedSalary(response.salary);
                         const baseSalaryValue =
                           typeof response.salary.baseSalary === 'string'
                             ? parseFloat(response.salary.baseSalary)
                             : response.salary.baseSalary;
 
-                        // If config exists, use its proportions to split baseSalary
-                        if (config && config.basePayComponents) {
+                        if (config?.basePayComponents) {
                           const totalConfigBase =
                             (config.basePayComponents.basic || 0) +
                             (config.basePayComponents.houseRent || 0) +
                             (config.basePayComponents.medical || 0) +
                             (config.basePayComponents.transport || 0);
+                          const ratio =
+                            totalConfigBase > 0
+                              ? baseSalaryValue / totalConfigBase
+                              : 1;
 
-                          if (totalConfigBase > 0) {
-                            const ratio = baseSalaryValue / totalConfigBase;
-                            setBasePayComponents({
-                              basic: Math.round(
-                                (config.basePayComponents.basic || 0) * ratio
-                              ),
-                              houseRent: Math.round(
-                                (config.basePayComponents.houseRent || 0) *
-                                  ratio
-                              ),
-                              medical: Math.round(
-                                (config.basePayComponents.medical || 0) * ratio
-                              ),
-                              transport: Math.round(
-                                (config.basePayComponents.transport || 0) *
-                                  ratio
-                              ),
-                            });
-                          } else {
-                            setBasePayComponents({
-                              basic: baseSalaryValue,
-                              houseRent: 0,
-                              medical: 0,
-                              transport: 0,
-                            });
-                          }
+                          setBasePayComponents({
+                            basic: Math.round(
+                              (config.basePayComponents.basic || 0) * ratio
+                            ),
+                            houseRent: Math.round(
+                              (config.basePayComponents.houseRent || 0) * ratio
+                            ),
+                            medical: Math.round(
+                              (config.basePayComponents.medical || 0) * ratio
+                            ),
+                            transport: Math.round(
+                              (config.basePayComponents.transport || 0) * ratio
+                            ),
+                          });
                         } else {
                           setBasePayComponents({
                             basic: baseSalaryValue,
@@ -1818,7 +1818,6 @@ const EmployeeSalaryPage: React.FC = () => {
                           });
                         }
 
-                        // base salary is derived from `basePayComponents`
                         setAllowances(response.salary.allowances || []);
                         setDeductions(response.salary.deductions || []);
                         const effectiveDateObj = dayjs(
@@ -1834,27 +1833,14 @@ const EmployeeSalaryPage: React.FC = () => {
                         setStatus(response.salary.status);
                         setNotes(response.salary.notes || '');
                       } else {
-                        // No salary assigned - use defaults from payroll config
+                        // No salary assigned, use defaults
                         setSelectedSalary(null);
-
-                        if (config && config.basePayComponents) {
-                          setBasePayComponents({
-                            basic: config.basePayComponents.basic || 0,
-                            houseRent: config.basePayComponents.houseRent || 0,
-                            medical: config.basePayComponents.medical || 0,
-                            transport: config.basePayComponents.transport || 0,
-                          });
-                          // total base salary is derived from `basePayComponents`
-                        } else {
-                          setBasePayComponents({
-                            basic: response.defaults.baseSalary || 0,
-                            houseRent: 0,
-                            medical: 0,
-                            transport: 0,
-                          });
-                          // defaults applied to `basePayComponents`
-                        }
-
+                        setBasePayComponents({
+                          basic: config?.basePayComponents?.basic || 0,
+                          houseRent: config?.basePayComponents?.houseRent || 0,
+                          medical: config?.basePayComponents?.medical || 0,
+                          transport: config?.basePayComponents?.transport || 0,
+                        });
                         setAllowances([...response.defaults.allowances]);
                         setDeductions([...response.defaults.deductions]);
                         const effectiveDateObj = dayjs(
@@ -1884,29 +1870,17 @@ const EmployeeSalaryPage: React.FC = () => {
                 placeholder='Select Employee'
                 inputBackgroundColor={darkMode ? '#2d2d2d' : '#fff'}
                 containerSx={{ width: '100%' }}
-                sx={{
-                  '& .MuiSelect-select': {
-                    color: darkMode ? '#fff' : '#000',
-                  },
-                  '& .MuiSelect-icon': {
-                    color: darkMode ? '#fff' : '#000',
-                  },
-                  '& .MuiOutlinedInput-root': {
-                    '& fieldset': {
-                      borderColor: theme.palette.divider,
-                    },
-                  },
-                }}
               />
             )}
 
+            {/* Base Pay Components */}
             <Box>
               <Typography
                 variant='h6'
                 sx={{
                   mb: 2,
                   fontWeight: 600,
-                  color: darkMode ? '#fff' : '#000',
+                  color: theme.palette.text.primary,
                 }}
               >
                 Base Pay Components
@@ -1916,77 +1890,48 @@ const EmployeeSalaryPage: React.FC = () => {
                   display: 'grid',
                   gridTemplateColumns: {
                     xs: '1fr',
-                    sm: 'repeat(2, 1fr)',
-                    md: 'repeat(4, 1fr)',
+                    sm: 'repeat(2,1fr)',
+                    md: 'repeat(4,1fr)',
                   },
                   gap: 2,
                 }}
               >
                 {Object.entries(basePayComponents).map(([key, value]) => (
-                  <TextField
+                  <AppInputField
                     key={key}
-                    fullWidth
                     label={
                       key.charAt(0).toUpperCase() +
                       key.slice(1).replace(/([A-Z])/g, ' $1')
                     }
                     type='number'
-                    inputProps={{ min: 0 }}
                     value={value === 0 ? '' : value}
-                    onChange={e => {
-                      const inputValue = e.target.value;
-                      const numValue =
-                        inputValue === ''
-                          ? ''
-                          : Math.max(0, parseFloat(inputValue) || 0);
-                      setBasePayComponents(prev => ({
-                        ...prev,
-                        [key]: numValue,
-                      }));
-                      // Update total base salary
-                      // Update local base pay components; total computed elsewhere
-                    }}
-                    sx={{
-                      '& .MuiOutlinedInput-root': {
-                        color: darkMode ? '#fff' : '#000',
-                      },
-                      '& .MuiInputLabel-root': {
-                        color: darkMode ? '#8f8f8f' : '#666',
-                      },
-                    }}
+                    onChange={val =>
+                      setBasePayComponents(prev => ({ ...prev, [key]: val }))
+                    }
+                    min={0}
+                    darkMode={darkMode}
                   />
                 ))}
               </Box>
               <Typography
                 variant='caption'
                 sx={{
-                  color: darkMode ? '#8f8f8f' : '#666',
+                  color: theme.palette.text.secondary,
                   mt: 1,
                   display: 'block',
                 }}
               >
                 Total Base Salary:{' '}
                 {formatCurrency(
-                  (typeof basePayComponents.basic === 'string' &&
-                  basePayComponents.basic === ''
-                    ? 0
-                    : basePayComponents.basic || 0) +
-                    (typeof basePayComponents.houseRent === 'string' &&
-                    basePayComponents.houseRent === ''
-                      ? 0
-                      : basePayComponents.houseRent || 0) +
-                    (typeof basePayComponents.medical === 'string' &&
-                    basePayComponents.medical === ''
-                      ? 0
-                      : basePayComponents.medical || 0) +
-                    (typeof basePayComponents.transport === 'string' &&
-                    basePayComponents.transport === ''
-                      ? 0
-                      : basePayComponents.transport || 0)
+                  Object.values(basePayComponents).reduce(
+                    (sum, val) => sum + (val || 0),
+                    0
+                  )
                 )}
               </Typography>
             </Box>
 
+            {/* Allowances */}
             <Box>
               <Box
                 sx={{
@@ -1998,7 +1943,7 @@ const EmployeeSalaryPage: React.FC = () => {
               >
                 <Typography
                   variant='h6'
-                  sx={{ color: darkMode ? '#fff' : '#000' }}
+                  sx={{ color: theme.palette.text.primary }}
                 >
                   Allowances
                 </Typography>
@@ -2021,107 +1966,66 @@ const EmployeeSalaryPage: React.FC = () => {
                   }}
                 >
                   <Box sx={{ display: 'flex', gap: 2, mb: 2 }}>
-                    <TextField
+                    <AppInputField
                       fullWidth
                       label='Type'
                       value={allowance.type}
-                      onChange={e =>
-                        handleUpdateAllowance(index, 'type', e.target.value)
+                      onChange={val =>
+                        handleUpdateAllowance(index, 'type', val)
                       }
-                      size='small'
-                      sx={{
-                        '& .MuiOutlinedInput-root': {
-                          color: darkMode ? '#fff' : '#000',
-                        },
-                        '& .MuiInputLabel-root': {
-                          color: darkMode ? '#8f8f8f' : '#666',
-                        },
-                      }}
+                      darkMode={darkMode}
                     />
-                    <TextField
+                    <AppInputField
                       fullWidth
                       label='Amount'
                       type='number'
-                      inputProps={{ min: 0 }}
                       value={allowance.amount === 0 ? '' : allowance.amount}
-                      onChange={e => {
-                        const value = e.target.value;
-                        const numValue =
-                          value === ''
-                            ? ''
-                            : Math.max(0, parseFloat(value) || 0);
-                        handleUpdateAllowance(index, 'amount', numValue);
-                      }}
-                      size='small'
-                      sx={{
-                        '& .MuiOutlinedInput-root': {
-                          color: darkMode ? '#fff' : '#000',
-                        },
-                        '& .MuiInputLabel-root': {
-                          color: darkMode ? '#8f8f8f' : '#666',
-                        },
-                      }}
+                      onChange={val =>
+                        handleUpdateAllowance(index, 'amount', val)
+                      }
+                      min={0}
+                      darkMode={darkMode}
                     />
-                    <TextField
+                    <AppInputField
                       fullWidth
                       label='Percentage'
                       type='number'
-                      inputProps={{ min: 0 }}
                       value={
                         allowance.percentage === 0 ? '' : allowance.percentage
                       }
-                      onChange={e => {
-                        const value = e.target.value;
-                        const numValue =
-                          value === ''
-                            ? ''
-                            : Math.max(0, parseFloat(value) || 0);
-                        handleUpdateAllowance(index, 'percentage', numValue);
-                      }}
-                      size='small'
-                      sx={{
-                        '& .MuiOutlinedInput-root': {
-                          color: darkMode ? '#fff' : '#000',
-                        },
-                        '& .MuiInputLabel-root': {
-                          color: darkMode ? '#8f8f8f' : '#666',
-                        },
-                      }}
+                      onChange={val =>
+                        handleUpdateAllowance(index, 'percentage', val)
+                      }
+                      min={0}
+                      darkMode={darkMode}
                     />
                     <IconButton
                       onClick={() => handleRemoveAllowance(index)}
                       size='small'
+                      sx={{
+                        color: theme.palette.text.primary,
+                        ':hover': { backgroundColor: 'transparent' },
+                      }}
                     >
                       <CloseIcon />
                     </IconButton>
                   </Box>
-                  <TextField
+                  <AppInputField
                     fullWidth
                     label='Description'
                     value={allowance.description || ''}
-                    onChange={e =>
-                      handleUpdateAllowance(
-                        index,
-                        'description',
-                        e.target.value
-                      )
+                    onChange={val =>
+                      handleUpdateAllowance(index, 'description', val)
                     }
                     multiline
                     rows={2}
-                    size='small'
-                    sx={{
-                      '& .MuiOutlinedInput-root': {
-                        color: darkMode ? '#fff' : '#000',
-                      },
-                      '& .MuiInputLabel-root': {
-                        color: darkMode ? '#8f8f8f' : '#666',
-                      },
-                    }}
+                    darkMode={darkMode}
                   />
                 </Paper>
               ))}
             </Box>
 
+            {/* Deductions */}
             <Box>
               <Box
                 sx={{
@@ -2133,7 +2037,7 @@ const EmployeeSalaryPage: React.FC = () => {
               >
                 <Typography
                   variant='h6'
-                  sx={{ color: darkMode ? '#fff' : '#000' }}
+                  sx={{ color: theme.palette.text.primary }}
                 >
                   Deductions
                 </Typography>
@@ -2156,107 +2060,63 @@ const EmployeeSalaryPage: React.FC = () => {
                   }}
                 >
                   <Box sx={{ display: 'flex', gap: 2, mb: 2 }}>
-                    <TextField
+                    <AppInputField
                       fullWidth
                       label='Type'
                       value={deduction.type}
-                      onChange={e =>
-                        handleUpdateDeduction(index, 'type', e.target.value)
+                      onChange={val =>
+                        handleUpdateDeduction(index, 'type', val)
                       }
-                      size='small'
-                      sx={{
-                        '& .MuiOutlinedInput-root': {
-                          color: darkMode ? '#fff' : '#000',
-                        },
-                        '& .MuiInputLabel-root': {
-                          color: darkMode ? '#8f8f8f' : '#666',
-                        },
-                      }}
+                      darkMode={darkMode}
                     />
-                    <TextField
+                    <AppInputField
                       fullWidth
                       label='Amount'
                       type='number'
-                      inputProps={{ min: 0 }}
                       value={deduction.amount === 0 ? '' : deduction.amount}
-                      onChange={e => {
-                        const value = e.target.value;
-                        const numValue =
-                          value === ''
-                            ? ''
-                            : Math.max(0, parseFloat(value) || 0);
-                        handleUpdateDeduction(index, 'amount', numValue);
-                      }}
-                      size='small'
-                      sx={{
-                        '& .MuiOutlinedInput-root': {
-                          color: darkMode ? '#fff' : '#000',
-                        },
-                        '& .MuiInputLabel-root': {
-                          color: darkMode ? '#8f8f8f' : '#666',
-                        },
-                      }}
+                      onChange={val =>
+                        handleUpdateDeduction(index, 'amount', val)
+                      }
+                      min={0}
+                      darkMode={darkMode}
                     />
-                    <TextField
+                    <AppInputField
                       fullWidth
                       label='Percentage'
                       type='number'
-                      inputProps={{ min: 0 }}
                       value={
                         deduction.percentage === 0 ? '' : deduction.percentage
                       }
-                      onChange={e => {
-                        const value = e.target.value;
-                        const numValue =
-                          value === ''
-                            ? ''
-                            : Math.max(0, parseFloat(value) || 0);
-                        handleUpdateDeduction(index, 'percentage', numValue);
-                      }}
-                      size='small'
-                      sx={{
-                        '& .MuiOutlinedInput-root': {
-                          color: darkMode ? '#fff' : '#000',
-                        },
-                        '& .MuiInputLabel-root': {
-                          color: darkMode ? '#8f8f8f' : '#666',
-                        },
-                      }}
+                      onChange={val =>
+                        handleUpdateDeduction(index, 'percentage', val)
+                      }
+                      min={0}
+                      darkMode={darkMode}
                     />
                     <IconButton
                       onClick={() => handleRemoveDeduction(index)}
                       size='small'
+                      sx={{ color: theme.palette.text.primary, ':hover': { backgroundColor: 'transparent' }, }}
                     >
                       <CloseIcon />
                     </IconButton>
                   </Box>
-                  <TextField
+                  <AppInputField
                     fullWidth
                     label='Description'
                     value={deduction.description || ''}
-                    onChange={e =>
-                      handleUpdateDeduction(
-                        index,
-                        'description',
-                        e.target.value
-                      )
+                    onChange={val =>
+                      handleUpdateDeduction(index, 'description', val)
                     }
                     multiline
                     rows={2}
-                    size='small'
-                    sx={{
-                      '& .MuiOutlinedInput-root': {
-                        color: darkMode ? '#fff' : '#000',
-                      },
-                      '& .MuiInputLabel-root': {
-                        color: darkMode ? '#8f8f8f' : '#666',
-                      },
-                    }}
+                    darkMode={darkMode}
                   />
                 </Paper>
               ))}
             </Box>
 
+            {/* Effective Month & Year */}
             <Box sx={{ display: 'flex', gap: 2 }}>
               <AppDropdown
                 label='Effective Month'
@@ -2268,43 +2128,16 @@ const EmployeeSalaryPage: React.FC = () => {
                   value: option.value,
                   label: option.label,
                 }))}
-                placeholder='Effective Month'
                 inputBackgroundColor={darkMode ? '#2d2d2d' : '#fff'}
                 containerSx={{ width: '100%' }}
-                sx={{
-                  '& .MuiSelect-select': {
-                    color: darkMode ? '#fff' : '#000',
-                  },
-                  '& .MuiSelect-icon': {
-                    color: darkMode ? '#fff' : '#000',
-                  },
-                  '& .MuiOutlinedInput-root': {
-                    '& fieldset': {
-                      borderColor: theme.palette.divider,
-                    },
-                  },
-                }}
               />
-              <TextField
+              <AppInputField
                 label='Effective Year'
                 type='number'
-                inputProps={{ min: 0 }}
                 value={effectiveYear === 0 ? '' : effectiveYear}
-                onChange={e => {
-                  const value = e.target.value;
-                  const numValue =
-                    value === '' ? '' : Math.max(0, Number(value) || 0);
-                  setEffectiveYear(numValue);
-                }}
-                sx={{
-                  width: '100%',
-                  '& .MuiOutlinedInput-root': {
-                    color: darkMode ? '#fff' : '#000',
-                  },
-                  '& .MuiInputLabel-root': {
-                    color: darkMode ? '#8f8f8f' : '#666',
-                  },
-                }}
+                onChange={val => setEffectiveYear(val)}
+                min={0}
+                darkMode={darkMode}
               />
             </Box>
             <Typography
@@ -2313,33 +2146,42 @@ const EmployeeSalaryPage: React.FC = () => {
             >
               Effective date will be set to the 1st of the selected month
             </Typography>
+
+            {/* End Date */}
             <LocalizationProvider dateAdapter={AdapterDayjs}>
               <Box sx={{ mt: 2 }}>
                 <DatePicker
                   label='End Date (Optional)'
                   value={endDate}
                   onChange={(newValue: unknown) => {
-                    if (newValue === null) {
-                      setEndDate(null);
-                    } else if (dayjs.isDayjs(newValue)) {
-                      setEndDate(newValue);
-                    } else {
-                      setEndDate(dayjs(newValue as string | Date));
-                    }
+                    if (newValue === null) setEndDate(null);
+                    else if (dayjs.isDayjs(newValue)) setEndDate(newValue);
+                    else setEndDate(dayjs(newValue as string | Date));
                   }}
-                  sx={{
-                    width: '100%',
-                    '& .MuiOutlinedInput-root': {
-                      color: darkMode ? '#fff' : '#000',
-                    },
-                    '& .MuiInputLabel-root': {
-                      color: darkMode ? '#8f8f8f' : '#666',
+                  slotProps={{
+                    textField: {
+                      sx: {
+                        width: '100%',
+                        '& .MuiOutlinedInput-root': {
+                          color: theme.palette.text.primary,
+                        },
+                        '& .MuiInputLabel-root': {
+                          color: theme.palette.text.secondary,
+                        },
+                        '& .MuiSvgIcon-root': {
+                          color: theme.palette.text.primary,
+                        },
+                        '& fieldset': {
+                          borderColor: darkMode ? '#555' : undefined,
+                        },
+                      },
                     },
                   }}
                 />
               </Box>
             </LocalizationProvider>
 
+            {/* Status */}
             <AppDropdown
               label='Status'
               value={status}
@@ -2350,39 +2192,18 @@ const EmployeeSalaryPage: React.FC = () => {
                 { value: 'active', label: 'Active' },
                 { value: 'inactive', label: 'Inactive' },
               ]}
-              placeholder='Status'
               inputBackgroundColor={darkMode ? '#2d2d2d' : '#fff'}
               containerSx={{ width: '100%' }}
-              sx={{
-                '& .MuiSelect-select': {
-                  color: darkMode ? '#fff' : '#000',
-                },
-                '& .MuiSelect-icon': {
-                  color: darkMode ? '#fff' : '#000',
-                },
-                '& .MuiOutlinedInput-root': {
-                  '& fieldset': {
-                    borderColor: theme.palette.divider,
-                  },
-                },
-              }}
             />
 
-            <TextField
-              fullWidth
+            {/* Notes */}
+            <AppInputField
               label='Notes (Optional)'
               value={notes}
-              onChange={e => setNotes(e.target.value)}
+              onChange={val => setNotes(val)}
               multiline
               rows={3}
-              sx={{
-                '& .MuiOutlinedInput-root': {
-                  color: darkMode ? '#fff' : '#000',
-                },
-                '& .MuiInputLabel-root': {
-                  color: darkMode ? '#8f8f8f' : '#666',
-                },
-              }}
+              darkMode={darkMode}
             />
           </Box>
         </Box>

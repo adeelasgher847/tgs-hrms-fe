@@ -181,10 +181,12 @@ const EmployeeGrowthChart: React.FC = () => {
         borderRadius: '0.375rem',
         backgroundColor: theme.palette.background.paper,
         direction: language === 'ar' ? 'rtl' : 'ltr',
-        height: 400,
+        minHeight: { xs: 'auto', sm: 420 },
+        height: { xs: 'auto', sm: 420 },
         display: 'flex',
         flexDirection: 'column',
         padding: 2,
+        overflow: 'hidden',
       }}
     >
       <Box
@@ -192,10 +194,9 @@ const EmployeeGrowthChart: React.FC = () => {
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: { xs: 'flex-start', sm: 'center' },
-          mb: 2,
           flexDirection: { xs: 'column', sm: 'row' },
           flexWrap: 'wrap',
-          gap: 2,
+          // gap: 1,
         }}
       >
         <Typography
@@ -206,7 +207,7 @@ const EmployeeGrowthChart: React.FC = () => {
           {labels[language]} ({selectedYear})
         </Typography>
 
-        <Box display='flex' gap={2} flexWrap='wrap'>
+        <Box display='flex' gap={1} flexWrap='wrap'>
           <AppDropdown
             label='Tenant'
             value={selectedTenant}
@@ -294,9 +295,24 @@ const EmployeeGrowthChart: React.FC = () => {
         sx={{
           flexGrow: 1,
           alignItems: 'center',
+          minHeight: { xs: 250, sm: 300 },
+          overflow: 'hidden',
+          width: '100%',
+          display: 'flex',
+          justifyContent: 'center',
+          padding: 0,
         }}
       >
-        <Chart options={options} series={series} type='line' height='100%' />
+        <Box
+          sx={{
+            width: '100%',
+            height: { xs: 270, sm: 350 },
+            '& .apexcharts-canvas': { width: '100% !important' },
+            padding: 0,
+          }}
+        >
+          <Chart options={options} series={series} type='line' height={300} />
+        </Box>
       </Box>
     </Box>
   );

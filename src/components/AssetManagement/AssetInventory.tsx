@@ -657,52 +657,59 @@ const AssetInventory: React.FC = () => {
               setFormPurchaseDate(date ? new Date(date.toString()) : null)
             }
             slotProps={{
-              // style the input field icons (calendar icon) to use primary color
               textField: {
                 fullWidth: true,
-                sx: {
-                  '& .MuiSvgIcon-root': {
-                    color: 'var(--primary-dark-color) !important',
+                sx: theme => ({
+                  '& .MuiInputBase-input': {
+                    color: theme.palette.text.primary,
                   },
-                  '& .MuiInputAdornment-root svg': {
-                    color: 'var(--primary-dark-color) !important',
+
+                  '& .MuiInputLabel-root': {
+                    color: theme.palette.text.secondary,
                   },
-                },
+
+                  '& .MuiIconButton-root': {
+                    color:
+                      theme.palette.mode === 'dark'
+                        ? theme.palette.grey[400]
+                        : theme.palette.text.secondary,
+                  },
+
+                  '& .MuiIconButton-root svg': {
+                    color:
+                      theme.palette.mode === 'dark'
+                        ? theme.palette.grey[400]
+                        : theme.palette.text.secondary,
+                  },
+                }),
               },
+
               desktopPaper: {
-                sx: {
-                  // change calendar popup background to match modal style
-                  backgroundColor: '#FFFFFF',
-                },
+                sx: theme => ({
+                  backgroundColor: theme.palette.background.paper,
+                  borderRadius: '12px',
+                }),
               },
+
               popper: {
                 sx: {
-                  // ensure popup inherits modal radius
                   '& .MuiPaper-root': {
                     borderRadius: '12px',
                   },
                 },
               },
-              // style individual days (selected) to use primary dark color
+
               day: {
-                sx: {
-                  // Selected day (clicked)
-                  '&.MuiPickersDay-root.Mui-selected, &.MuiPickersDay-root.Mui-selected:hover':
-                    {
-                      backgroundColor: 'var(--primary-dark-color) !important',
-                      color: '#FFFFFF !important',
-                    },
-                  // Today (current date) when not selected
-                  '&.MuiPickersDay-root.MuiPickersDay-today:not(.Mui-selected)':
-                    {
-                      backgroundColor: 'var(--primary-dark-color) !important',
-                      color: '#FFFFFF !important',
-                    },
-                  // Today outline (in case additional styling needed)
-                  '&.MuiPickersDay-root.MuiPickersDay-today': {
-                    borderColor: 'var(--primary-dark-color) !important',
+                sx: theme => ({
+                  '&.Mui-selected, &.Mui-selected:hover': {
+                    backgroundColor: theme.palette.primary.main,
+                    color: theme.palette.primary.contrastText,
                   },
-                },
+
+                  '&.MuiPickersDay-today:not(.Mui-selected)': {
+                    borderColor: theme.palette.primary.main,
+                  },
+                }),
               },
             }}
           />
@@ -710,6 +717,7 @@ const AssetInventory: React.FC = () => {
       ),
       onChange: () => {},
     },
+
     {
       name: 'assignedTo',
       label: 'Assigned To',
@@ -742,11 +750,11 @@ const AssetInventory: React.FC = () => {
       <Box
         sx={{
           display: 'flex',
+          flexDirection: { xs: 'column', sm: 'row' },
           justifyContent: 'space-between',
-          alignItems: 'center',
+          alignItems: { xs: 'flex-start', sm: 'center' },
           mb: 3,
-          flexWrap: 'wrap',
-          gap: 1,
+          gap: 2,
         }}
       >
         <Typography
@@ -756,7 +764,9 @@ const AssetInventory: React.FC = () => {
         >
           Asset Inventory
         </Typography>
-        <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+        <Box
+          sx={{ display: 'flex', gap: 1, width: { xs: '100%', sm: 'auto' } }}
+        >
           <AppButton
             variant='contained'
             variantType='primary'
@@ -772,7 +782,8 @@ const AssetInventory: React.FC = () => {
               bgcolor: 'var(--primary-dark-color)',
               color: '#FFFFFF',
               boxShadow: 'none',
-              minWidth: { xs: 'auto', sm: 200 },
+              width: { xs: '100%', sm: 'auto' },
+              minWidth: { sm: 200 },
               px: { xs: 1.5, sm: 2 },
               py: { xs: 0.75, sm: 1 },
               '& .MuiButton-startIcon': {
@@ -884,7 +895,7 @@ const AssetInventory: React.FC = () => {
             }}
           >
             <AppDropdown
-              label='Status'
+              showLabel={false}
               size='small'
               fullWidth
               value={filters.status || ''}
@@ -913,7 +924,7 @@ const AssetInventory: React.FC = () => {
             }}
           >
             <AppDropdown
-              label='Category'
+              showLabel={false}
               size='small'
               fullWidth
               value={filters.category || ''}
@@ -943,8 +954,8 @@ const AssetInventory: React.FC = () => {
             }}
           >
             <AppButton
-              variant='contained'
-              variantType='primary'
+              // variant='contained'
+              // variantType='primary'
               startIcon={<FilterIcon />}
               onClick={() => setFilters({})}
               sx={{
@@ -954,8 +965,10 @@ const AssetInventory: React.FC = () => {
                 fontSize: 'var(--body-font-size)',
                 lineHeight: 'var(--body-line-height)',
                 letterSpacing: 'var(--body-letter-spacing)',
-                bgcolor: 'var(--primary-dark-color)',
-                color: '#FFFFFF',
+                // bgcolor: 'var(--primary-dark-color)',
+                backgroundColor: 'transparent',
+                color: 'var(--primary-dark-color)',
+                border: '1px solid var(--primary-dark-color)',
                 boxShadow: 'none',
                 px: { xs: 1, sm: 1.25 },
                 py: { xs: 0.6, sm: 0.8 },

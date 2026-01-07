@@ -248,6 +248,19 @@ const SelectPlan: React.FC = () => {
     }
   }, [plans, loading, selectedPlan]);
 
+  // Compute visible plans: hide any plan that is billed "per employee" or has a $2 price
+  const visiblePlans = plans.filter(p => {
+    const durationStr =
+      typeof p.duration === 'string' ? p.duration.toLowerCase() : '';
+    if (durationStr.includes('employee')) return false;
+    const priceStr =
+      typeof p.price === 'string'
+        ? p.price.replace(/[^0-9.]/g, '')
+        : String(p.price);
+    const priceNum = parseFloat(priceStr) || 0;
+    return priceNum !== 2;
+  });
+
   const handlePlanSelect = (planId: string) => {
     setSelectedPlan(planId);
   };
@@ -512,7 +525,12 @@ const SelectPlan: React.FC = () => {
     >
       {/* Heading */}
       <AppPageTitle
-        sx={{ color: 'var(--text-color)', fontWeight: 700, mb: 1, textAlign: 'center' }}
+        sx={{
+          color: 'var(--text-color)',
+          fontWeight: 700,
+          mb: 1,
+          textAlign: 'center',
+        }}
       >
         Choose Your Plan
       </AppPageTitle>
@@ -541,7 +559,7 @@ const SelectPlan: React.FC = () => {
         spacing={3}
         sx={{ width: '100%', maxWidth: '1300px', mb: 4 }}
       >
-        {plans.map(plan => (
+        {visiblePlans.map(plan => (
           <Paper
             key={plan.id}
             onClick={() => handlePlanSelect(plan.id)}

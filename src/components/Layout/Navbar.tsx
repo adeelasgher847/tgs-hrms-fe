@@ -118,21 +118,21 @@ interface SearchResult {
   path: string;
   category: string;
   type:
-  | 'route'
-  | 'employee'
-  | 'asset'
-  | 'team'
-  | 'department'
-  | 'designation'
-  | 'benefit'
-  | 'leave'
-  | 'policy'
-  | 'holiday'
-  | 'tenant'
-  | 'project'
-  | 'asset-request'
-  | 'attendance'
-  | 'payroll';
+    | 'route'
+    | 'employee'
+    | 'asset'
+    | 'team'
+    | 'department'
+    | 'designation'
+    | 'benefit'
+    | 'leave'
+    | 'policy'
+    | 'holiday'
+    | 'tenant'
+    | 'project'
+    | 'asset-request'
+    | 'attendance'
+    | 'payroll';
   id?: string;
   icon?: React.ReactNode;
   subtitle?: string;
@@ -660,19 +660,11 @@ const Navbar: React.FC<NavbarProps> = ({
     setTeamMembersModalOpen(false);
   };
 
-  // Helper to normalize text for search (tokenize)
-  const normalizeText = (text: string): string[] => {
-    if (!text) return [];
-    return text
-      .toLowerCase()
-      .trim()
-      .split(/[\s_-]+/)
-      .filter(word => word.length > 0);
-  };
+  // (removed unused `normalizeText` helper)
 
   const searchRoutes = React.useCallback(
     (query: string): SearchResult[] => {
-      const queryWords = normalizeText(query);
+      const queryWords = query.toLowerCase().trim().split(/\s+/);
       if (queryWords.length === 0) return [];
 
       const exactQuery = query.toLowerCase().trim();
@@ -738,7 +730,7 @@ const Navbar: React.FC<NavbarProps> = ({
           }
 
           if (queryWords.length > 1) {
-            const labelWords = normalizeText(label);
+            const labelWords = label.split(/\s+/);
             let consecutiveMatches = 0;
             let queryIndex = 0;
             for (
@@ -1025,7 +1017,8 @@ const Navbar: React.FC<NavbarProps> = ({
 
               } else if (isNetAdmin) {
                 if (typeof searchApiService.searchNetworkAdmin === 'function') {
-                  apiResponse = await searchApiService.searchNetworkAdmin(searchParams);
+                  apiResponse =
+                    await searchApiService.searchNetworkAdmin(searchParams);
                 } else {
                   apiResponse = await searchApiService.search(searchParams);
                 }

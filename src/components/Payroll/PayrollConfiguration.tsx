@@ -25,6 +25,8 @@ import AppDropdown from '../common/AppDropdown';
 import type { SelectChangeEvent } from '@mui/material/Select';
 import AppFormModal from '../common/AppFormModal';
 import AppPageTitle from '../common/AppPageTitle';
+import AppButton from '../common/AppButton';
+import AppInputField from '../common/AppInputField';
 
 const PayrollConfiguration: React.FC = () => {
   const theme = useTheme();
@@ -546,7 +548,7 @@ const PayrollConfiguration: React.FC = () => {
             alignItems: 'center',
           }}
         >
-          <AppPageTitle sx={{ color: darkMode ? '#fff' : '#000', mb: 1 }}>
+          <AppPageTitle sx={{ color: theme.palette.text.primary, mb: 1 }}>
             Payroll Configuration
           </AppPageTitle>
           <Button
@@ -567,7 +569,7 @@ const PayrollConfiguration: React.FC = () => {
           sx={{
             p: 4,
             backgroundColor: darkMode ? '#1a1a1a' : '#fff',
-            color: darkMode ? '#fff' : '#000',
+            color: theme.palette.text.primary,
             boxShadow: 'none',
           }}
         >
@@ -588,7 +590,7 @@ const PayrollConfiguration: React.FC = () => {
           cancelLabel='Cancel'
           isSubmitting={saving}
           hasChanges={isFormValid()}
-          maxWidth='md'
+          maxWidth='lg'
           paperSx={{ backgroundColor: darkMode ? '#1e1e1e' : '#fff' }}
         >
           <Box sx={{ pr: 1 }}>
@@ -626,10 +628,10 @@ const PayrollConfiguration: React.FC = () => {
                 inputBackgroundColor={darkMode ? '#2d2d2d' : '#fff'}
                 sx={{
                   '& .MuiSelect-select': {
-                    color: darkMode ? '#fff' : '#000',
+                    color: theme.palette.text.primary,
                   },
                   '& .MuiSelect-icon': {
-                    color: darkMode ? '#fff' : '#000',
+                    color: theme.palette.text.primary,
                   },
                   '& .MuiOutlinedInput-root': {
                     '& fieldset': {
@@ -645,7 +647,7 @@ const PayrollConfiguration: React.FC = () => {
                   sx={{
                     mb: 2,
                     fontWeight: 600,
-                    color: darkMode ? '#fff' : '#000',
+                    color: theme.palette.text.primary,
                   }}
                 >
                   Base Pay Components
@@ -689,7 +691,7 @@ const PayrollConfiguration: React.FC = () => {
                       sx={{
                         '& .MuiOutlinedInput-root': {
                           backgroundColor: darkMode ? '#2d2d2d' : '#fff',
-                          color: darkMode ? '#fff' : '#000',
+                          color: theme.palette.text.primary,
                           '& fieldset': {
                             borderColor: theme.palette.divider,
                           },
@@ -713,7 +715,7 @@ const PayrollConfiguration: React.FC = () => {
                     variant='h6'
                     sx={{
                       fontWeight: 600,
-                      color: darkMode ? '#fff' : '#000',
+                      color: theme.palette.text.primary,
                     }}
                   >
                     Allowances
@@ -726,7 +728,7 @@ const PayrollConfiguration: React.FC = () => {
                     sx={{
                       textTransform: 'none',
                       borderColor: theme.palette.divider,
-                      color: darkMode ? '#fff' : '#000',
+                      color: theme.palette.text.primary,
                     }}
                   >
                     Add Allowance
@@ -767,7 +769,7 @@ const PayrollConfiguration: React.FC = () => {
                           <Typography
                             variant='subtitle2'
                             sx={{
-                              color: darkMode ? '#fff' : '#000',
+                              color: theme.palette.text.primary,
                               fontWeight: 600,
                             }}
                           >
@@ -816,7 +818,7 @@ const PayrollConfiguration: React.FC = () => {
                             sx={{
                               '& .MuiOutlinedInput-root': {
                                 backgroundColor: darkMode ? '#1a1a1a' : '#fff',
-                                color: darkMode ? '#fff' : '#000',
+                                color: theme.palette.text.primary,
                                 '& fieldset': {
                                   borderColor: theme.palette.divider,
                                 },
@@ -845,7 +847,7 @@ const PayrollConfiguration: React.FC = () => {
                             sx={{
                               '& .MuiOutlinedInput-root': {
                                 backgroundColor: darkMode ? '#1a1a1a' : '#fff',
-                                color: darkMode ? '#fff' : '#000',
+                                color: theme.palette.text.primary,
                                 '& fieldset': {
                                   borderColor: theme.palette.divider,
                                 },
@@ -880,7 +882,7 @@ const PayrollConfiguration: React.FC = () => {
                             sx={{
                               '& .MuiOutlinedInput-root': {
                                 backgroundColor: darkMode ? '#1a1a1a' : '#fff',
-                                color: darkMode ? '#fff' : '#000',
+                                color: theme.palette.text.primary,
                                 '& fieldset': {
                                   borderColor: theme.palette.divider,
                                 },
@@ -901,7 +903,7 @@ const PayrollConfiguration: React.FC = () => {
                   sx={{
                     mb: 2,
                     fontWeight: 600,
-                    color: darkMode ? '#fff' : '#000',
+                    color: theme.palette.text.primary,
                   }}
                 >
                   Deductions
@@ -941,7 +943,7 @@ const PayrollConfiguration: React.FC = () => {
                       sx={{
                         '& .MuiOutlinedInput-root': {
                           backgroundColor: darkMode ? '#2d2d2d' : '#fff',
-                          color: darkMode ? '#fff' : '#000',
+                          color: theme.palette.text.primary,
                           '& fieldset': {
                             borderColor: theme.palette.divider,
                           },
@@ -958,7 +960,7 @@ const PayrollConfiguration: React.FC = () => {
                   sx={{
                     mb: 2,
                     fontWeight: 600,
-                    color: darkMode ? '#fff' : '#000',
+                    color: theme.palette.text.primary,
                   }}
                 >
                   Overtime Policy
@@ -983,7 +985,7 @@ const PayrollConfiguration: React.FC = () => {
                       />
                     }
                     label='Enable Overtime'
-                    sx={{ color: darkMode ? '#fff' : '#000' }}
+                    sx={{ color: theme.palette.text.primary }}
                   />
                   {overtimePolicy.enabled && (
                     <Box
@@ -1020,7 +1022,7 @@ const PayrollConfiguration: React.FC = () => {
                         sx={{
                           '& .MuiOutlinedInput-root': {
                             backgroundColor: darkMode ? '#2d2d2d' : '#fff',
-                            color: darkMode ? '#fff' : '#000',
+                            color: theme.palette.text.primary,
                             '& fieldset': {
                               borderColor: theme.palette.divider,
                             },
@@ -1051,7 +1053,7 @@ const PayrollConfiguration: React.FC = () => {
                         sx={{
                           '& .MuiOutlinedInput-root': {
                             backgroundColor: darkMode ? '#2d2d2d' : '#fff',
-                            color: darkMode ? '#fff' : '#000',
+                            color: theme.palette.text.primary,
                             '& fieldset': {
                               borderColor: theme.palette.divider,
                             },
@@ -1069,7 +1071,7 @@ const PayrollConfiguration: React.FC = () => {
                   sx={{
                     mb: 2,
                     fontWeight: 600,
-                    color: darkMode ? '#fff' : '#000',
+                    color: theme.palette.text.primary,
                   }}
                 >
                   Leave Deduction Policy
@@ -1097,7 +1099,7 @@ const PayrollConfiguration: React.FC = () => {
                       />
                     }
                     label='Unpaid Leave Deduction'
-                    sx={{ color: darkMode ? '#fff' : '#000' }}
+                    sx={{ color: theme.palette.text.primary }}
                   />
                   <TextField
                     fullWidth
@@ -1119,7 +1121,7 @@ const PayrollConfiguration: React.FC = () => {
                       maxWidth: 400,
                       '& .MuiOutlinedInput-root': {
                         backgroundColor: darkMode ? '#2d2d2d' : '#fff',
-                        color: darkMode ? '#fff' : '#000',
+                        color: theme.palette.text.primary,
                       },
                     }}
                     InputLabelProps={{
@@ -1158,36 +1160,41 @@ const PayrollConfiguration: React.FC = () => {
         sx={{
           mb: 3,
           display: 'flex',
+          flexDirection: { xs: 'column', sm: 'row' },
           justifyContent: 'space-between',
-          alignItems: 'center',
+          alignItems: 'flex-start',
+          gap: { xs: 2, sm: 0 },
         }}
       >
         <AppPageTitle>Payroll Configuration</AppPageTitle>
-        <Button
+        <AppButton
           onClick={handleOpenEditModal}
-          variant='outlined'
+          variantType='primary'
           startIcon={
             <Box
               component='img'
               src={Icons.edit}
               alt='Edit'
-              sx={{ width: 18, height: 18, color: theme.palette.text.primary }}
+              sx={{
+                width: 18,
+                height: 18,
+                filter: 'brightness(0) invert(1)',
+              }}
             />
           }
           sx={{
-            textTransform: 'none',
             fontWeight: 500,
-            px: 2,
-            py: 1,
-            color: theme.palette.text.primary,
+            width: { xs: '100%', sm: 'auto' },
+            backgroundColor: 'var(--primary-dark-color)',
+            color: 'theme.paletle.text.primary',
             '&:hover': {
-              borderColor: theme.palette.primary.main,
-              backgroundColor: theme.palette.action.hover,
+              backgroundColor: 'var(--primary-dark-color)',
+              opacity: 0.9,
             },
           }}
         >
           Update Configuration
-        </Button>
+        </AppButton>
       </Box>
 
       <Box
@@ -1214,7 +1221,7 @@ const PayrollConfiguration: React.FC = () => {
             sx={{
               mb: 2,
               fontWeight: 600,
-              color: darkMode ? '#fff' : '#000',
+              color: theme.palette.text.primary,
             }}
           >
             Salary Cycle
@@ -1222,7 +1229,7 @@ const PayrollConfiguration: React.FC = () => {
           <Typography
             variant='body1'
             sx={{
-              color: darkMode ? '#fff' : '#000',
+              color: theme.palette.text.primary,
               textTransform: 'capitalize',
               fontSize: '16px',
             }}
@@ -1245,7 +1252,7 @@ const PayrollConfiguration: React.FC = () => {
             sx={{
               mb: 2,
               fontWeight: 600,
-              color: darkMode ? '#fff' : '#000',
+              color: theme.palette.text.primary,
             }}
           >
             Base Pay Components
@@ -1266,7 +1273,7 @@ const PayrollConfiguration: React.FC = () => {
                 <Typography
                   variant='body2'
                   sx={{
-                    color: darkMode ? '#8f8f8f' : '#666',
+                    color: theme.palette.text.secondary,
                     mb: 0.5,
                     fontSize: '12px',
                   }}
@@ -1277,7 +1284,7 @@ const PayrollConfiguration: React.FC = () => {
                 <Typography
                   variant='body1'
                   sx={{
-                    color: darkMode ? '#fff' : '#000',
+                    color: theme.palette.text.primary,
                     fontWeight: 500,
                     fontSize: '16px',
                   }}
@@ -1303,7 +1310,7 @@ const PayrollConfiguration: React.FC = () => {
             sx={{
               mb: 2,
               fontWeight: 600,
-              color: darkMode ? '#fff' : '#000',
+              color: theme.palette.text.primary,
             }}
           >
             Allowances
@@ -1343,7 +1350,7 @@ const PayrollConfiguration: React.FC = () => {
                     <Typography
                       variant='subtitle2'
                       sx={{
-                        color: darkMode ? '#fff' : '#000',
+                        color: theme.palette.text.primary,
                         fontWeight: 600,
                         mb: 1.5,
                       }}
@@ -1357,7 +1364,7 @@ const PayrollConfiguration: React.FC = () => {
                         <Typography
                           variant='body2'
                           sx={{
-                            color: darkMode ? '#8f8f8f' : '#666',
+                            color: theme.palette.text.secondary,
                             mb: 0.5,
                             fontSize: '12px',
                           }}
@@ -1367,7 +1374,7 @@ const PayrollConfiguration: React.FC = () => {
                         <Typography
                           variant='body1'
                           sx={{
-                            color: darkMode ? '#fff' : '#000',
+                            color: theme.palette.text.primary,
                             fontWeight: 500,
                           }}
                         >
@@ -1378,7 +1385,7 @@ const PayrollConfiguration: React.FC = () => {
                         <Typography
                           variant='body2'
                           sx={{
-                            color: darkMode ? '#8f8f8f' : '#666',
+                            color: theme.palette.text.secondary,
                             mb: 0.5,
                             fontSize: '12px',
                           }}
@@ -1388,7 +1395,7 @@ const PayrollConfiguration: React.FC = () => {
                         <Typography
                           variant='body1'
                           sx={{
-                            color: darkMode ? '#fff' : '#000',
+                            color: theme.palette.text.primary,
                             fontWeight: 500,
                           }}
                         >
@@ -1408,7 +1415,7 @@ const PayrollConfiguration: React.FC = () => {
                     sx={{
                       textTransform: 'none',
                       borderColor: theme.palette.divider,
-                      color: darkMode ? '#fff' : '#000',
+                      color: theme.palette.text.primary,
                       '&:hover': {
                         borderColor: theme.palette.primary.main,
                         backgroundColor: theme.palette.action.hover,
@@ -1427,7 +1434,7 @@ const PayrollConfiguration: React.FC = () => {
                     sx={{
                       textTransform: 'none',
                       borderColor: theme.palette.divider,
-                      color: darkMode ? '#fff' : '#000',
+                      color: theme.palette.text.primary,
                       '&:hover': {
                         borderColor: theme.palette.primary.main,
                         backgroundColor: theme.palette.action.hover,
@@ -1443,7 +1450,7 @@ const PayrollConfiguration: React.FC = () => {
             <Typography
               variant='body2'
               sx={{
-                color: darkMode ? '#8f8f8f' : '#666',
+                color: theme.palette.text.secondary,
                 fontStyle: 'italic',
               }}
             >
@@ -1466,7 +1473,7 @@ const PayrollConfiguration: React.FC = () => {
             sx={{
               mb: 2,
               fontWeight: 600,
-              color: darkMode ? '#fff' : '#000',
+              color: theme.palette.text.primary,
             }}
           >
             Deductions
@@ -1483,7 +1490,7 @@ const PayrollConfiguration: React.FC = () => {
                 <Typography
                   variant='body2'
                   sx={{
-                    color: darkMode ? '#8f8f8f' : '#666',
+                    color: theme.palette.text.secondary,
                     mb: 0.5,
                     fontSize: '12px',
                   }}
@@ -1496,7 +1503,7 @@ const PayrollConfiguration: React.FC = () => {
                 <Typography
                   variant='body1'
                   sx={{
-                    color: darkMode ? '#fff' : '#000',
+                    color: theme.palette.text.primary,
                     fontWeight: 500,
                     fontSize: '16px',
                   }}
@@ -1529,7 +1536,7 @@ const PayrollConfiguration: React.FC = () => {
               sx={{
                 mb: 2,
                 fontWeight: 600,
-                color: darkMode ? '#fff' : '#000',
+                color: theme.palette.text.primary,
               }}
             >
               Overtime Policy
@@ -1552,7 +1559,7 @@ const PayrollConfiguration: React.FC = () => {
                   />
                 }
                 label='Enable Overtime'
-                sx={{ color: darkMode ? '#fff' : '#000' }}
+                sx={{ color: theme.palette.text.primary }}
               />
               {config.overtimePolicy.enabled && (
                 <Box
@@ -1566,7 +1573,7 @@ const PayrollConfiguration: React.FC = () => {
                     <Typography
                       variant='body2'
                       sx={{
-                        color: darkMode ? '#8f8f8f' : '#666',
+                        color: theme.palette.text.secondary,
                         mb: 0.5,
                         fontSize: '12px',
                       }}
@@ -1576,7 +1583,7 @@ const PayrollConfiguration: React.FC = () => {
                     <Typography
                       variant='body1'
                       sx={{
-                        color: darkMode ? '#fff' : '#000',
+                        color: theme.palette.text.primary,
                         fontWeight: 500,
                         fontSize: '16px',
                       }}
@@ -1588,7 +1595,7 @@ const PayrollConfiguration: React.FC = () => {
                     <Typography
                       variant='body2'
                       sx={{
-                        color: darkMode ? '#8f8f8f' : '#666',
+                        color: theme.palette.text.secondary,
                         mb: 0.5,
                         fontSize: '12px',
                       }}
@@ -1598,7 +1605,7 @@ const PayrollConfiguration: React.FC = () => {
                     <Typography
                       variant='body1'
                       sx={{
-                        color: darkMode ? '#fff' : '#000',
+                        color: theme.palette.text.primary,
                         fontWeight: 500,
                         fontSize: '16px',
                       }}
@@ -1625,7 +1632,7 @@ const PayrollConfiguration: React.FC = () => {
               sx={{
                 mb: 2,
                 fontWeight: 600,
-                color: darkMode ? '#fff' : '#000',
+                color: theme.palette.text.primary,
               }}
             >
               Leave Deduction Policy
@@ -1648,13 +1655,13 @@ const PayrollConfiguration: React.FC = () => {
                   />
                 }
                 label='Unpaid Leave Deduction'
-                sx={{ color: darkMode ? '#fff' : '#000' }}
+                sx={{ color: theme.palette.text.primary }}
               />
               <Box>
                 <Typography
                   variant='body2'
                   sx={{
-                    color: darkMode ? '#8f8f8f' : '#666',
+                    color: theme.palette.text.secondary,
                     mb: 0.5,
                     fontSize: '12px',
                   }}
@@ -1664,7 +1671,7 @@ const PayrollConfiguration: React.FC = () => {
                 <Typography
                   variant='body1'
                   sx={{
-                    color: darkMode ? '#fff' : '#000',
+                    color: theme.palette.text.primary,
                     fontWeight: 500,
                     fontSize: '16px',
                   }}
@@ -1689,7 +1696,11 @@ const PayrollConfiguration: React.FC = () => {
         isSubmitting={saving}
         hasChanges={isFormValid() && hasChanges()}
         maxWidth='md'
-        paperSx={{ backgroundColor: darkMode ? '#1e1e1e' : '#fff' }}
+        paperSx={{
+          backgroundColor: darkMode ? '#1e1e1e' : '#fff',
+          width: '700px',
+          maxWidth: '90%',
+        }}
       >
         <Box sx={{ pr: 1 }}>
           {error && (
@@ -1702,18 +1713,12 @@ const PayrollConfiguration: React.FC = () => {
             </Alert>
           )}
 
-          <Box
-            sx={{
-              display: 'flex',
-              flexDirection: 'column',
-              gap: 3,
-              marginTop: 2,
-            }}
-          >
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3, mt: 2 }}>
+            {/* Salary Cycle */}
             <AppDropdown
               label='Salary Cycle'
               value={salaryCycle}
-              onChange={(e: SelectChangeEvent<string | number>) =>
+              onChange={e =>
                 setSalaryCycle(
                   e.target.value as 'monthly' | 'weekly' | 'biweekly'
                 )
@@ -1724,32 +1729,14 @@ const PayrollConfiguration: React.FC = () => {
               ]}
               placeholder='Salary Cycle'
               inputBackgroundColor={darkMode ? '#2d2d2d' : '#fff'}
-              sx={{
-                '& .MuiSelect-select': {
-                  color: darkMode ? '#fff' : '#000',
-                },
-                '& .MuiSelect-icon': {
-                  color: darkMode ? '#fff' : '#000',
-                },
-                '& .MuiOutlinedInput-root': {
-                  '& fieldset': {
-                    borderColor: theme.palette.divider,
-                  },
-                },
-              }}
             />
 
+            {/* Base Pay */}
             <Box>
-              <Typography
-                variant='h6'
-                sx={{
-                  mb: 2,
-                  fontWeight: 600,
-                  color: darkMode ? '#fff' : '#000',
-                }}
-              >
+              <Typography variant='h6' sx={{ mb: 2, fontWeight: 600 }}>
                 Base Pay Components
               </Typography>
+
               <Box
                 sx={{
                   display: 'grid',
@@ -1762,9 +1749,8 @@ const PayrollConfiguration: React.FC = () => {
                 }}
               >
                 {Object.entries(basePayComponents).map(([key, value]) => (
-                  <TextField
+                  <AppInputField
                     key={key}
-                    fullWidth
                     label={
                       key.charAt(0).toUpperCase() +
                       key.slice(1).replace(/([A-Z])/g, ' $1')
@@ -1772,33 +1758,19 @@ const PayrollConfiguration: React.FC = () => {
                     type='number'
                     inputProps={{ min: 0 }}
                     value={value}
-                    onChange={e => {
-                      const numValue = Math.max(
-                        0,
-                        parseFloat(e.target.value) || 0
-                      );
+                    onChange={e =>
                       handleBasePayChange(
                         key as keyof typeof basePayComponents,
-                        numValue
-                      );
-                    }}
-                    InputLabelProps={{
-                      sx: { color: darkMode ? '#ccc' : undefined },
-                    }}
-                    sx={{
-                      '& .MuiOutlinedInput-root': {
-                        backgroundColor: darkMode ? '#2d2d2d' : '#fff',
-                        color: darkMode ? '#fff' : '#000',
-                        '& fieldset': {
-                          borderColor: theme.palette.divider,
-                        },
-                      },
-                    }}
+                        Math.max(0, Number(e.target.value) || 0)
+                      )
+                    }
+                    inputBackgroundColor={darkMode ? '#2d2d2d' : '#fff'}
                   />
                 ))}
               </Box>
             </Box>
 
+            {/* Allowances */}
             <Box>
               <Box
                 sx={{
@@ -1808,195 +1780,115 @@ const PayrollConfiguration: React.FC = () => {
                   mb: 2,
                 }}
               >
-                <Typography
-                  variant='h6'
-                  sx={{
-                    fontWeight: 600,
-                    color: darkMode ? '#fff' : '#000',
-                  }}
-                >
+                <Typography variant='h6' sx={{ fontWeight: 600 }}>
                   Allowances
                 </Typography>
+
                 <Button
                   variant='outlined'
                   size='small'
                   startIcon={<AddIcon />}
                   onClick={handleAddAllowance}
-                  sx={{
-                    textTransform: 'none',
-                    borderColor: theme.palette.divider,
-                    color: darkMode ? '#fff' : '#000',
-                  }}
                 >
                   Add Allowance
                 </Button>
               </Box>
-              {allowances.length === 0 ? (
-                <Typography
-                  variant='body2'
+
+              {allowances.map((allowance, index) => (
+                <Box
+                  key={index}
                   sx={{
-                    color: darkMode ? '#8f8f8f' : '#666',
-                    fontStyle: 'italic',
+                    p: 2,
+                    border: '1px solid',
+                    borderColor: 'divider',
+                    borderRadius: 2,
+                    mb: 2,
+                    backgroundColor: darkMode ? '#2d2d2d' : '#f9f9f9',
                   }}
                 >
-                  No allowances added. Click "Add Allowance" to add one.
-                </Typography>
-              ) : (
-                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                  {allowances.map((allowance, index) => (
-                    <Box
-                      key={index}
-                      sx={{
-                        p: 2,
-                        border: `1px solid ${theme.palette.divider}`,
-                        borderRadius: 1,
-                        backgroundColor: darkMode ? '#2d2d2d' : '#f9f9f9',
-                      }}
-                    >
+                  <Box
+                    sx={{
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      mb: 2,
+                    }}
+                  >
+                    <Typography fontWeight={600}>
+                      Allowance {index + 1}
+                    </Typography>
+
+                    <IconButton onClick={() => handleRemoveAllowance(index)}>
                       <Box
+                        component='img'
+                        src={Icons.delete}
+                        alt='Delete'
                         sx={{
-                          display: 'flex',
-                          justifyContent: 'space-between',
-                          alignItems: 'flex-start',
-                          mb: 2,
+                          width: 18,
+                          height: 18,
+                          ':hover': { backgroundColor: 'transparent' },
                         }}
-                      >
-                        <Typography
-                          variant='subtitle2'
-                          sx={{
-                            color: darkMode ? '#fff' : '#000',
-                            fontWeight: 600,
-                          }}
-                        >
-                          Allowance {index + 1}
-                        </Typography>
-                        <IconButton
-                          size='small'
-                          onClick={() => handleRemoveAllowance(index)}
-                          sx={{
-                            color: theme.palette.error.main,
-                          }}
-                        >
-                          <Box
-                            component='img'
-                            src={Icons.delete}
-                            alt='Delete'
-                            sx={{ width: 18, height: 18 }}
-                          />
-                        </IconButton>
-                      </Box>
-                      <Box
-                        sx={{
-                          display: 'grid',
-                          gridTemplateColumns: {
-                            xs: '1fr',
-                            sm: 'repeat(3, 1fr)',
-                          },
-                          gap: 2,
-                        }}
-                      >
-                        <TextField
-                          fullWidth
-                          label='Type'
-                          value={allowance.type}
-                          onChange={e =>
-                            handleAllowanceChange(index, 'type', e.target.value)
-                          }
-                          placeholder='e.g., travel, meal, etc.'
-                          InputLabelProps={{
-                            sx: { color: darkMode ? '#ccc' : undefined },
-                          }}
-                          sx={{
-                            '& .MuiOutlinedInput-root': {
-                              backgroundColor: darkMode ? '#1a1a1a' : '#fff',
-                              color: darkMode ? '#fff' : '#000',
-                              '& fieldset': {
-                                borderColor: theme.palette.divider,
-                              },
-                            },
-                          }}
-                        />
-                        <TextField
-                          fullWidth
-                          label='Amount'
-                          type='number'
-                          inputProps={{ min: 0 }}
-                          value={allowance.amount === 0 ? '' : allowance.amount}
-                          onChange={e => {
-                            const value = e.target.value;
-                            const numValue =
-                              value === ''
-                                ? ''
-                                : Math.max(0, parseFloat(value) || 0);
-                            handleAllowanceChange(index, 'amount', numValue);
-                          }}
-                          InputLabelProps={{
-                            sx: { color: darkMode ? '#ccc' : undefined },
-                          }}
-                          sx={{
-                            '& .MuiOutlinedInput-root': {
-                              backgroundColor: darkMode ? '#1a1a1a' : '#fff',
-                              color: darkMode ? '#fff' : '#000',
-                              '& fieldset': {
-                                borderColor: theme.palette.divider,
-                              },
-                            },
-                          }}
-                        />
-                        <TextField
-                          fullWidth
-                          label='Percentage (%)'
-                          type='number'
-                          inputProps={{ min: 0 }}
-                          value={
-                            allowance.percentage === 0
-                              ? ''
-                              : allowance.percentage
-                          }
-                          onChange={e => {
-                            const value = e.target.value;
-                            const numValue =
-                              value === ''
-                                ? ''
-                                : Math.max(0, parseFloat(value) || 0);
-                            handleAllowanceChange(
-                              index,
-                              'percentage',
-                              numValue
-                            );
-                          }}
-                          InputLabelProps={{
-                            sx: { color: darkMode ? '#ccc' : undefined },
-                          }}
-                          sx={{
-                            '& .MuiOutlinedInput-root': {
-                              backgroundColor: darkMode ? '#1a1a1a' : '#fff',
-                              color: darkMode ? '#fff' : '#000',
-                              '& fieldset': {
-                                borderColor: theme.palette.divider,
-                              },
-                            },
-                          }}
-                        />
-                      </Box>
-                      {/* Description removed from edit modal */}
-                    </Box>
-                  ))}
+                      />
+                    </IconButton>
+                  </Box>
+
+                  <Box
+                    sx={{
+                      display: 'grid',
+                      gridTemplateColumns: { xs: '1fr', sm: 'repeat(3, 1fr)' },
+                      gap: 2,
+                    }}
+                  >
+                    <AppInputField
+                      label='Type'
+                      value={allowance.type}
+                      onChange={e =>
+                        handleAllowanceChange(index, 'type', e.target.value)
+                      }
+                      inputBackgroundColor={darkMode ? '#1a1a1a' : '#fff'}
+                    />
+
+                    <AppInputField
+                      label='Amount'
+                      type='number'
+                      inputProps={{ min: 0 }}
+                      value={allowance.amount === 0 ? '' : allowance.amount}
+                      onChange={e =>
+                        handleAllowanceChange(
+                          index,
+                          'amount',
+                          Math.max(0, Number(e.target.value) || 0)
+                        )
+                      }
+                      inputBackgroundColor={darkMode ? '#1a1a1a' : '#fff'}
+                    />
+
+                    <AppInputField
+                      label='Percentage (%)'
+                      type='number'
+                      inputProps={{ min: 0 }}
+                      value={
+                        allowance.percentage === 0 ? '' : allowance.percentage
+                      }
+                      onChange={e =>
+                        handleAllowanceChange(
+                          index,
+                          'percentage',
+                          Math.max(0, Number(e.target.value) || 0)
+                        )
+                      }
+                      inputBackgroundColor={darkMode ? '#1a1a1a' : '#fff'}
+                    />
+                  </Box>
                 </Box>
-              )}
+              ))}
             </Box>
 
+            {/* Deductions */}
             <Box>
-              <Typography
-                variant='h6'
-                sx={{
-                  mb: 2,
-                  fontWeight: 600,
-                  color: darkMode ? '#fff' : '#000',
-                }}
-              >
+              <Typography variant='h6' sx={{ mb: 2, fontWeight: 600 }}>
                 Deductions
               </Typography>
+
               <Box
                 sx={{
                   display: 'grid',
@@ -2005,214 +1897,51 @@ const PayrollConfiguration: React.FC = () => {
                 }}
               >
                 {Object.entries(deductions).map(([key, value]) => (
-                  <TextField
+                  <AppInputField
                     key={key}
-                    fullWidth
                     label={key
                       .replace(/([A-Z])/g, ' $1')
-                      .replace(/^./, str => str.toUpperCase())
+                      .replace(/^./, s => s.toUpperCase())
                       .replace('Percentage', ' (%)')}
                     type='number'
                     inputProps={{ min: 0 }}
                     value={value === 0 ? '' : value}
-                    onChange={e => {
-                      const inputValue = e.target.value;
-                      const numValue =
-                        inputValue === ''
-                          ? ''
-                          : Math.max(0, parseFloat(inputValue) || 0);
+                    onChange={e =>
                       handleDeductionChange(
                         key as keyof typeof deductions,
-                        numValue
-                      );
-                    }}
-                    InputLabelProps={{
-                      sx: { color: darkMode ? '#ccc' : undefined },
-                    }}
-                    sx={{
-                      '& .MuiOutlinedInput-root': {
-                        backgroundColor: darkMode ? '#2d2d2d' : '#fff',
-                        color: darkMode ? '#fff' : '#000',
-                        '& fieldset': {
-                          borderColor: theme.palette.divider,
-                        },
-                      },
-                    }}
+                        Math.max(0, Number(e.target.value) || 0)
+                      )
+                    }
+                    inputBackgroundColor={darkMode ? '#2d2d2d' : '#fff'}
                   />
                 ))}
               </Box>
             </Box>
 
+            {/* Leave Deduction */}
             <Box>
-              <Typography
-                variant='h6'
-                sx={{
-                  mb: 2,
-                  fontWeight: 600,
-                  color: darkMode ? '#fff' : '#000',
-                }}
-              >
-                Overtime Policy
-              </Typography>
-              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                <FormControlLabel
-                  control={
-                    <Switch
-                      checked={overtimePolicy.enabled}
-                      onChange={e =>
-                        handleOvertimeChange('enabled', e.target.checked)
-                      }
-                      sx={{
-                        '& .MuiSwitch-switchBase.Mui-checked': {
-                          color: theme.palette.primary.main,
-                        },
-                        '& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track':
-                          {
-                            backgroundColor: theme.palette.primary.main,
-                          },
-                      }}
-                    />
-                  }
-                  label='Enable Overtime'
-                  sx={{ color: darkMode ? '#fff' : '#000' }}
-                />
-                {overtimePolicy.enabled && (
-                  <Box
-                    sx={{
-                      display: 'grid',
-                      gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)' },
-                      gap: 2,
-                    }}
-                  >
-                    <TextField
-                      fullWidth
-                      label='Rate Multiplier'
-                      type='number'
-                      inputProps={{ min: 0 }}
-                      value={
-                        overtimePolicy.rateMultiplier === 0
-                          ? ''
-                          : overtimePolicy.rateMultiplier
-                      }
-                      onChange={e => {
-                        const value = e.target.value;
-                        const numValue =
-                          value === ''
-                            ? ''
-                            : Math.max(0, parseFloat(value) || 0);
-                        handleOvertimeChange('rateMultiplier', numValue);
-                      }}
-                      InputLabelProps={{
-                        sx: { color: darkMode ? '#ccc' : undefined },
-                      }}
-                      sx={{
-                        '& .MuiOutlinedInput-root': {
-                          backgroundColor: darkMode ? '#2d2d2d' : '#fff',
-                          color: darkMode ? '#fff' : '#000',
-                          '& fieldset': {
-                            borderColor: theme.palette.divider,
-                          },
-                        },
-                      }}
-                    />
-                    <TextField
-                      fullWidth
-                      label='Max Hours Per Month'
-                      type='number'
-                      inputProps={{ min: 0 }}
-                      value={
-                        overtimePolicy.maxHoursPerMonth === 0
-                          ? ''
-                          : overtimePolicy.maxHoursPerMonth
-                      }
-                      onChange={e => {
-                        const value = e.target.value;
-                        const numValue =
-                          value === '' ? '' : Math.max(0, parseInt(value) || 0);
-                        handleOvertimeChange('maxHoursPerMonth', numValue);
-                      }}
-                      InputLabelProps={{
-                        sx: { color: darkMode ? '#ccc' : undefined },
-                      }}
-                      sx={{
-                        '& .MuiOutlinedInput-root': {
-                          backgroundColor: darkMode ? '#2d2d2d' : '#fff',
-                          color: darkMode ? '#fff' : '#000',
-                          '& fieldset': {
-                            borderColor: theme.palette.divider,
-                          },
-                        },
-                      }}
-                    />
-                  </Box>
-                )}
-              </Box>
-            </Box>
-
-            <Box>
-              <Typography
-                variant='h6'
-                sx={{
-                  mb: 2,
-                  fontWeight: 600,
-                  color: darkMode ? '#fff' : '#000',
-                }}
-              >
+              <Typography variant='h6' sx={{ mb: 2, fontWeight: 600 }}>
                 Leave Deduction Policy
               </Typography>
-              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                <FormControlLabel
-                  control={
-                    <Switch
-                      checked={leaveDeductionPolicy.unpaidLeaveDeduction}
-                      onChange={e =>
-                        handleLeaveDeductionChange(
-                          'unpaidLeaveDeduction',
-                          e.target.checked
-                        )
-                      }
-                      sx={{
-                        '& .MuiSwitch-switchBase.Mui-checked': {
-                          color: theme.palette.primary.main,
-                        },
-                        '& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track':
-                          {
-                            backgroundColor: theme.palette.primary.main,
-                          },
-                      }}
-                    />
-                  }
-                  label='Unpaid Leave Deduction'
-                  sx={{ color: darkMode ? '#fff' : '#000' }}
-                />
-                <TextField
-                  fullWidth
-                  label='Half Day Deduction (%)'
-                  type='number'
-                  inputProps={{ min: 0 }}
-                  value={
-                    leaveDeductionPolicy.halfDayDeduction === 0
-                      ? ''
-                      : leaveDeductionPolicy.halfDayDeduction
-                  }
-                  onChange={e => {
-                    const value = e.target.value;
-                    const numValue =
-                      value === '' ? '' : Math.max(0, parseFloat(value) || 0);
-                    handleLeaveDeductionChange('halfDayDeduction', numValue);
-                  }}
-                  sx={{
-                    maxWidth: 400,
-                    '& .MuiOutlinedInput-root': {
-                      backgroundColor: darkMode ? '#2d2d2d' : '#fff',
-                      color: darkMode ? '#fff' : '#000',
-                    },
-                  }}
-                  InputLabelProps={{
-                    sx: { color: darkMode ? '#ccc' : undefined },
-                  }}
-                />
-              </Box>
+
+              <AppInputField
+                label='Half Day Deduction (%)'
+                type='number'
+                inputProps={{ min: 0 }}
+                value={
+                  leaveDeductionPolicy.halfDayDeduction === 0
+                    ? ''
+                    : leaveDeductionPolicy.halfDayDeduction
+                }
+                onChange={e =>
+                  handleLeaveDeductionChange(
+                    'halfDayDeduction',
+                    Math.max(0, Number(e.target.value) || 0)
+                  )
+                }
+                containerSx={{ maxWidth: 400 }}
+                inputBackgroundColor={darkMode ? '#2d2d2d' : '#fff'}
+              />
             </Box>
           </Box>
         </Box>

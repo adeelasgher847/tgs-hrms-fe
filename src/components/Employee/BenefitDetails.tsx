@@ -196,7 +196,7 @@ const BenefitDetails: React.FC = () => {
                   <IconButton
                     size='small'
                     onClick={() => setSelectedBenefit(b)}
-                    sx={{ color: theme => theme.palette.primary.main }}
+                    sx={{ color: theme => theme.palette.text.primary }}
                     aria-label='View benefit details'
                   >
                     <IoEyeOutline size={20} aria-hidden='true' />
@@ -219,24 +219,34 @@ const BenefitDetails: React.FC = () => {
   return (
     <Box>
       <Box
-        display='flex'
-        justifyContent='space-between'
-        alignItems='center'
-        mb={3}
+        sx={{
+          display: 'flex',
+          flexDirection: { xs: 'column', sm: 'row' },
+          justifyContent: 'space-between',
+          alignItems: { xs: 'flex-start', sm: 'center' },
+          mb: 3,
+        }}
       >
         <Box>
           <AppPageTitle>My Benefits</AppPageTitle>
         </Box>
 
-        {isManager ? (
+        <Box
+          sx={{
+            mt: { xs: 1, sm: 0 },
+            alignSelf: { xs: 'flex-start', sm: 'auto' },
+          }}
+        >
           <Tooltip title='Download My Benefits'>
             <IconButton
               onClick={handleDownload}
               sx={{
                 backgroundColor: '#3083DC',
                 borderRadius: '6px',
-                padding: '6px',
+                padding: { xs: '8px', sm: '6px' },
                 color: 'white',
+                // keep intrinsic width on small screens; align left under heading
+                justifyContent: { xs: 'flex-start', sm: 'center' },
                 '&:hover': {
                   backgroundColor: '#3083DC',
                 },
@@ -246,71 +256,59 @@ const BenefitDetails: React.FC = () => {
               <FileDownloadIcon aria-hidden='true' />
             </IconButton>
           </Tooltip>
-        ) : (
-          <Tooltip title='Download My Benefits'>
-            <IconButton
-              onClick={handleDownload}
-              sx={{
-                backgroundColor: '#3083DC',
-                borderRadius: '6px',
-                padding: '6px',
-                color: 'white',
-                '&:hover': {
-                  backgroundColor: '#3083DC',
-                },
-              }}
-              aria-label='Download My Benefits'
-            >
-              <FileDownloadIcon aria-hidden='true' />
-            </IconButton>
-          </Tooltip>
-        )}
+        </Box>
       </Box>
 
       <Paper
         sx={{
-          p: role === 'employee' ? 0 : 2,
-          borderRadius: role === 'employee' ? 0 : 2,
-          boxShadow: role === 'employee' ? 'none' : undefined,
-          background: role === 'employee' ? 'unset' : undefined,
-          mt: role === 'employee' ? 0 : undefined,
+          p: 0,
+          borderRadius: 0,
+          background: 'transparent',
+          boxShadow: 'none',
         }}
       >
         {loading ? (
-        <Box
-          display='flex'
-          justifyContent='center'
-          alignItems='center'
-          minHeight='200px'
-        >
-          <CircularProgress />
-        </Box>
-      ) : shouldUseAppTable ? (
-        <AppTable>{tableContent}</AppTable>
-      ) : (
-        <Paper sx={{ mt: 2, overflowX: 'auto', boxShadow: 'none' }}>
-          <Table>{tableContent}</Table>
-        </Paper>
-      )}
+          <Box
+            display='flex'
+            justifyContent='center'
+            alignItems='center'
+            minHeight='200px'
+          >
+            <CircularProgress />
+          </Box>
+        ) : shouldUseAppTable ? (
+          <Paper sx={{ overflowX: 'auto', boxShadow: 'none' }}>
+          <AppTable>{tableContent}</AppTable>
+          </Paper>
+        ) : (
+          <Paper sx={{ mt: 2, overflowX: 'auto', boxShadow: 'none' }}>
+            <Table>{tableContent}</Table>
+          </Paper>
+        )}
 
-      {totalPages > 1 && (
-        <Box display='flex' justifyContent='center' alignItems='center' py={2}>
-          <Pagination
-            count={totalPages}
-            page={page}
-            onChange={handlePageChange}
-            color='primary'
-          />
-        </Box>
-      )}
+        {totalPages > 1 && (
+          <Box
+            display='flex'
+            justifyContent='center'
+            alignItems='center'
+            py={2}
+          >
+            <Pagination
+              count={totalPages}
+              page={page}
+              onChange={handlePageChange}
+              color='primary'
+            />
+          </Box>
+        )}
 
-      {totalRecords > 0 && (
-        <Box textAlign='center' my={2}>
-          <Typography variant='body2' color='text.secondary'>
-            Showing page {page} of {totalPages} ({totalRecords} total records)
-          </Typography>
-        </Box>
-      )}
+        {totalRecords > 0 && (
+          <Box textAlign='center' my={2}>
+            <Typography variant='body2' color='text.secondary'>
+              Showing page {page} of {totalPages} ({totalRecords} total records)
+            </Typography>
+          </Box>
+        )}
       </Paper>
 
       <Dialog

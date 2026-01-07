@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Box, Typography, Paper, Alert } from '@mui/material';
+import { Box, Typography, Paper, Alert, useTheme } from '@mui/material';
 import LoginIcon from '@mui/icons-material/Login';
 import LogoutIcon from '@mui/icons-material/Logout';
 import attendanceApi from '../../api/attendanceApi';
@@ -28,6 +28,7 @@ const AttendanceCheck = () => {
   const [isNetworkAdminUser, setIsNetworkAdminUser] = useState(false);
   const [isHRAdminUser, setIsHRAdminUser] = useState(false);
   const [attendanceRefreshToken, setAttendanceRefreshToken] = useState(0);
+  const theme = useTheme();
 
   const getCurrentUserId = () => {
     const userStr = localStorage.getItem('user');
@@ -145,7 +146,7 @@ const AttendanceCheck = () => {
             fontSize={{ xs: '16px', lg: '16px' }}
             lineHeight='24px'
             letterSpacing='-1%'
-            color='#2C2C2C'
+            color={theme.palette.text.secondary}
             sx={{ mt: 1 }}
           >
             {isAdminUser ||
@@ -173,7 +174,8 @@ const AttendanceCheck = () => {
             }
             aria-label={loading ? 'Checking in...' : 'Check in for attendance'}
             sx={{
-              minWidth: { xs: 100, sm: 120, md: 140 },
+              width: { xs: '100%', sm: 'auto' },
+              minWidth: { xs: 'auto', sm: 120, md: 140 },
               height: { xs: 36, sm: 40 },
               fontSize: '1.1rem',
               fontWeight: 600,
@@ -198,7 +200,8 @@ const AttendanceCheck = () => {
               loading ? 'Checking out...' : 'Check out from attendance'
             }
             sx={{
-              minWidth: { xs: 100, sm: 120, md: 140 },
+              width: { xs: '100%', sm: 'auto' },
+              minWidth: { xs: 'auto', sm: 120, md: 140 },
               height: { xs: 36, sm: 40 },
               fontSize: '1.1rem',
               fontWeight: 600,
@@ -237,7 +240,7 @@ const AttendanceCheck = () => {
             fontSize={{ xs: '20px', lg: '28px' }}
             lineHeight='36px'
             letterSpacing='-2%'
-            color='#2C2C2C'
+            color={theme.palette.text.primary}
           >
             Good{' '}
             {new Date().getHours() < 12
@@ -252,7 +255,7 @@ const AttendanceCheck = () => {
             fontSize='20px'
             lineHeight='28px'
             letterSpacing='-1%'
-            color='#2C2C2C'
+            color={theme.palette.text.secondary}
             mb={3}
             sx={{ fontFamily: 'monospace' }}
           >
@@ -286,7 +289,7 @@ const AttendanceCheck = () => {
                   fontSize={{ xs: '14px', lg: '14px' }}
                   lineHeight='20px'
                   letterSpacing='-1%'
-                  color='#2C2C2C'
+                  color={theme.palette.text.secondary}
                 >
                   Check In Time
                 </Typography>
@@ -324,7 +327,7 @@ const AttendanceCheck = () => {
                   fontSize={{ xs: '14px', lg: '14px' }}
                   lineHeight='20px'
                   letterSpacing='-1%'
-                  color='#2C2C2C'
+                  color={theme.palette.text.secondary}
                 >
                   Check Out Time
                 </Typography>

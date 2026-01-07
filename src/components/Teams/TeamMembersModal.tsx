@@ -49,7 +49,6 @@ const TeamMembersModal: React.FC<TeamMembersModalProps> = ({
   open,
   onClose,
   onOpenInviteModal,
-  darkMode = false,
 }) => {
   const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
   const [adminTeamMembers, setAdminTeamMembers] = useState<AdminTeamMember[]>(
@@ -216,12 +215,7 @@ const TeamMembersModal: React.FC<TeamMembersModalProps> = ({
           alignItems: 'center',
           borderBottom: `1px solid ${theme.palette.divider}`,
           pb: 2,
-          '& .MuiTypography-root': {
-            color:
-              theme.palette.mode === 'dark' || darkMode
-                ? '#ffffff'
-                : theme.palette.text.primary,
-          },
+          color: theme.palette.text.primary,
         }}
       >
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
@@ -232,18 +226,13 @@ const TeamMembersModal: React.FC<TeamMembersModalProps> = ({
             component='div'
             sx={{
               fontWeight: 600,
-              color:
-                theme.palette.mode === 'dark' || darkMode
-                  ? '#ffffff'
-                  : theme.palette.text.primary,
+              color: theme.palette.text.primary,
               display: 'flex',
               alignItems: 'center',
               gap: 1,
             }}
           >
-            <Box component='span'>
-              {isAdmin() ? lang.allTeamMembers : lang.title}
-            </Box>
+            {isAdmin() ? lang.allTeamMembers : lang.title}
 
             <Box
               component='span'
@@ -252,7 +241,7 @@ const TeamMembersModal: React.FC<TeamMembersModalProps> = ({
                 py: 0.5,
                 borderRadius: '12px',
                 backgroundColor: 'var(--primary-dark-color)',
-                color: '#ffffff',
+                color: theme.palette.text.primary,
                 fontSize: '0.875rem',
                 fontWeight: 600,
                 display: 'inline-flex',
@@ -260,7 +249,7 @@ const TeamMembersModal: React.FC<TeamMembersModalProps> = ({
                 minWidth: 'fit-content',
               }}
             >
-            {isAdmin()
+              {isAdmin()
                 ? searchTerm
                   ? filteredAdminTeamMembers.length
                   : adminTeamMembers.length

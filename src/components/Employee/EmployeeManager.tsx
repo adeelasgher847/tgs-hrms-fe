@@ -1024,6 +1024,7 @@ const EmployeeManager: React.FC = () => {
         >
           {/* Department Filter */}
           <AppDropdown
+            label={getLabel('Department', 'القسم')}
             showLabel={false}
             placeholder={getLabel('All Departments', 'كل الأقسام')}
             inputBackgroundColor={controlBg}
@@ -1061,6 +1062,7 @@ const EmployeeManager: React.FC = () => {
 
           {/* Designation Filter */}
           <AppDropdown
+            label={getLabel('Designation', 'المسمى الوظيفي')}
             showLabel={false}
             placeholder={getLabel('All Designations', 'كل المسميات')}
             inputBackgroundColor={controlBg}
@@ -1185,7 +1187,7 @@ const EmployeeManager: React.FC = () => {
       </Box>
 
       {/* Employee List */}
-      <Paper elevation={3} sx={{ boxShadow: 'none' }}>
+      <Paper elevation={3} sx={{ boxShadow: 'none', backgroundColor: 'transparent' }}>
         <EmployeeList
           employees={employees}
           onDelete={requestDeleteEmployee}

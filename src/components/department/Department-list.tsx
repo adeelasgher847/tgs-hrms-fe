@@ -468,6 +468,7 @@ export const DepartmentList: React.FC = () => {
                 letterSpacing: 'var(--body-letter-spacing)',
                 boxShadow: 'none',
                 minWidth: { xs: 'auto', sm: 'auto' },
+                width: { xs: '100%', sm: 'auto' },
                 px: { xs: 1.5, sm: 2 },
                 py: { xs: 0.75, sm: 1 },
                 '& .MuiButton-startIcon': {

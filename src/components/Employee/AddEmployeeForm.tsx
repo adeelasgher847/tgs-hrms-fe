@@ -707,14 +707,14 @@ const AddEmployeeForm: React.FC<AddEmployeeFormProps> = ({
                       outline: 'none',
                       padding: '0',
                       margin: '0',
-                      fontSize: '1rem',
+                      fontSize: '0.8rem',
                       fontFamily: '"Roboto", "Helvetica", "Arial", sans-serif',
                       backgroundColor: 'transparent',
                       width: '100%',
                       boxSizing: 'border-box',
                       flex: 1,
                       height: '100%',
-                      color: darkMode ? '#eeeeee' : '#2C2C2C',
+                      color: theme.palette.text.primary,
                     }}
                     countrySelectorStyleProps={{
                       buttonStyle: {
@@ -725,7 +725,7 @@ const AddEmployeeForm: React.FC<AddEmployeeFormProps> = ({
                         cursor: 'pointer',
                         display: 'flex',
                         alignItems: 'center',
-                        color: darkMode ? '#eeeeee' : '#2C2C2C',
+                        color: theme.palette.text.primary,
                       },
                     }}
                     className='phone-input-textfield-adornment'
@@ -880,11 +880,29 @@ const AddEmployeeForm: React.FC<AddEmployeeFormProps> = ({
                   />
                   <label htmlFor='profile-picture-upload'>
                     <AppButton
-                      variant='outlined'
+                      variant='contained'
+                      variantType='primary'
                       component='span'
-                      size='small'
+                      size='medium'
                       text={label('Upload', 'رفع')}
-                      sx={{ textTransform: 'none' }}
+                      sx={{
+                        textTransform: 'none',
+                        borderTopLeftRadius: 0,
+                        borderBottomLeftRadius: 0,
+                        borderTopRightRadius: '12px',
+                        borderBottomRightRadius: '12px',
+                        height: '100%',
+                        boxShadow: 'none',
+                        minWidth: '80px',
+                        color:
+                          theme.palette.mode === 'dark'
+                            ? theme.palette.text.primary
+                            : theme.palette.common.white,
+                        '&:hover': {
+                          backgroundColor: 'primary.main',
+                          boxShadow: 'none',
+                        },
+                      }}
                     />
                   </label>
                 </InputAdornment>
@@ -892,6 +910,16 @@ const AddEmployeeForm: React.FC<AddEmployeeFormProps> = ({
             }}
             placeholder={label('Select profile picture', 'اختر الصورة الشخصية')}
             inputBackgroundColor={controlBg}
+            sx={{
+              '& .MuiOutlinedInput-root': {
+                paddingRight: 0,
+                '& .MuiInputAdornment-positionEnd': {
+                  margin: 0,
+                  height: '100%',
+                  maxHeight: '100%',
+                },
+              },
+            }}
           />
         </Box>
 
@@ -915,11 +943,29 @@ const AddEmployeeForm: React.FC<AddEmployeeFormProps> = ({
                   />
                   <label htmlFor='cnic-front-upload'>
                     <AppButton
-                      variant='outlined'
+                      variant='contained'
+                      variantType='primary'
                       component='span'
-                      size='small'
+                      size='medium'
                       text={label('Upload', 'رفع')}
-                      sx={{ textTransform: 'none' }}
+                      sx={{
+                        textTransform: 'none',
+                        borderTopLeftRadius: 0,
+                        borderBottomLeftRadius: 0,
+                        borderTopRightRadius: '12px',
+                        borderBottomRightRadius: '12px',
+                        height: '100%',
+                        boxShadow: 'none',
+                        minWidth: '80px',
+                        color:
+                          theme.palette.mode === 'dark'
+                            ? theme.palette.text.primary
+                            : theme.palette.common.white,
+                        '&:hover': {
+                          backgroundColor: 'primary.main',
+                          boxShadow: 'none',
+                        },
+                      }}
                     />
                   </label>
                 </InputAdornment>
@@ -930,6 +976,16 @@ const AddEmployeeForm: React.FC<AddEmployeeFormProps> = ({
               'اختر الوجه الأمامي للهوية'
             )}
             inputBackgroundColor={controlBg}
+            sx={{
+              '& .MuiOutlinedInput-root': {
+                paddingRight: 0,
+                '& .MuiInputAdornment-positionEnd': {
+                  margin: 0,
+                  height: '100%',
+                  maxHeight: '100%',
+                },
+              },
+            }}
           />
         </Box>
 
@@ -953,11 +1009,29 @@ const AddEmployeeForm: React.FC<AddEmployeeFormProps> = ({
                   />
                   <label htmlFor='cnic-back-upload'>
                     <AppButton
-                      variant='outlined'
+                      variant='contained'
+                      variantType='primary'
                       component='span'
-                      size='small'
+                      size='medium'
                       text={label('Upload', 'رفع')}
-                      sx={{ textTransform: 'none' }}
+                      sx={{
+                        textTransform: 'none',
+                        borderTopLeftRadius: 0,
+                        borderBottomLeftRadius: 0,
+                        borderTopRightRadius: '12px',
+                        borderBottomRightRadius: '12px',
+                        height: '100%',
+                        boxShadow: 'none',
+                        minWidth: '80px',
+                        color:
+                          theme.palette.mode === 'dark'
+                            ? theme.palette.text.primary
+                            : theme.palette.common.white,
+                        '&:hover': {
+                          backgroundColor: 'primary.main',
+                          boxShadow: 'none',
+                        },
+                      }}
                     />
                   </label>
                 </InputAdornment>
@@ -968,6 +1042,16 @@ const AddEmployeeForm: React.FC<AddEmployeeFormProps> = ({
               'اختر الوجه الخلفي للهوية'
             )}
             inputBackgroundColor={controlBg}
+            sx={{
+              '& .MuiOutlinedInput-root': {
+                paddingRight: 0,
+                '& .MuiInputAdornment-positionEnd': {
+                  margin: 0,
+                  height: '100%',
+                  maxHeight: '100%',
+                },
+              },
+            }}
           />
         </Box>
 
@@ -980,7 +1064,6 @@ const AddEmployeeForm: React.FC<AddEmployeeFormProps> = ({
           initialData?.cnicBackPicture) && (
           <Box flex='1 1 100%' sx={{ mt: 2 }}>
             <Box display='flex' flexWrap='wrap' gap={2} justifyContent='center'>
-              {/* Profile Picture Preview */}
               {(values.profilePicture || initialData?.profilePicture) && (
                 <Box sx={{ textAlign: 'center' }}>
                   <Box
@@ -1025,7 +1108,6 @@ const AddEmployeeForm: React.FC<AddEmployeeFormProps> = ({
                 </Box>
               )}
 
-              {/* CNIC Front Picture Preview */}
               {(values.cnicFrontPicture || initialData?.cnicFrontPicture) && (
                 <Box sx={{ textAlign: 'center' }}>
                   <Box
@@ -1070,7 +1152,6 @@ const AddEmployeeForm: React.FC<AddEmployeeFormProps> = ({
                 </Box>
               )}
 
-              {/* CNIC Back Picture Preview */}
               {(values.cnicBackPicture || initialData?.cnicBackPicture) && (
                 <Box sx={{ textAlign: 'center' }}>
                   <Box
@@ -1125,7 +1206,10 @@ const AddEmployeeForm: React.FC<AddEmployeeFormProps> = ({
               sx={{
                 p: 2,
                 bgcolor: theme.palette.primary.main,
-                color: theme.palette.primary.contrastText,
+                color:
+                  theme.palette.mode === 'dark'
+                    ? theme.palette.text.primary
+                    : theme.palette.common.white,
                 borderRadius: 1,
                 textAlign: 'center',
               }}

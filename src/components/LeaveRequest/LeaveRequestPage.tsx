@@ -24,7 +24,7 @@ import AssignmentIcon from '@mui/icons-material/Assignment';
 import HistoryIcon from '@mui/icons-material/History';
 import ErrorSnackbar from '../common/ErrorSnackbar';
 import { useErrorHandler } from '../../hooks/useErrorHandler';
-
+import employeeApi from '../../api/employeeApi';
 import { PAGINATION } from '../../constants/appConstants';
 
 const ITEMS_PER_PAGE = PAGINATION.DEFAULT_PAGE_SIZE;
@@ -52,6 +52,9 @@ const LeaveRequestPage = () => {
     useState(false);
   const [withdrawDialogOpen, setWithdrawDialogOpen] = useState(false);
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [employees, setEmployees] = useState<
+    { id: string; userId: string; name: string }[]
+  >([]);
 
   // Currently selected leave (used for dialogs like manager response)
   const selectedLeave = selectedId
@@ -246,6 +249,9 @@ const LeaveRequestPage = () => {
             status: (getString(leave.status) as Leave['status']) || 'pending',
             createdAt: leave.createdAt as string | undefined,
             updatedAt: leave.updatedAt as string | undefined,
+            documents: Array.isArray(leave.documents)
+              ? (leave.documents as string[])
+              : [],
           } as Leave;
         });
 
@@ -530,6 +536,22 @@ const LeaveRequestPage = () => {
     }
   }, [currentUserId, role, viewMode]);
 
+  useEffect(() => {
+    if (role === 'admin' || role === 'hr-admin') {
+      employeeApi.getAllEmployeesWithoutPagination().then(res => {
+        setEmployees(
+          res
+            .filter(e => e.user_id)
+            .map(e => ({
+              id: e.id,
+              userId: e.user_id!,
+              name: e.name,
+            }))
+        );
+      });
+    }
+  }, [role]);
+
   if (initialLoading)
     return (
       <Box
@@ -561,6 +583,7 @@ const LeaveRequestPage = () => {
             justifyContent: 'space-between',
             textAlign: { xs: 'start', sm: 'left' },
             gap: { xs: 1, sm: 0 },
+            color: '#fff',
           }}
         >
           <Box>
@@ -574,7 +597,7 @@ const LeaveRequestPage = () => {
             )}
           </Box>
 
-          {['employee', 'manager'].includes(role) && (
+          {['employee', 'manager', 'admin', 'hr-admin'].includes(role) && (
             <Stack
               direction={{ xs: 'column', sm: 'row' }}
               spacing={2}
@@ -631,114 +654,156 @@ const LeaveRequestPage = () => {
       </AppBar>
 
       <Box sx={{ py: 3 }}>
-        {['employee', 'manager'].includes(role) ? (
-          activeTab === 'apply' ? (
-            <LeaveForm onSubmit={handleApply} onError={handleApplyError} />
-          ) : (
-            <>
-              {role === 'manager' && (
-                <Box
+        {activeTab === 'apply' &&
+        ['employee', 'manager', 'admin', 'hr-admin'].includes(role) ? (
+          <LeaveForm
+            onSubmit={async formData => {
+              try {
+                if (role === 'admin' || role === 'hr-admin') {
+                  // formData.employeeId = selected employee's EMPLOYEE id
+                  const employee = employees.find(
+                    e => e.id === formData.employeeId
+                  );
+
+                  if (!employee?.userId) {
+                    showError('Invalid employee selected');
+                    return;
+                  }
+
+                  await leaveApi.createLeaveForEmployee({
+                    employeeId: employee.userId, // ✅ user_id
+                    leaveTypeId: formData.leaveTypeId,
+                    startDate: formData.startDate,
+                    endDate: formData.endDate,
+                    reason: formData.reason,
+                    documents: formData.documents,
+                  });
+                } else {
+                  await leaveApi.createLeave({
+                    leaveTypeId: formData.leaveTypeId,
+                    startDate: formData.startDate,
+                    endDate: formData.endDate,
+                    reason: formData.reason,
+                    documents: formData.documents,
+                  });
+                }
+
+                await handleApply();
+              } catch (err) {
+                handleApplyError(getErrorMessage(err));
+              }
+            }}
+            onError={handleApplyError}
+            employees={
+              role === 'admin' || role === 'hr-admin' ? employees : undefined
+            }
+          />
+        ) : activeTab === 'history' &&
+          ['employee', 'manager'].includes(role) ? (
+          <>
+            {role === 'manager' && (
+              <Box
+                sx={{
+                  mb: 2,
+                  textAlign: { xs: 'left', sm: 'right' },
+                  display: 'flex',
+                  flexWrap: 'wrap',
+                  gap: 1,
+                  justifyContent: { xs: 'flex-start', sm: 'flex-end' },
+                }}
+              >
+                <AppButton
+                  variant={viewMode === 'you' ? 'contained' : 'outlined'}
+                  variantType={viewMode === 'you' ? 'primary' : 'secondary'}
+                  onClick={() => setViewMode('you')}
                   sx={{
-                    mb: 2,
-                    textAlign: { xs: 'left', sm: 'right' },
-                    display: 'flex',
-                    flexWrap: 'wrap',
-                    gap: 1,
-                    justifyContent: { xs: 'flex-start', sm: 'flex-end' },
+                    borderRadius: '20px',
+                    width: { xs: '100%', sm: 'auto' },
+                    backgroundColor:
+                      viewMode === 'you'
+                        ? 'var(--primary-dark-color)'
+                        : 'transparent',
+                    color:
+                      viewMode === 'you' ? '#fff' : 'var(--primary-dark-color)',
+                    borderColor: 'var(--primary-dark-color)',
+                    '&:hover': {
+                      backgroundColor:
+                        viewMode === 'you'
+                          ? 'var(--primary-dark-color)'
+                          : '#eae7f5',
+                    },
                   }}
                 >
-                  <AppButton
-                    variant={viewMode === 'you' ? 'contained' : 'outlined'}
-                    variantType={viewMode === 'you' ? 'primary' : 'secondary'}
-                    onClick={() => setViewMode('you')}
-                    sx={{
-                      borderRadius: '20px',
-                      width: { xs: '100%', sm: 'auto' },
-                      backgroundColor:
-                        viewMode === 'you'
-                          ? 'var(--primary-dark-color)'
-                          : 'transparent',
-                      color:
-                        viewMode === 'you'
-                          ? '#fff'
-                          : 'var(--primary-dark-color)',
-                      borderColor: 'var(--primary-dark-color)',
-                      '&:hover': {
-                        backgroundColor:
-                          viewMode === 'you'
-                            ? 'var(--primary-dark-color)'
-                            : '#eae7f5',
-                      },
-                    }}
-                  >
-                    Your Leaves
-                  </AppButton>
-                  <AppButton
-                    variant={viewMode === 'team' ? 'contained' : 'outlined'}
-                    variantType={viewMode === 'team' ? 'primary' : 'secondary'}
-                    onClick={() => setViewMode('team')}
-                    sx={{
-                      borderRadius: '20px',
-                      width: { xs: '100%', sm: 'auto' },
+                  Your Leaves
+                </AppButton>
+                <AppButton
+                  variant={viewMode === 'team' ? 'contained' : 'outlined'}
+                  variantType={viewMode === 'team' ? 'primary' : 'secondary'}
+                  onClick={() => setViewMode('team')}
+                  sx={{
+                    borderRadius: '20px',
+                    width: { xs: '100%', sm: 'auto' },
+                    backgroundColor:
+                      viewMode === 'team'
+                        ? 'var(--primary-dark-color)'
+                        : 'transparent',
+                    color:
+                      viewMode === 'team'
+                        ? '#fff'
+                        : 'var(--primary-dark-color)',
+                    borderColor: 'var(--primary-dark-color)',
+                    '&:hover': {
                       backgroundColor:
                         viewMode === 'team'
                           ? 'var(--primary-dark-color)'
-                          : 'transparent',
-                      color:
-                        viewMode === 'team'
-                          ? '#fff'
-                          : 'var(--primary-dark-color)',
-                      borderColor: 'var(--primary-dark-color)',
-                      '&:hover': {
-                        backgroundColor:
-                          viewMode === 'team'
-                            ? 'var(--primary-dark-color)'
-                            : '#eae7f5',
-                      },
-                    }}
-                  >
-                    Team Leaves
-                  </AppButton>
-                </Box>
-              )}
+                          : '#eae7f5',
+                    },
+                  }}
+                >
+                  Team Leaves
+                </AppButton>
+              </Box>
+            )}
 
-              <LeaveHistory
-                leaves={leaves}
-                isAdmin={false}
-                isManager={role === 'manager'}
-                currentUserId={currentUserId || undefined}
-                viewMode={viewMode}
-                onManagerAction={
-                  role === 'manager' && viewMode === 'team'
-                    ? handleManagerAction
-                    : undefined
-                }
-                onManagerResponse={
-                  role === 'manager' && viewMode === 'team'
-                    ? handleViewManagerResponse
-                    : undefined
-                }
-                onWithdraw={viewMode === 'you' ? handleWithdraw : undefined}
-                currentPage={currentPage}
-                totalPages={totalPages}
-                totalItems={totalItems}
-                onPageChange={setCurrentPage}
-                isLoading={tableLoading}
-                onExportAll={
-                  ['manager'].includes(role)
-                    ? _fetchAllLeavesForExport
-                    : undefined
-                }
-                userRole={role}
-              />
-            </>
-          )
+            <LeaveHistory
+              leaves={leaves}
+              isAdmin={false}
+              isManager={role === 'manager'}
+              currentUserId={currentUserId || undefined}
+              viewMode={viewMode}
+              onManagerAction={
+                role === 'manager' && viewMode === 'team'
+                  ? handleManagerAction
+                  : undefined
+              }
+              onManagerResponse={
+                role === 'manager' && viewMode === 'team'
+                  ? handleViewManagerResponse
+                  : undefined
+              }
+              onWithdraw={viewMode === 'you' ? handleWithdraw : undefined}
+              currentPage={currentPage}
+              totalPages={totalPages}
+              totalItems={totalItems}
+              onPageChange={setCurrentPage}
+              isLoading={tableLoading}
+              onExportAll={
+                ['manager'].includes(role)
+                  ? _fetchAllLeavesForExport
+                  : undefined
+              }
+              userRole={role}
+              onRefresh={() => loadLeaves({ skipFullPageLoader: true })}
+            />
+          </>
         ) : (
           <LeaveHistory
             leaves={leaves}
             isAdmin={['hr-admin', 'system-admin', 'admin', 'oe-admin'].includes(role)}
             isManager={false}
+            currentUserId={currentUserId || undefined}
             onAction={handleAction}
+            onWithdraw={handleWithdraw}
             dateFilter={dateFilter}
             onDateFilterChange={handleDateFilterChange}
             currentPage={currentPage}
@@ -748,6 +813,7 @@ const LeaveRequestPage = () => {
             isLoading={tableLoading}
             onExportAll={_fetchAllLeavesForExport}
             userRole={role}
+            onRefresh={() => loadLeaves({ skipFullPageLoader: true })}
           />
         )}
       </Box>

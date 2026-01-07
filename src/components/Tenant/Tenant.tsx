@@ -21,7 +21,7 @@ import {
 import type { SelectChangeEvent } from '@mui/material/Select';
 import AddIcon from '@mui/icons-material/Add';
 import RestoreIcon from '@mui/icons-material/Restore';
-import VisibilityIcon from '@mui/icons-material/Visibility';
+
 import CloseIcon from '@mui/icons-material/Close';
 import {
   SystemTenantApi,
@@ -40,6 +40,7 @@ import AppDropdown from '../common/AppDropdown';
 import { Icons } from '../../assets/icons';
 import DeleteConfirmationDialog from '../common/DeleteConfirmationDialog';
 import { PAGINATION } from '../../constants/appConstants';
+import AppPageTitle from '../common/AppPageTitle';
 
 type StatusFilterOption = 'all' | 'active' | 'suspended' | 'deleted';
 
@@ -461,9 +462,7 @@ export const TenantPage: React.FC = () => {
         gap={2}
         mb={3}
       >
-        <Typography variant='h5' fontWeight={700}>
-          Tenant Management
-        </Typography>
+        <AppPageTitle>Tenant Management</AppPageTitle>
 
         <Box display='flex' flexWrap='wrap' gap={2} alignItems='center'>
           <AppDropdown
@@ -565,10 +564,19 @@ export const TenantPage: React.FC = () => {
                     <>
                       <Tooltip title='View Details'>
                         <IconButton
+                          color='primary'
                           onClick={() => handleViewDetails(t)}
                           aria-label={`View details for tenant ${t.name}`}
                         >
-                          <VisibilityIcon aria-hidden='true' />
+                          <Box
+                            component='img'
+                            src={Icons.password}
+                            alt='View'
+                            sx={{
+                              width: { xs: 16, sm: 20 },
+                              height: { xs: 16, sm: 20 },
+                            }}
+                          />
                         </IconButton>
                       </Tooltip>
                       <Tooltip title='Edit Tenant'>
@@ -926,6 +934,7 @@ export const TenantPage: React.FC = () => {
             name: 'name',
             label: 'Tenant Name',
             type: 'text',
+            placeholder: 'Trans Gloal Services',
             required: true,
             value: tenantForm.name,
             onChange: value =>
@@ -1032,6 +1041,7 @@ export const TenantPage: React.FC = () => {
             name: 'adminName',
             label: 'Admin Name',
             type: 'text',
+            placeholder: 'Waleed Ahmed',
             value: tenantForm.adminName,
             onChange: value =>
               setTenantForm(prev => ({ ...prev, adminName: String(value) })),
@@ -1040,6 +1050,7 @@ export const TenantPage: React.FC = () => {
             name: 'adminEmail',
             label: 'Admin Email',
             type: 'text',
+            placeholder: 'waleed@tgs.com',
             value: tenantForm.adminEmail,
             onChange: value =>
               setTenantForm(prev => ({ ...prev, adminEmail: String(value) })),

@@ -51,7 +51,7 @@ const PayrollReports: React.FC = () => {
   const bgColor = effectiveDarkMode
     ? '#121212'
     : theme.palette.background.default;
-  const textColor = effectiveDarkMode ? '#fff' : '#000';
+  const textColor = theme.palette.text.primary;
 
   useEffect(() => {
     const loadInitialData = async () => {
@@ -210,6 +210,22 @@ const PayrollReports: React.FC = () => {
     return {
       chart: { type: 'bar', toolbar: { show: false } },
       plotOptions: { bar: { horizontal: true, borderRadius: 4 } },
+      chart: { type: 'bar', toolbar: { show: false }, offsetX: 0 },
+      grid: { padding: { left: 72, right: 16 } },
+      responsive: [
+        {
+          breakpoint: 900,
+          options: {
+            grid: { padding: { left: 48, right: 12 } },
+          },
+        },
+        {
+          breakpoint: 600,
+          options: {
+            grid: { padding: { left: 24, right: 8 } },
+          },
+        },
+      ],
       yaxis: {
         categories: categories,
         labels: {
@@ -219,7 +235,7 @@ const PayrollReports: React.FC = () => {
             if (val >= 0 && val < categories.length) {
               return categories[Math.floor(val)];
             }
-            return String(val);
+            return val;
           },
         },
       },
@@ -237,15 +253,15 @@ const PayrollReports: React.FC = () => {
         color: textColor,
         '& .MuiButton-contained': {
           backgroundColor: 'var(--primary-dark-color)',
-          '&:hover': { backgroundColor: 'var(--primary-dark-color)' },
+          // '&:hover': { backgroundColor: 'var(--primary-dark-color)' },
         },
         '& .MuiButton-outlined': {
           borderColor: 'var(--primary-dark-color)',
           color: 'var(--primary-dark-color)',
-          '&:hover': {
-            borderColor: 'var(--primary-dark-color)',
-            backgroundColor: 'var(--primary-color)',
-          },
+          // '&:hover': {
+          //   borderColor: 'var(--primary-dark-color)',
+          //   backgroundColor: 'var(--primary-color)',
+          // },
         },
       }}
     >
@@ -334,8 +350,8 @@ const PayrollReports: React.FC = () => {
                   No department data
                 </Alert>
               ) : (
-                <Box sx={{ width: '100%', overflowX: 'auto' }}>
-                  <Box sx={{ minWidth: { xs: 520, sm: 0 } }}>
+                <Box sx={{ width: '100%', overflowX: 'auto', p: 0 }}>
+                  <Box sx={{ minWidth: { xs: 520, sm: 0 }, p: 0 }}>
                     <Chart
                       options={departmentOptions}
                       series={departmentSeries}

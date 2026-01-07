@@ -78,7 +78,7 @@ const PayrollGeneration: React.FC = () => {
     ? '#121212'
     : theme.palette.background.default;
   const cardBg = effectiveDarkMode ? '#1a1a1a' : '#fff';
-  const textColor = effectiveDarkMode ? '#fff' : '#000';
+  const textColor = theme.palette.text.primary;
 
   const totals = useMemo(() => {
     if (!records.length) {
@@ -213,10 +213,10 @@ const PayrollGeneration: React.FC = () => {
             inputBackgroundColor={effectiveDarkMode ? '#1e1e1e' : '#fff'}
             sx={{
               '& .MuiSelect-select': {
-                color: effectiveDarkMode ? '#fff' : '#000',
+                color: theme.palette.text.primary,
               },
               '& .MuiSelect-icon': {
-                color: effectiveDarkMode ? '#fff' : '#000',
+                color: theme.palette.text.primary,
               },
               '& .MuiOutlinedInput-root': {
                 '& fieldset': {

@@ -20,7 +20,9 @@ import {
   Stack,
   Pagination,
   Alert,
+  useTheme,
 } from '@mui/material';
+
 import {
   CheckCircle as ApproveIcon,
   Cancel as RejectIcon,
@@ -172,6 +174,7 @@ const RequestManagement: React.FC = () => {
   const [selectedRequestId, setSelectedRequestId] = useState<string | null>(
     null
   );
+  const theme = useTheme();
 
   // Get status filter based on active tab
   const getStatusFilter = (tabIndex: number): string | undefined => {
@@ -1399,7 +1402,11 @@ const RequestManagement: React.FC = () => {
         onChange: () => {},
         component: (
           <Box sx={{ mb: 1 }}>
-            <Typography fontWeight={600} className='subheading2'>
+            <Typography
+              fontWeight={600}
+              className='subheading2'
+              sx={{ color: 'text.primary' }}
+            >
               Employee Information
             </Typography>
           </Box>
@@ -1439,7 +1446,11 @@ const RequestManagement: React.FC = () => {
         onChange: () => {},
         component: (
           <Box sx={{ mt: 1 }}>
-            <Typography fontWeight={600} className='subheading2'>
+            <Typography
+              fontWeight={600}
+              className='subheading2'
+              sx={{ color: 'text.primary' }}
+            >
               Request Information
             </Typography>
           </Box>
@@ -1470,7 +1481,11 @@ const RequestManagement: React.FC = () => {
         onChange: () => {},
         component: (
           <Box sx={{ mt: 1 }}>
-            <Typography fontWeight={600} className='subheading2'>
+            <Typography
+              fontWeight={600}
+              className='subheading2'
+              sx={{ color: 'text.primary' }}
+            >
               Employee Remarks
             </Typography>
           </Box>
@@ -1496,7 +1511,11 @@ const RequestManagement: React.FC = () => {
         onChange: () => {},
         component: (
           <Box sx={{ mt: 1 }}>
-            <Typography fontWeight={600} className='subheading2'>
+            <Typography
+              fontWeight={600}
+              className='subheading2'
+              sx={{ color: 'text.primary' }}
+            >
               Processing Information
             </Typography>
           </Box>
@@ -1739,6 +1758,7 @@ const RequestManagement: React.FC = () => {
         <IconButton
           onClick={e => handleMenuClick(e, request.id)}
           size='small'
+          sx={{color: theme.palette.text.primary}}
           aria-label={`Actions menu for request ${request.id}`}
           aria-haspopup='true'
           aria-expanded={Boolean(anchorEl) && selectedRequestId === request.id}

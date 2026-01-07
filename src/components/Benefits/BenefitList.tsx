@@ -231,44 +231,50 @@ const BenefitList: React.FC = () => {
         flexWrap='wrap'
         gap={2}
       >
-        <Box display='flex' flexWrap='wrap' gap={2}>
-          <Box sx={{ minWidth: 160, maxWidth: 220 }}>
-            <AppDropdown
-              label='Type'
-              options={[
-                { value: 'all', label: 'All Types' },
-                ...types.map(t => ({ value: t, label: t })),
-              ]}
-              value={filterType}
-              onChange={e => {
-                setFilterType(String(e.target.value || 'all'));
-                setPage(1);
-              }}
-              showLabel
-            />
-          </Box>
+        <Box display='flex' flexWrap='wrap' gap={2} sx={{ width: { xs: '100%', sm: 'auto' } }}>
+          <AppDropdown
+            label='Type'
+            showLabel={false}
+            options={[
+              { value: 'all', label: 'All Types' },
+              ...types.map(t => ({ value: t, label: t })),
+            ]}
+            value={filterType}
+            onChange={e => {
+              setFilterType(String(e.target.value || 'all'));
+              setPage(1);
+            }}
+            containerSx={{
+              minWidth: { xs: '100%', sm: 160 },
+              maxWidth: { xs: '100%', sm: 220 },
+              width: { xs: '100%', sm: 'auto' },
+            }}
+          />
 
-          <Box sx={{ minWidth: 160, maxWidth: 220 }}>
-            <AppDropdown
-              label='Status'
-              options={[
-                { value: 'all', label: 'All Status' },
-                ...statuses.map(s => ({
-                  value: s,
-                  label: s.charAt(0).toUpperCase() + s.slice(1),
-                })),
-              ]}
-              value={filterStatus}
-              onChange={e => {
-                setFilterStatus(String(e.target.value || 'all'));
-                setPage(1);
-              }}
-              showLabel
-            />
-          </Box>
+          <AppDropdown
+            label='Status'
+            showLabel={false}
+            options={[
+              { value: 'all', label: 'All Status' },
+              ...statuses.map(s => ({
+                value: s,
+                label: s.charAt(0).toUpperCase() + s.slice(1),
+              })),
+            ]}
+            value={filterStatus}
+            onChange={e => {
+              setFilterStatus(String(e.target.value || 'all'));
+              setPage(1);
+            }}
+            containerSx={{
+              minWidth: { xs: '100%', sm: 160 },
+              maxWidth: { xs: '100%', sm: 220 },
+              width: { xs: '100%', sm: 'auto' },
+            }}
+          />
         </Box>
 
-        <Box display='flex' gap={1} flexWrap='wrap'>
+        <Box display='flex' gap={1} flexWrap='wrap' sx={{ width: { xs: '100%', sm: 'auto' } }}>
           <AppButton
             variant='contained'
             startIcon={<AddIcon />}
@@ -288,6 +294,7 @@ const BenefitList: React.FC = () => {
               color: '#FFFFFF',
               boxShadow: 'none',
               minWidth: { xs: 'auto', sm: 200 },
+              width: { xs: '100%', sm: 'auto' },
               px: { xs: 1.5, sm: 2 },
               py: { xs: 0.75, sm: 1 },
               '& .MuiButton-startIcon': {
@@ -488,9 +495,8 @@ const BenefitList: React.FC = () => {
       <DeleteConfirmationDialog
         open={deleteDialogOpen}
         title='Delete Benefit'
-        message={`Are you sure you want to delete the benefit "${
-          selectedBenefit?.name || ''
-        }"? This action cannot be undone.`}
+        message={`Are you sure you want to delete the benefit "${selectedBenefit?.name || ''
+          }"? This action cannot be undone.`}
         confirmText='Delete'
         cancelText='Cancel'
         onConfirm={handleConfirmDelete}

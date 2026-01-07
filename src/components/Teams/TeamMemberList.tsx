@@ -18,6 +18,7 @@ import {
   DialogActions,
   TextField,
   InputAdornment,
+  useTheme,
 } from '@mui/material';
 import {
   Person as PersonIcon,
@@ -51,6 +52,7 @@ const TeamMemberList: React.FC<TeamMemberListProps> = ({
   const [showDeleteConfirmDialog, setShowDeleteConfirmDialog] = useState(false);
   const [memberToDelete, setMemberToDelete] = useState<TeamMember | null>(null);
   const { language } = useLanguage();
+  const theme = useTheme();
 
   const labels = {
     en: {
@@ -267,7 +269,7 @@ const TeamMemberList: React.FC<TeamMemberListProps> = ({
           alignItems: 'center',
           justifyContent: 'center',
           py: 4,
-          color: darkMode ? '#ccc' : '#666',
+          color: theme.palette.text.secondary,
         }}
       >
         <PersonIcon sx={{ fontSize: 48, mb: 2, opacity: 0.5 }} />
@@ -288,7 +290,7 @@ const TeamMemberList: React.FC<TeamMemberListProps> = ({
           InputProps={{
             startAdornment: (
               <InputAdornment position='start'>
-                <SearchIcon sx={{ color: darkMode ? '#ccc' : '#666' }} />
+                <SearchIcon sx={{ color: theme.palette.text.secondary }} />
               </InputAdornment>
             ),
           }}
@@ -296,7 +298,7 @@ const TeamMemberList: React.FC<TeamMemberListProps> = ({
             backgroundColor: darkMode ? '#2d2d2d' : '#fff',
             borderRadius: 2,
             '& .MuiOutlinedInput-root': {
-              color: darkMode ? '#fff' : '#000',
+              color: theme.palette.text.primary,
               '& fieldset': {
                 borderColor: darkMode ? '#555' : '#ccc',
               },
@@ -308,7 +310,7 @@ const TeamMemberList: React.FC<TeamMemberListProps> = ({
               },
             },
             '& .MuiInputBase-input::placeholder': {
-              color: darkMode ? '#999' : '#999',
+              color: theme.palette.text.secondary,
               opacity: 1,
             },
           }}
@@ -324,27 +326,27 @@ const TeamMemberList: React.FC<TeamMemberListProps> = ({
         <TableHead>
           <TableRow>
             <TableCell
-              sx={{ color: darkMode ? '#fff' : '#000', fontWeight: 600 }}
+              sx={{ color: theme.palette.text.primary, fontWeight: 600 }}
             >
               {lang.name}
             </TableCell>
             <TableCell
-              sx={{ color: darkMode ? '#fff' : '#000', fontWeight: 600 }}
+              sx={{ color: theme.palette.text.primary, fontWeight: 600 }}
             >
               {lang.email}
             </TableCell>
             <TableCell
-              sx={{ color: darkMode ? '#fff' : '#000', fontWeight: 600 }}
+              sx={{ color: theme.palette.text.primary, fontWeight: 600 }}
             >
               {lang.designation}
             </TableCell>
             <TableCell
-              sx={{ color: darkMode ? '#fff' : '#000', fontWeight: 600 }}
+              sx={{ color: theme.palette.text.primary, fontWeight: 600 }}
             >
               {lang.department}
             </TableCell>
             <TableCell
-              sx={{ color: darkMode ? '#fff' : '#000', fontWeight: 600 }}
+              sx={{ color: theme.palette.text.primary, fontWeight: 600 }}
             >
               {lang.actions}
             </TableCell>
@@ -369,13 +371,13 @@ const TeamMemberList: React.FC<TeamMemberListProps> = ({
                       size={32}
                       sx={{ mr: 2 }}
                     />
-                    <Typography sx={{ color: darkMode ? '#fff' : '#000' }}>
+                    <Typography sx={{ color: theme.palette.text.primary }}>
                       {member.user?.first_name || 'Unknown'}{' '}
                       {member.user?.last_name || 'User'}
                     </Typography>
                   </Box>
                 </TableCell>
-                <TableCell sx={{ color: darkMode ? '#ccc' : '#666' }}>
+                <TableCell sx={{ color: theme.palette.text.secondary }}>
                   {member.user?.email || 'N/A'}
                 </TableCell>
                 <TableCell>
@@ -389,7 +391,7 @@ const TeamMemberList: React.FC<TeamMemberListProps> = ({
                     }}
                   />
                 </TableCell>
-                <TableCell sx={{ color: darkMode ? '#ccc' : '#666' }}>
+                <TableCell sx={{ color: theme.palette.text.secondary }}>
                   {member.designation?.department?.name || 'N/A'}
                 </TableCell>
                 <TableCell>
@@ -424,9 +426,9 @@ const TeamMemberList: React.FC<TeamMemberListProps> = ({
         onRowsPerPageChange={handleChangeRowsPerPage}
         rowsPerPageOptions={[5, 10, 25]}
         sx={{
-          color: darkMode ? '#fff' : '#000',
+          color: theme.palette.text.primary,
           '& .MuiTablePagination-selectIcon': {
-            color: darkMode ? '#fff' : '#000',
+            color: theme.palette.text.primary,
           },
         }}
       />
@@ -439,11 +441,11 @@ const TeamMemberList: React.FC<TeamMemberListProps> = ({
         PaperProps={{
           sx: {
             backgroundColor: darkMode ? '#2d2d2d' : '#fff',
-            color: darkMode ? '#fff' : '#000',
+            color: theme.palette.text.primary,
           },
         }}
       >
-        <DialogTitle sx={{ color: darkMode ? '#fff' : '#000' }}>
+        <DialogTitle sx={{ color: theme.palette.text.primary }}>
           Confirm Remove Member
         </DialogTitle>
         <DialogContent>
@@ -466,27 +468,27 @@ const TeamMemberList: React.FC<TeamMemberListProps> = ({
               >
                 <Typography
                   variant='body2'
-                  sx={{ color: darkMode ? '#ccc' : '#666' }}
+                  sx={{ color: theme.palette.text.secondary }}
                 >
                   <strong>Employee:</strong> {memberToDelete.user?.first_name}{' '}
                   {memberToDelete.user?.last_name}
                 </Typography>
                 <Typography
                   variant='body2'
-                  sx={{ color: darkMode ? '#ccc' : '#666' }}
+                  sx={{ color: theme.palette.text.secondary }}
                 >
                   <strong>Email:</strong> {memberToDelete.user?.email}
                 </Typography>
                 <Typography
                   variant='body2'
-                  sx={{ color: darkMode ? '#ccc' : '#666' }}
+                  sx={{ color: theme.palette.text.secondary }}
                 >
                   <strong>Designation:</strong>{' '}
                   {memberToDelete.designation?.title}
                 </Typography>
                 <Typography
                   variant='body2'
-                  sx={{ color: darkMode ? '#ccc' : '#666' }}
+                  sx={{ color: theme.palette.text.secondary }}
                 >
                   <strong>Department:</strong>{' '}
                   {memberToDelete.designation?.department?.name}

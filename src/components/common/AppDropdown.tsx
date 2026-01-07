@@ -104,7 +104,7 @@ const AppDropdown = React.forwardRef<HTMLDivElement, AppDropdownProps>(
               className={labelClassName}
               sx={{
                 fontWeight: 500,
-                fontSize: 'var(--subheading2-font-size)',
+                fontSize: 'var(--subheading3-font-size)',
                 lineHeight: 'var(--subheading2-line-height)',
                 letterSpacing: 'var(--subheading2-letter-spacing)',
                 color:
@@ -169,6 +169,10 @@ const AppDropdown = React.forwardRef<HTMLDivElement, AppDropdownProps>(
               },
               '& .MuiOutlinedInput-input': {
                 backgroundColor: 'transparent !important',
+                color: theme.palette.text.primary,
+              },
+              '& .MuiOutlinedInput-input.MuiSelect-select': {
+                color: theme.palette.text.primary + ' !important',
               },
               '& .MuiSelect-select': {
                 color: theme.palette.text.primary,
@@ -219,6 +223,7 @@ const AppDropdown = React.forwardRef<HTMLDivElement, AppDropdownProps>(
               },
               '& .MuiSelect-select': {
                 backgroundColor: 'transparent !important',
+                color: theme.palette.text.primary,
               },
             }}
             MenuProps={{
@@ -227,10 +232,6 @@ const AppDropdown = React.forwardRef<HTMLDivElement, AppDropdownProps>(
                   borderRadius: '12px',
                   mt: 1,
                   backgroundColor: theme.palette.background.paper,
-                  boxShadow:
-                    theme.palette.mode === 'dark'
-                      ? '0 4px 6px rgba(0, 0, 0, 0.3)'
-                      : '0 4px 6px rgba(0, 0, 0, 0.1)',
                   '& .MuiMenuItem-root': {
                     fontSize: 'var(--label-font-size)',
                     lineHeight: 'var(--label-line-height)',
@@ -264,6 +265,7 @@ const AppDropdown = React.forwardRef<HTMLDivElement, AppDropdownProps>(
                 key={option.value}
                 value={option.value === 'all' ? '' : option.value}
                 sx={{
+                  color: theme.palette.text.primary,
                   backgroundColor: 'transparent !important',
                   '&.Mui-selected': {
                     backgroundColor: 'transparent !important',

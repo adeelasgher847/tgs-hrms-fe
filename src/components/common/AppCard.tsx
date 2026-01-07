@@ -1,27 +1,40 @@
-import { Card, type CardProps, type SxProps, type Theme } from '@mui/material';
+import {
+  Card,
+  type CardProps,
+  type SxProps,
+  type Theme,
+  useTheme,
+} from '@mui/material';
 
 interface AppCardProps extends CardProps {
   compact?: boolean;
+  padding?: number | string;
 }
 
 export function AppCard({
   compact = false,
   sx,
-  pading,
+  padding,
   ...rest
 }: AppCardProps) {
+  const theme = useTheme(); // access current theme (light/dark)
+
   const baseSx: SxProps<Theme> = compact
     ? {
-        padding: pading !== undefined ? pading : 1,
-        boxShadow: '0 1px 3px rgba(16,24,40,0.04)',
+        padding: padding !== undefined ? padding : 1,
+        boxShadow:
+          theme.palette.mode === 'dark'
+            ? '0 1px 3px rgba(255,255,255,0.05)'
+            : '0 1px 3px rgba(16,24,40,0.04)',
         borderRadius: 2,
-        bgcolor: 'background.paper',
+        bgcolor: theme.palette.background.paper,
+        color: theme.palette.text.primary,
       }
     : {
-        padding: pading !== undefined ? pading : 2,
-        boxShadow: '0 6px 18px rgba(16,24,40,0.06)',
+        padding: padding !== undefined ? padding : 2,
         borderRadius: 2,
-        bgcolor: 'background.paper',
+        bgcolor: theme.palette.background.paper,
+        color: theme.palette.text.primary,
       };
 
   const combinedSx: SxProps<Theme> = sx
