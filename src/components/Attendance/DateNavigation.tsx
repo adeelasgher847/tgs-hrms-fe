@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Box, IconButton, Typography, Paper } from '@mui/material';
+import { Box, IconButton, Typography, Paper, useTheme } from '@mui/material';
 import { ChevronLeft, ChevronRight } from '@mui/icons-material';
 
 interface DateNavigationProps {
@@ -15,6 +15,7 @@ const DateNavigation: React.FC<DateNavigationProps> = ({
 }) => {
   // State to track the center date of the sequence
   const [sequenceCenter, setSequenceCenter] = useState<Date>(new Date());
+  const theme = useTheme();
   // Get a date sequence centered around the sequenceCenter state
   const getDateSequence = () => {
     const dates = [];
@@ -145,6 +146,7 @@ const DateNavigation: React.FC<DateNavigationProps> = ({
           borderRadius: '8px',
           width: 40,
           height: 40,
+          color: theme.palette.text.primary,
         }}
       >
         <ChevronLeft />
@@ -214,6 +216,7 @@ const DateNavigation: React.FC<DateNavigationProps> = ({
           borderRadius: '8px',
           width: 40,
           height: 40,
+          color: theme.palette.text.primary,
         }}
       >
         <ChevronRight />

@@ -118,21 +118,21 @@ interface SearchResult {
   path: string;
   category: string;
   type:
-    | 'route'
-    | 'employee'
-    | 'asset'
-    | 'team'
-    | 'department'
-    | 'designation'
-    | 'benefit'
-    | 'leave'
-    | 'policy'
-    | 'holiday'
-    | 'tenant'
-    | 'project'
-    | 'asset-request'
-    | 'attendance'
-    | 'payroll';
+  | 'route'
+  | 'employee'
+  | 'asset'
+  | 'team'
+  | 'department'
+  | 'designation'
+  | 'benefit'
+  | 'leave'
+  | 'policy'
+  | 'holiday'
+  | 'tenant'
+  | 'project'
+  | 'asset-request'
+  | 'attendance'
+  | 'payroll';
   id?: string;
   icon?: React.ReactNode;
   subtitle?: string;
@@ -726,7 +726,7 @@ const Navbar: React.FC<NavbarProps> = ({
           } else if (label.includes(exactQuery)) {
             score += 25; // Big bonus for exact label match
           } else if (label.startsWith(exactQuery)) {
-            score += 20; 
+            score += 20;
           }
 
           if (queryWords.length > 1) {
@@ -1159,6 +1159,8 @@ const Navbar: React.FC<NavbarProps> = ({
     canSearchLeaves,
     canSearchTenants,
     currentUserRole,
+    user?.id,
+    user?.email,
   ]);
 
   const handleSearchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -1351,7 +1353,7 @@ const Navbar: React.FC<NavbarProps> = ({
       cacheRef.policies = null;
       cacheRef.tenants = null;
     };
-  }, []);
+  }, [CACHE_DURATION]);
 
   return (
     <Box
@@ -1541,14 +1543,14 @@ const Navbar: React.FC<NavbarProps> = ({
                               cursor: 'pointer',
                               touchAction: 'manipulation',
                               WebkitTapHighlightColor: 'transparent',
-                              
+
                               '&:active': {
                                 backgroundColor: 'var(--primary-dark-color)',
                               },
                               '&.Mui-selected': {
                                 backgroundColor: 'var(--primary-dark-color)',
                                 color: '#ffffff',
-                                
+
                               },
                             }}
                           >

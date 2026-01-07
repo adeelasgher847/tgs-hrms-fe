@@ -1,4 +1,4 @@
-import React, { useState, useEffect, use } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Box,
   Typography,
@@ -251,10 +251,10 @@ const MyTeams: React.FC<MyTeamsProps> = ({ teams, darkMode = false }) => {
                   icon={<PersonIcon />}
                   sx={{
                     backgroundColor: '#3083DC',
-                    color: theme.palette.text.primary,
+                    color: theme.palette.common.white,
                     fontSize: '0.75rem',
                     '& .MuiChip-icon': {
-                      color: theme.palette.text.primary,
+                      color: theme.palette.common.white,
                     },
                   }}
                 />

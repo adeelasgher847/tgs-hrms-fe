@@ -153,7 +153,7 @@ const EmployeeViewModal: React.FC<EmployeeViewModalProps> = ({
         <IconButton
           onClick={onClose}
           aria-label='Close employee details dialog'
-          sx={{ color: darkMode ? '#ccc' : theme.palette.grey[500] }}
+          sx={{ color: theme.palette.text.primary }}
         >
           <CloseIcon aria-hidden='true' />
         </IconButton>

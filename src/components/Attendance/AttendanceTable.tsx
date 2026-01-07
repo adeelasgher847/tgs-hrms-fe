@@ -1512,7 +1512,7 @@ const AttendanceTable = () => {
                 display: 'flex',
                 flexDirection: { xs: 'column', sm: 'row' },
                 gap: 2,
-                alignItems: { xs: 'stretch', sm: 'center' },
+                alignItems: { xs: 'stretch', sm: 'flex-end' },
                 justifyContent: 'space-between',
               }}
             >
@@ -1523,6 +1523,7 @@ const AttendanceTable = () => {
                   gap: 2,
                   alignItems: { xs: 'stretch', sm: 'center' },
                   flex: 1,
+                  flexWrap: 'wrap',
                 }}
               >
                 {canViewAllAttendance && (
@@ -1621,9 +1622,7 @@ const AttendanceTable = () => {
                 {adminView === 'all' && isSystemAdminUser && (
                   <>
                     <AppDropdown
-                      label=''
                       showLabel={false}
-                      placeholder='SELECT TENANT'
                       value={selectedTenant || ''}
                       onChange={(e: SelectChangeEvent<string | number>) =>
                         handleTenantChange(e.target.value as string)
@@ -1635,6 +1634,7 @@ const AttendanceTable = () => {
                           label: tenant.name,
                         })),
                       ]}
+                      placeholder='SELECT TENANT'
                       disabled={tenantsLoading}
                       containerSx={{
                         minWidth: { xs: '100%', sm: 220 },
@@ -1642,7 +1642,6 @@ const AttendanceTable = () => {
                       }}
                     />
                     <AppDropdown
-                      label=''
                       showLabel={false}
                       value={selectedEmployee || ''}
                       onChange={(e: SelectChangeEvent<string | number>) =>
@@ -1769,7 +1768,7 @@ const AttendanceTable = () => {
                   gap: 1,
                   alignItems: 'center',
                   width: { xs: '100%', sm: 'auto' },
-                  justifyContent: 'flex-start',
+                  justifyContent: { xs: 'flex-start', sm: 'flex-end' },
                 }}
               >
                 {/* Single CSV export button - behavior changes based on view and role */}

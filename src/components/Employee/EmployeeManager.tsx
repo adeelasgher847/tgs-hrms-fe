@@ -278,14 +278,34 @@ const EmployeeManager: React.FC = () => {
     role_name: 'Employee', // Default
     status: 'Active', // Default or fetch if available
     profile_picture: member.user.profile_pic || undefined,
-    department: member.department || member.designation.department || {
-      id: '',
-      name: 'Unknown',
-      description: '',
-      tenantId: '',
-      createdAt: '',
-      updatedAt: '',
-    },
+    department: member.department
+      ? {
+        id: member.department.id,
+        name: member.department.name,
+        description: '',
+        tenantId: '',
+        createdAt: '',
+        updatedAt: '',
+        ...member.department,
+      }
+      : member.designation.department
+        ? {
+          id: member.designation.department.id,
+          name: member.designation.department.name,
+          description: '',
+          tenantId: '',
+          createdAt: '',
+          updatedAt: '',
+          ...member.designation.department,
+        }
+        : {
+          id: '',
+          name: 'Unknown',
+          description: '',
+          tenantId: '',
+          createdAt: '',
+          updatedAt: '',
+        },
     designation: {
       id: member.designation.id,
       title: member.designation.title,
@@ -312,7 +332,8 @@ const EmployeeManager: React.FC = () => {
 
       // Check current user role
       // Note: user object might trigger re-renders, but ref/checking inside callback is safer
-      const currentUserRole = user?.role || (user as any)?.role_name;
+      const currentUserRole =
+        user?.role || (user as { role_name?: string })?.role_name;
 
       if (isManager(currentUserRole)) {
         // Fetch manager's team members
