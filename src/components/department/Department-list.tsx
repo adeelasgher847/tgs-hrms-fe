@@ -483,7 +483,7 @@ export const DepartmentList: React.FC = () => {
                 component='span'
                 sx={{
                   display: { xs: 'none', sm: 'inline' },
-                  fontSize: { xs: '8px', lg: '16px' },
+                  fontSize: { xs: '16px', lg: '16px' },
                 }}
               >
                 {lang.create}
