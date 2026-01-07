@@ -89,6 +89,12 @@ interface OutletContext {
   language: 'en' | 'ar';
 }
 
+import { useUser } from '../../hooks/useUser';
+import { isManager } from '../../utils/roleUtils';
+import { teamApiService, type TeamMember } from '../../api/teamApi';
+
+// ... existing imports
+
 const EmployeeManager: React.FC = () => {
   const theme = useTheme();
   const direction = theme.direction;
@@ -96,6 +102,7 @@ const EmployeeManager: React.FC = () => {
   const { darkMode } = useOutletContext<OutletContext>();
   const location = useLocation();
   const navigate = useNavigate();
+  const { user } = useUser(); // Get user context
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<null | Employee>(null);
   const [allEmployees, setAllEmployees] = useState<Employee[]>([]); // Store all employees
@@ -258,6 +265,40 @@ const EmployeeManager: React.FC = () => {
     updatedAt: emp.updatedAt,
   });
 
+  const convertTeamMemberToEmployee = (member: TeamMember): Employee => ({
+    id: member.id,
+    user_id: member.user.id,
+    name: `${member.user.first_name || ''} ${member.user.last_name || ''}`.trim(),
+    firstName: member.user.first_name,
+    lastName: member.user.last_name,
+    email: member.user.email,
+    phone: '', // Not available in TeamMember
+    departmentId: member.department?.id || member.designation.department?.id || '',
+    designationId: member.designation.id,
+    role_name: 'Employee', // Default
+    status: 'Active', // Default or fetch if available
+    profile_picture: member.user.profile_pic || undefined,
+    department: member.department || member.designation.department || {
+      id: '',
+      name: 'Unknown',
+      description: '',
+      tenantId: '',
+      createdAt: '',
+      updatedAt: '',
+    },
+    designation: {
+      id: member.designation.id,
+      title: member.designation.title,
+      tenantId: '', // Not available
+      departmentId: member.department?.id || '',
+      createdAt: '',
+      updatedAt: '',
+    },
+    tenantId: '', // Not available
+    createdAt: member.created_at || new Date().toISOString(),
+    updatedAt: member.updated_at || new Date().toISOString(),
+  });
+
   // Fetch all employees from all pages
   const loadEmployees = useCallback(async () => {
     // Prevent duplicate calls
@@ -269,46 +310,75 @@ const EmployeeManager: React.FC = () => {
       isLoadingRef.current = true;
       setLoading(true);
 
-      const filters = {
-        departmentId: departmentFilter || undefined,
-        designationId: designationFilter || undefined,
-      };
+      // Check current user role
+      // Note: user object might trigger re-renders, but ref/checking inside callback is safer
+      const currentUserRole = user?.role || (user as any)?.role_name;
 
-      // Fetch all pages sequentially
-      const allEmployeesData: Employee[] = [];
-      let page = 1;
-      let hasMorePages = true;
-      let backendLimit = 25; // Default limit
+      if (isManager(currentUserRole)) {
+        // Fetch manager's team members
+        const allMembers: TeamMember[] = [];
+        let page = 1;
+        let hasMore = true;
 
-      while (hasMorePages) {
-        const response = await employeeApi.getAllEmployees(filters, page);
-
-        // Extract limit from first page response
-        if (page === 1 && response.limit) {
-          backendLimit = response.limit;
-          setPaginationLimit(backendLimit);
+        while (hasMore) {
+          const res = await teamApiService.getMyTeamMembers(page);
+          if (res.items && res.items.length > 0) {
+            allMembers.push(...res.items);
+            if (page >= res.totalPages) hasMore = false;
+            else page++;
+          } else {
+            hasMore = false;
+          }
         }
 
-        // Convert and add employees
-        const convertedEmployees: Employee[] =
-          response.items.map(convertToEmployee);
-        allEmployeesData.push(...convertedEmployees);
+        const mappedEmployees = allMembers.map(convertTeamMemberToEmployee);
+        setAllEmployees(mappedEmployees);
+        setPaginationLimit(mappedEmployees.length > 0 ? mappedEmployees.length : 25);
+        setCurrentPage(1);
 
-        // Check if there are more pages
-        if (response.totalPages) {
-          // Use backend pagination info
-          hasMorePages = page < response.totalPages;
-          page++;
-        } else {
-          // Estimate: if we got less than backend limit, it's the last page
-          hasMorePages = convertedEmployees.length >= backendLimit;
-          page++;
+      } else {
+        // Admin/HR Admin logic - fetch full list
+        const filters = {
+          departmentId: departmentFilter || undefined,
+          designationId: designationFilter || undefined,
+        };
+
+        // Fetch all pages sequentially
+        const allEmployeesData: Employee[] = [];
+        let page = 1;
+        let hasMorePages = true;
+        let backendLimit = 25; // Default limit
+
+        while (hasMorePages) {
+          const response = await employeeApi.getAllEmployees(filters, page);
+
+          // Extract limit from first page response
+          if (page === 1 && response.limit) {
+            backendLimit = response.limit;
+            setPaginationLimit(backendLimit);
+          }
+
+          // Convert and add employees
+          const convertedEmployees: Employee[] =
+            response.items.map(convertToEmployee);
+          allEmployeesData.push(...convertedEmployees);
+
+          // Check if there are more pages
+          if (response.totalPages) {
+            // Use backend pagination info
+            hasMorePages = page < response.totalPages;
+            page++;
+          } else {
+            // Estimate: if we got less than backend limit, it's the last page
+            hasMorePages = convertedEmployees.length >= backendLimit;
+            page++;
+          }
         }
+
+        setAllEmployees(allEmployeesData);
+        // Reset to page 1 when data is loaded
+        setCurrentPage(1);
       }
-
-      setAllEmployees(allEmployeesData);
-      // Reset to page 1 when data is loaded
-      setCurrentPage(1);
     } catch (error: unknown) {
       const errorResult = extractErrorMessage(error);
       showError(errorResult.message);
@@ -317,7 +387,7 @@ const EmployeeManager: React.FC = () => {
       setLoading(false);
       isLoadingRef.current = false;
     }
-  }, [departmentFilter, designationFilter, showError]);
+  }, [departmentFilter, designationFilter, showError, user]);
 
   // Mark initial mount as complete after first render
   useEffect(() => {
@@ -404,23 +474,23 @@ const EmployeeManager: React.FC = () => {
         cnic_back_picture: completeEmployee.cnic_back_picture,
         department: completeEmployee.department
           ? {
-              id: completeEmployee.department.id,
-              name: completeEmployee.department.name,
-              description: completeEmployee.department.description,
-              tenantId: completeEmployee.department.tenantId,
-              createdAt: completeEmployee.department.createdAt,
-              updatedAt: completeEmployee.department.updatedAt,
-            }
+            id: completeEmployee.department.id,
+            name: completeEmployee.department.name,
+            description: completeEmployee.department.description,
+            tenantId: completeEmployee.department.tenantId,
+            createdAt: completeEmployee.department.createdAt,
+            updatedAt: completeEmployee.department.updatedAt,
+          }
           : {
-              id: completeEmployee.departmentId,
-              name:
-                departments[completeEmployee.departmentId] ||
-                'Unknown Department',
-              description: '',
-              tenantId: completeEmployee.tenantId,
-              createdAt: completeEmployee.createdAt,
-              updatedAt: completeEmployee.updatedAt,
-            },
+            id: completeEmployee.departmentId,
+            name:
+              departments[completeEmployee.departmentId] ||
+              'Unknown Department',
+            description: '',
+            tenantId: completeEmployee.tenantId,
+            createdAt: completeEmployee.createdAt,
+            updatedAt: completeEmployee.updatedAt,
+          },
         designation: completeEmployee.designation || {
           id: completeEmployee.designationId,
           title:
@@ -461,25 +531,25 @@ const EmployeeManager: React.FC = () => {
       const requiresPayment =
         Boolean(
           data &&
-            (data.requiresPayment === true || data.requires_payment === true)
+          (data.requiresPayment === true || data.requires_payment === true)
         ) || false;
       const checkoutUrl =
         typeof (data as Record<string, unknown> | null)?.checkoutUrl ===
-        'string'
+          'string'
           ? ((data as Record<string, unknown>).checkoutUrl as string)
           : typeof (data as Record<string, unknown> | null)?.checkout_url ===
-              'string'
+            'string'
             ? ((data as Record<string, unknown>).checkout_url as string)
             : null;
       const checkoutSessionId =
         typeof (data as Record<string, unknown> | null)?.checkoutSessionId ===
-        'string'
+          'string'
           ? ((data as Record<string, unknown>).checkoutSessionId as string)
           : typeof (data as Record<string, unknown> | null)
-                ?.checkout_session_id === 'string'
+            ?.checkout_session_id === 'string'
             ? ((data as Record<string, unknown>).checkout_session_id as string)
             : typeof (data as Record<string, unknown> | null)?.session_id ===
-                'string'
+              'string'
               ? ((data as Record<string, unknown>).session_id as string)
               : null;
 
@@ -680,55 +750,55 @@ const EmployeeManager: React.FC = () => {
         prev.map(emp =>
           emp.id === editing.id
             ? {
-                ...emp,
-                user_id: updatedEmployee.user_id || emp.user_id,
-                name: updatedEmployee.name,
-                firstName: updatedEmployee.firstName,
-                lastName: updatedEmployee.lastName,
-                email: updatedEmployee.email,
-                phone: updatedEmployee.phone,
-                departmentId: newDepartmentId,
-                designationId: nextDesignationId,
-                role_name:
-                  updatedEmployee.role_name || nextRoleName || emp.role_name,
-                status: updatedEmployee.status || emp.status,
-                cnic_number: updatedEmployee.cnic_number || emp.cnic_number,
-                profile_picture:
-                  updatedEmployee.profile_picture || emp.profile_picture,
-                cnic_picture: updatedEmployee.cnic_picture || emp.cnic_picture,
-                cnic_back_picture:
-                  updatedEmployee.cnic_back_picture || emp.cnic_back_picture,
-                department: emp.department
-                  ? {
-                      ...emp.department,
-                      id: newDepartmentId,
-                      name: departmentName,
-                    }
-                  : {
-                      id: newDepartmentId,
-                      name: departmentName,
-                      description: '',
-                      tenantId: emp.tenantId,
-                      createdAt: emp.createdAt,
-                      updatedAt: emp.updatedAt,
-                    },
-                designation: emp.designation
-                  ? {
-                      ...emp.designation,
-                      id: nextDesignationId,
-                      title: designationName,
-                      departmentId: newDepartmentId,
-                    }
-                  : {
-                      id: nextDesignationId,
-                      title: designationName,
-                      tenantId: emp.tenantId,
-                      departmentId: newDepartmentId,
-                      createdAt: emp.createdAt,
-                      updatedAt: emp.updatedAt,
-                    },
-                updatedAt: updatedEmployee.updatedAt,
-              }
+              ...emp,
+              user_id: updatedEmployee.user_id || emp.user_id,
+              name: updatedEmployee.name,
+              firstName: updatedEmployee.firstName,
+              lastName: updatedEmployee.lastName,
+              email: updatedEmployee.email,
+              phone: updatedEmployee.phone,
+              departmentId: newDepartmentId,
+              designationId: nextDesignationId,
+              role_name:
+                updatedEmployee.role_name || nextRoleName || emp.role_name,
+              status: updatedEmployee.status || emp.status,
+              cnic_number: updatedEmployee.cnic_number || emp.cnic_number,
+              profile_picture:
+                updatedEmployee.profile_picture || emp.profile_picture,
+              cnic_picture: updatedEmployee.cnic_picture || emp.cnic_picture,
+              cnic_back_picture:
+                updatedEmployee.cnic_back_picture || emp.cnic_back_picture,
+              department: emp.department
+                ? {
+                  ...emp.department,
+                  id: newDepartmentId,
+                  name: departmentName,
+                }
+                : {
+                  id: newDepartmentId,
+                  name: departmentName,
+                  description: '',
+                  tenantId: emp.tenantId,
+                  createdAt: emp.createdAt,
+                  updatedAt: emp.updatedAt,
+                },
+              designation: emp.designation
+                ? {
+                  ...emp.designation,
+                  id: nextDesignationId,
+                  title: designationName,
+                  departmentId: newDepartmentId,
+                }
+                : {
+                  id: nextDesignationId,
+                  title: designationName,
+                  tenantId: emp.tenantId,
+                  departmentId: newDepartmentId,
+                  createdAt: emp.createdAt,
+                  updatedAt: emp.updatedAt,
+                },
+              updatedAt: updatedEmployee.updatedAt,
+            }
             : emp
         )
       );
@@ -907,13 +977,13 @@ const EmployeeManager: React.FC = () => {
   const deleteTitle = getLabel('Confirm Delete', 'تأكيد الحذف');
   const deleteMessage = pendingDeleteName
     ? getLabel(
-        `Are you sure you want to delete employee "${pendingDeleteName}"? This action cannot be undone.`,
-        `هل أنت متأكد أنك تريد حذف الموظف "${pendingDeleteName}"؟ لا يمكن التراجع عن هذا الإجراء.`
-      )
+      `Are you sure you want to delete employee "${pendingDeleteName}"? This action cannot be undone.`,
+      `هل أنت متأكد أنك تريد حذف الموظف "${pendingDeleteName}"؟ لا يمكن التراجع عن هذا الإجراء.`
+    )
     : getLabel(
-        'Are you sure you want to delete this employee? This action cannot be undone.',
-        'هل أنت متأكد أنك تريد حذف هذا الموظف؟ لا يمكن التراجع عن هذا الإجراء.'
-      );
+      'Are you sure you want to delete this employee? This action cannot be undone.',
+      'هل أنت متأكد أنك تريد حذف هذا الموظف؟ لا يمكن التراجع عن هذا الإجراء.'
+    );
 
   const token = localStorage.getItem('token');
   const filters = { page: '1' };
@@ -1274,20 +1344,20 @@ const EmployeeManager: React.FC = () => {
           initialData={
             editing
               ? {
-                  id: editing.id,
-                  firstName: editing.firstName || '',
-                  lastName: editing.lastName || '',
-                  email: editing.email,
-                  phone: editing.phone,
-                  cnicNumber: editing.cnic_number || ' ',
-                  profilePicture: toAbsoluteUrl(editing.profile_picture),
-                  cnicFrontPicture: toAbsoluteUrl(editing.cnic_picture),
-                  cnicBackPicture: toAbsoluteUrl(editing.cnic_back_picture),
-                  role: editing.role_name || '',
-                  role_name: editing.role_name || '',
-                  designationId: editing.designationId,
-                  departmentId: editing.departmentId,
-                }
+                id: editing.id,
+                firstName: editing.firstName || '',
+                lastName: editing.lastName || '',
+                email: editing.email,
+                phone: editing.phone,
+                cnicNumber: editing.cnic_number || ' ',
+                profilePicture: toAbsoluteUrl(editing.profile_picture),
+                cnicFrontPicture: toAbsoluteUrl(editing.cnic_picture),
+                cnicBackPicture: toAbsoluteUrl(editing.cnic_back_picture),
+                role: editing.role_name || '',
+                role_name: editing.role_name || '',
+                designationId: editing.designationId,
+                departmentId: editing.departmentId,
+              }
               : null
           }
           submitting={submitting}

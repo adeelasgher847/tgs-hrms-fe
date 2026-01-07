@@ -237,15 +237,16 @@ class TeamApiService {
 
   // Get manager's team members
   async getMyTeamMembers(
-    page: number = 1
+    page: number = 1,
+    limit: number = 25
   ): Promise<PaginatedResponse<TeamMember>> {
     try {
       const response = await axiosInstance.get<PaginatedResponse<TeamMember>>(
-        `${this.baseUrl}/my-members?page=${page}`
+        `${this.baseUrl}/my-members?page=${page}&limit=${limit}`
       );
       return response.data;
     } catch {
-      return { items: [], total: 0, page: 1, limit: 25, totalPages: 1 };
+      return { items: [], total: 0, page, limit, totalPages: 0 };
     }
   }
 

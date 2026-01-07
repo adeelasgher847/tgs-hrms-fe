@@ -12,6 +12,8 @@ import {
   isManager,
   isEmployee,
   isNetworkAdmin,
+  isAdmin,
+  isHRAdmin,
 } from '../../utils/roleUtils';
 
 import {
@@ -48,7 +50,7 @@ import PersonIcon from '@mui/icons-material/Person';
 import GroupIcon from '@mui/icons-material/Group';
 import TeamMembersAvatar from '../Teams/TeamMembersAvatar';
 import TeamMembersModal from '../Teams/TeamMembersModal';
-import type { Team } from '../../api/teamApi';
+import { teamApiService, type Team, type TeamMember } from '../../api/teamApi';
 import InventoryIcon from '@mui/icons-material/Inventory';
 import CardGiftcardIcon from '@mui/icons-material/CardGiftcard';
 import EventIcon from '@mui/icons-material/Event';
@@ -134,11 +136,8 @@ interface SearchResult {
   id?: string;
   icon?: React.ReactNode;
   subtitle?: string;
+  metadata?: Record<string, unknown>;
 }
-
-// Note: `searchInObject` helper removed — searchRoutes and backend search are used instead.
-
-// Flattened list of all searchable routes - includes all menu items from sidebar
 const searchableRoutes: SearchResult[] = [
   {
     label: 'Dashboard',
@@ -380,6 +379,7 @@ const Navbar: React.FC<NavbarProps> = ({
   const searchTimeoutRef = React.useRef<NodeJS.Timeout | null>(null);
   const abortControllerRef = React.useRef<AbortController | null>(null);
 
+
   // Cache for API responses to avoid redundant calls
   const dataCacheRef = React.useRef<{
     employees: unknown[] | null;
@@ -405,6 +405,10 @@ const Navbar: React.FC<NavbarProps> = ({
     cacheTime: 0,
   });
 
+
+
+  const managerTeamMembersRef = React.useRef<TeamMember[]>([]);
+
   const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes cache
 
   const open = Boolean(anchorEl);
@@ -414,9 +418,6 @@ const Navbar: React.FC<NavbarProps> = ({
   const lang = labels[language];
   const { user, clearUser } = useUser();
   const { updateProfilePicture } = useProfilePicture();
-
-  // Get current user role for permission checking
-  // Role can be a string or an object with name property
   const currentUserRole = React.useMemo(() => {
     if (!user) return '';
 
@@ -600,6 +601,26 @@ const Navbar: React.FC<NavbarProps> = ({
     }
   }, [user?.profile_pic, user?.id, updateProfilePicture]);
 
+  // Fetch manager's team members when user is manager
+  React.useEffect(() => {
+    const fetchManagerTeam = async () => {
+      if (!isManager(currentUserRole)) return;
+
+      try {
+        const response = await teamApiService.getMyTeamMembers(1, 1000);
+        if (response && response.items) {
+          managerTeamMembersRef.current = response.items;
+        }
+      } catch (error) {
+        console.error('Error fetching manager team members:', error);
+      }
+    };
+
+    if (user && isManager(currentUserRole)) {
+      fetchManagerTeam();
+    }
+  }, [user, currentUserRole]);
+
   // Language dropdown state
   const [langAnchorEl, setLangAnchorEl] = React.useState<null | HTMLElement>(
     null
@@ -649,8 +670,6 @@ const Navbar: React.FC<NavbarProps> = ({
       .filter(word => word.length > 0);
   };
 
-  // Memoized route search with relevance scoring for better matching
-  // Only searches routes that are allowed for current user role
   const searchRoutes = React.useCallback(
     (query: string): SearchResult[] => {
       const queryWords = normalizeText(query);
@@ -715,10 +734,9 @@ const Navbar: React.FC<NavbarProps> = ({
           } else if (label.includes(exactQuery)) {
             score += 25; // Big bonus for exact label match
           } else if (label.startsWith(exactQuery)) {
-            score += 20; // Bonus for label starting with query
+            score += 20; 
           }
 
-          // Bonus for consecutive word matches in label (phrase matching)
           if (queryWords.length > 1) {
             const labelWords = normalizeText(label);
             let consecutiveMatches = 0;
@@ -740,10 +758,6 @@ const Navbar: React.FC<NavbarProps> = ({
               score += 15; // Bonus for all words matching in order
             }
           }
-
-          // Penalty for Dashboard route if query doesn't match well
-          // This prevents Dashboard from appearing when searching for specific items
-          // Only show Dashboard if query is very short (1-2 chars) or explicitly matches "dashboard"
           if (label === 'dashboard') {
             const isDashboardQuery =
               exactQuery === 'dashboard' ||
@@ -765,7 +779,6 @@ const Navbar: React.FC<NavbarProps> = ({
     [isRouteAllowed]
   );
 
-  // Helper function to map API search results to SearchResult format
   const mapApiResultToSearchResult = (
     item: SearchResultItem,
     module: string
@@ -866,7 +879,6 @@ const Navbar: React.FC<NavbarProps> = ({
     }
   };
 
-  // Optimized search functionality with backend API integration
   React.useEffect(() => {
     // Cancel previous request
     if (abortControllerRef.current) {
@@ -888,9 +900,7 @@ const Navbar: React.FC<NavbarProps> = ({
 
     const query = searchQuery.trim();
 
-    // Minimum 2 characters for API search (as per API requirements)
     if (query.length < 2) {
-      // For queries less than 2 characters, only search routes
       const routeResults = searchRoutes(query.toLowerCase());
       setSearchResults(routeResults.slice(0, 15));
       setShowSearchResults(routeResults.length > 0);
@@ -899,11 +909,9 @@ const Navbar: React.FC<NavbarProps> = ({
       return;
     }
 
-    // Create new AbortController for this search
     const abortController = new AbortController();
     abortControllerRef.current = abortController;
 
-    // Optimized debounce: 400ms for better performance (reduces API calls)
     searchTimeoutRef.current = setTimeout(async () => {
       // Check if request was cancelled
       if (abortController.signal.aborted) return;
@@ -914,8 +922,6 @@ const Navbar: React.FC<NavbarProps> = ({
       const startTime = performance.now();
 
       try {
-        // 1. Search routes (instant, no API call) - use memoized function
-        // Routes are always searchable (frontend-only) and filtered by permissions
         const routeResults = searchRoutes(query.toLowerCase());
         if (routeResults.length > 0) {
           results.push(...routeResults);
@@ -945,8 +951,6 @@ const Navbar: React.FC<NavbarProps> = ({
               query: query,
               limit: 10, // Default limit per module
             };
-
-            // Add tenantId only if user is system admin and tenantId is available
             if (canSearchTenants() && currentTenantId) {
               searchParams.tenantId = currentTenantId;
             }
@@ -954,11 +958,72 @@ const Navbar: React.FC<NavbarProps> = ({
             let apiResponse;
 
             try {
-              // Check if user is network admin
-              // Using optional chaining and fallback to false for safety
               const isNetAdmin = isNetworkAdmin && isNetworkAdmin(currentUserRole);
+              const isSysAdmin = roleIsSystemAdmin && roleIsSystemAdmin(currentUserRole);
+              // Check for Admin role
+              const isRoleAdmin = isAdmin && isAdmin(currentUserRole);
+              // Check for HR Admin role
+              const isRoleHRAdmin = isHRAdmin && isHRAdmin(currentUserRole);
+              // Check for Employee role
+              const isRoleEmployee = isEmployee && isEmployee(currentUserRole);
+              // Check for Manager role
+              const isRoleManager = isManager && isManager(currentUserRole);
 
-              if (isNetAdmin) {
+              if (isSysAdmin) {
+                apiResponse = await searchApiService.searchSystemAdmin(searchParams);
+              } else if (isRoleHRAdmin) {
+                apiResponse = await searchApiService.searchHrAdmin(searchParams);
+              } else if (isRoleAdmin) {
+                apiResponse = await searchApiService.searchAdmin(searchParams);
+              } else if (isRoleManager) {
+                apiResponse = await searchApiService.searchManager(searchParams);
+              } else if (isRoleEmployee) {
+                apiResponse = await searchApiService.searchEmployee(searchParams);
+
+                // Strict filtering for Employee role
+                if (user?.id && apiResponse?.results) {
+                  const userId = user.id;
+                  const userEmail = user.email;
+
+                  // Filter employees (only self)
+                  if (apiResponse.results.employees) {
+                    apiResponse.results.employees = apiResponse.results.employees.filter(
+                      item => item.metadata?.userId === userId
+                    );
+                  }
+                  if (apiResponse.results.leaves) {
+                    apiResponse.results.leaves = apiResponse.results.leaves.filter(
+                      item => item.metadata?.userId === userId
+                    );
+                  }
+                  if (apiResponse.results.payroll) {
+                    apiResponse.results.payroll = apiResponse.results.payroll.filter(
+                      item => item.metadata?.userId === userId
+                    );
+                  }
+                  if (apiResponse.results.benefits) {
+                    apiResponse.results.benefits = apiResponse.results.benefits.filter(
+                      item => item.metadata?.userId === userId
+                    );
+                  }
+                  if (apiResponse.results.attendance && userEmail) {
+                    apiResponse.results.attendance = apiResponse.results.attendance.filter(
+                      item => item.metadata?.userEmail === userEmail
+                    );
+                  }
+                }
+              } else if (isManager(currentUserRole)) {
+                apiResponse = await searchApiService.searchManager(searchParams);
+                if (managerTeamMembersRef.current.length > 0 && apiResponse.results && apiResponse.results.employees) {
+                  const teamMemberIds = new Set(managerTeamMembersRef.current.map(m => m.user.id));
+
+                  apiResponse.results.employees = apiResponse.results.employees.filter(employee => {
+                    const empUserId = employee.metadata?.userId as string;
+                    return empUserId && teamMemberIds.has(empUserId);
+                  });
+                }
+
+              } else if (isNetAdmin) {
                 if (typeof searchApiService.searchNetworkAdmin === 'function') {
                   apiResponse = await searchApiService.searchNetworkAdmin(searchParams);
                 } else {
@@ -968,11 +1033,9 @@ const Navbar: React.FC<NavbarProps> = ({
                 apiResponse = await searchApiService.search(searchParams);
               }
             } catch {
-              // Fallback to regular search if anything goes wrong in the branch logic
               apiResponse = await searchApiService.search(searchParams);
             }
 
-            // Map API results to SearchResult format
             if (apiResponse && apiResponse.results) {
               // Employees
               if (apiResponse.results.employees) {
@@ -1060,12 +1123,10 @@ const Navbar: React.FC<NavbarProps> = ({
           } catch (error) {
             if (!abortController.signal.aborted) {
               console.error('Error calling search API:', error);
-              // Continue with route results even if API fails
             }
           }
         }
 
-        // Only update if request wasn't cancelled
         if (!abortController.signal.aborted) {
           const endTime = performance.now();
           console.log(
@@ -1107,35 +1168,24 @@ const Navbar: React.FC<NavbarProps> = ({
     currentUserRole,
   ]);
 
-  // Handle search input change
   const handleSearchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     setSearchQuery(event.target.value);
     setShowSearchResults(true);
   };
-
-  // Handle search result click - navigates to specific item in the module
   const handleSearchResultClick = (result: SearchResult) => {
-    // Clear search state
     setSearchQuery('');
     setShowSearchResults(false);
     setSelectedResultIndex(-1);
-
-    // Ensure we have a valid result
     if (!result) return;
-
-    // Navigate based on result type with proper state for opening exact records
     if (result.type === 'employee' && result.id) {
-      // Navigate to employee manager and open the specific employee view
-      navigate('/dashboard/EmployeeManager', {
+      navigate(`/dashboard/EmployeeProfileView/${result.id}`, {
         state: {
-          employeeId: result.id,
-          viewEmployee: true,
-          fromSearch: true, // Flag to indicate navigation from search
+          fromSearch: true,
+          userId: result.metadata?.userId,
         },
-        replace: false, // Allow back navigation
+        replace: false,
       });
     } else if (result.type === 'team' && result.id) {
-      // Navigate to teams page and highlight/select the specific team
       navigate('/dashboard/teams', {
         state: {
           teamId: result.id,
@@ -1145,7 +1195,6 @@ const Navbar: React.FC<NavbarProps> = ({
         replace: false,
       });
     } else if (result.type === 'asset' && result.id) {
-      // Navigate to assets page and open the specific asset view/edit modal
       navigate('/dashboard/assets', {
         state: {
           assetId: result.id,
@@ -1155,7 +1204,6 @@ const Navbar: React.FC<NavbarProps> = ({
         replace: false,
       });
     } else if (result.type === 'department' && result.id) {
-      // Navigate to departments page with department ID
       navigate('/dashboard/departments', {
         state: {
           departmentId: result.id,
@@ -1164,7 +1212,6 @@ const Navbar: React.FC<NavbarProps> = ({
         replace: false,
       });
     } else if (result.type === 'designation' && result.id) {
-      // Navigate to designations page with designation ID
       navigate('/dashboard/Designations', {
         state: {
           designationId: result.id,
@@ -1173,7 +1220,6 @@ const Navbar: React.FC<NavbarProps> = ({
         replace: false,
       });
     } else if (result.type === 'benefit' && result.id) {
-      // Navigate to benefits list page with benefit ID
       navigate('/dashboard/benefits-list', {
         state: {
           benefitId: result.id,
@@ -1182,7 +1228,6 @@ const Navbar: React.FC<NavbarProps> = ({
         replace: false,
       });
     } else if (result.type === 'leave' && result.id) {
-      // Navigate to leave requests page with leave ID
       navigate('/dashboard/leaves', {
         state: {
           leaveId: result.id,
@@ -1191,7 +1236,6 @@ const Navbar: React.FC<NavbarProps> = ({
         replace: false,
       });
     } else if (result.type === 'policy' && result.id) {
-      // Navigate to policies page with policy ID
       navigate('/dashboard/policies', {
         state: {
           policyId: result.id,
@@ -1200,7 +1244,6 @@ const Navbar: React.FC<NavbarProps> = ({
         replace: false,
       });
     } else if (result.type === 'tenant' && result.id) {
-      // Navigate to tenant page with tenant ID
       navigate('/dashboard/tenant', {
         state: {
           tenantId: result.id,
@@ -1209,7 +1252,6 @@ const Navbar: React.FC<NavbarProps> = ({
         replace: false,
       });
     } else if (result.type === 'asset-request' && result.id) {
-      // Navigate to asset requests page with request ID
       navigate('/dashboard/assets/requests', {
         state: {
           requestId: result.id,
@@ -1219,7 +1261,6 @@ const Navbar: React.FC<NavbarProps> = ({
         replace: false,
       });
     } else if (result.type === 'attendance' && result.id) {
-      // Navigate to attendance page with attendance ID
       navigate('/dashboard/AttendanceCheck', {
         state: {
           attendanceId: result.id,
@@ -1228,7 +1269,6 @@ const Navbar: React.FC<NavbarProps> = ({
         replace: false,
       });
     } else if (result.type === 'payroll' && result.id) {
-      // Navigate to payroll records page with payroll ID
       navigate('/dashboard/payroll-records', {
         state: {
           payrollId: result.id,
@@ -1238,8 +1278,6 @@ const Navbar: React.FC<NavbarProps> = ({
         replace: false,
       });
     } else {
-      // Navigate to route (for route-type results)
-      // Handle empty path (Dashboard route)
       let path = '/dashboard';
       if (result.path && result.path.trim() !== '') {
         path = `/dashboard/${result.path}`;
@@ -1250,25 +1288,18 @@ const Navbar: React.FC<NavbarProps> = ({
       });
     }
   };
-
-  // Handle keyboard navigation in search
   const handleSearchKeyDown = (
     event: React.KeyboardEvent<HTMLInputElement>
   ) => {
     if (event.key === 'Enter') {
       event.preventDefault();
-      // Only navigate if user has selected a result or there's exactly one result
-      // Don't auto-navigate if there are multiple results - let user choose
       if (selectedResultIndex >= 0 && searchResults[selectedResultIndex]) {
         handleSearchResultClick(searchResults[selectedResultIndex]);
       } else if (searchResults.length === 1) {
-        // Only auto-navigate if there's exactly one result
         handleSearchResultClick(searchResults[0]);
       } else if (searchResults.length > 1) {
-        // If multiple results, just show them (don't navigate)
         setShowSearchResults(true);
       }
-      // If no results, do nothing (don't navigate to dashboard)
     } else if (event.key === 'ArrowDown') {
       event.preventDefault();
       setSelectedResultIndex(prev =>
@@ -1283,8 +1314,6 @@ const Navbar: React.FC<NavbarProps> = ({
       searchInputRef.current?.blur();
     }
   };
-
-  // Close search results when clicking outside
   const handleClickAway = (event: MouseEvent | TouchEvent) => {
     if (
       searchContainerRef.current &&
@@ -1295,14 +1324,10 @@ const Navbar: React.FC<NavbarProps> = ({
     }
     setShowSearchResults(false);
   };
-
-  // Close search results on route change
   React.useEffect(() => {
     setShowSearchResults(false);
     setSearchQuery('');
   }, [location.pathname]);
-
-  // Clear cache periodically to ensure fresh data
   React.useEffect(() => {
     const cacheRef = dataCacheRef.current;
     const cacheCleanupInterval = setInterval(() => {
@@ -1333,10 +1358,7 @@ const Navbar: React.FC<NavbarProps> = ({
       cacheRef.policies = null;
       cacheRef.tenants = null;
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-
-  // Language context available if needed
 
   return (
     <Box
@@ -1375,9 +1397,7 @@ const Navbar: React.FC<NavbarProps> = ({
             minHeight: 'auto',
           }}
         >
-          {/* Left Side - Search (Desktop) / Menu Toggle (Mobile) */}
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            {/* Mobile Menu Toggle - Left Side */}
             <IconButton
               onClick={onToggleSidebar}
               sx={{
@@ -1443,15 +1463,11 @@ const Navbar: React.FC<NavbarProps> = ({
                 </Search>
                 <IconButton
                   onClick={() => {
-                    // Only navigate if there's exactly one result
-                    // Otherwise, just show the results dropdown
                     if (searchResults.length === 1) {
                       handleSearchResultClick(searchResults[0]);
                     } else if (searchResults.length > 1) {
-                      // Show results dropdown if multiple results
                       setShowSearchResults(true);
                     }
-                    // If no results, do nothing (don't navigate)
                   }}
                   sx={{
                     backgroundColor: 'var(--primary-dark-color)',
@@ -1478,7 +1494,6 @@ const Navbar: React.FC<NavbarProps> = ({
                     }}
                   />
                 </IconButton>
-                {/* Search Results Dropdown */}
                 {showSearchResults && searchResults.length > 0 && (
                   <Paper
                     elevation={4}
@@ -1533,18 +1548,14 @@ const Navbar: React.FC<NavbarProps> = ({
                               cursor: 'pointer',
                               touchAction: 'manipulation',
                               WebkitTapHighlightColor: 'transparent',
-                              // '&:hover': {
-                              //   backgroundColor: 'var(--primary-color)',
-                              // },
+                              
                               '&:active': {
                                 backgroundColor: 'var(--primary-dark-color)',
                               },
                               '&.Mui-selected': {
                                 backgroundColor: 'var(--primary-dark-color)',
                                 color: '#ffffff',
-                                // '&:hover': {
-                                //   backgroundColor: 'var(--primary-dark-color)',
-                                // },
+                                
                               },
                             }}
                           >

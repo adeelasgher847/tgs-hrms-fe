@@ -12,6 +12,7 @@ import {
   IconButton,
   Tooltip,
   CircularProgress,
+  TextField,
 } from '@mui/material';
 import AccessTimeIcon from '@mui/icons-material/AccessTime';
 import CancelIcon from '@mui/icons-material/Cancel';
@@ -295,37 +296,24 @@ const LeaveHistory: React.FC<LeaveHistoryProps> = ({
           }}
         >
           {isAdmin && onDateFilterChange && (
-            <AppDropdown
-              label='Date Filter'
-              showLabel={false}
-              align='left'
-              value={dateFilter || ''}
-              onChange={(e: SelectChangeEvent<string | number>) => {
-                onDateFilterChange(String(e.target.value));
+            <TextField
+              type='month'
+              size='small'
+              value={dateFilter}
+              onChange={e => onDateFilterChange(e.target.value)}
+              sx={{
+                width: 160,
+                bgcolor: 'background.paper',
+                borderRadius: 1,
               }}
-              options={[
-                { value: 'month-1', label: 'January' },
-                { value: 'month-2', label: 'February' },
-                { value: 'month-3', label: 'March' },
-                { value: 'month-4', label: 'April' },
-                { value: 'month-5', label: 'May' },
-                { value: 'month-6', label: 'June' },
-                { value: 'month-7', label: 'July' },
-                { value: 'month-8', label: 'August' },
-                { value: 'month-9', label: 'September' },
-                { value: 'month-10', label: 'October' },
-                { value: 'month-11', label: 'November' },
-                { value: 'month-12', label: 'December' },
-                { value: 'all', label: 'All Time' },
-              ]}
-              renderValue={() => 'Date Filter'}
-              containerSx={{ minWidth: { xs: '100%', sm: 200 } }}
+              InputLabelProps={{ shrink: true }}
             />
           )}
 
           {!hideDropdown && (isAdmin || isManager) && (
             <AppDropdown
               label='All Employees'
+              showLabel={false}
               value={selectedEmployee || ''}
               onChange={(e: SelectChangeEvent<string | number>) =>
                 setSelectedEmployee(String(e.target.value || ''))
