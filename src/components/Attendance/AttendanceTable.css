@@ -46,9 +46,11 @@
 [data-theme='dark'] .custom-date-picker-input::placeholder {
   color: #999999 !important;
 }
+
 .rmdp-container {
   z-index: 1300 !important;
 }
+
 .rmdp-calendar {
   border: 1px solid rgba(0, 0, 0, 0.12) !important;
   border-radius: 4px !important;
@@ -141,6 +143,7 @@
 [data-theme='dark'] .rmdp-day.rmdp-disabled:hover {
   background-color: transparent !important;
 }
+
 /* .rmdp-header {
   background-color: #F5F5F5 !important;
   border-bottom: 1px solid rgba(0, 0, 0, 0.12) !important;
@@ -148,6 +151,7 @@
 .rmdp-day {
   transition: background-color 0.15s ease-in-out !important;
 }
+
 /* .rmdp-day:hover {
   background-color: rgba(25, 118, 210, 0.08) !important;
 } */
@@ -155,22 +159,27 @@
   background-color: #3083DC !important;
   color: white !important;
 }
+
 .rmdp-day.rmdp-range {
   background-color: #3083DC;
   box-shadow: 0 0 3px rgba(48, 131, 220, 0.3);
   color: #fff;
 }
+
 .rmdp-day.rmdp-range-start,
 .rmdp-day.rmdp-range-end {
   background-color: #3083DC !important;
   color: white !important;
 }
+
 .rmdp-arrow {
   color: #3083DC !important;
 }
+
 .rmdp-arrow:hover {
   background-color: rgba(48, 131, 220, 0.08) !important;
 }
+
 /* Mobile responsive styles for DateNavigation */
 .MuiBox-root.css-1c1kq07 {
   overflow-x: auto !important;

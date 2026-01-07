@@ -11,6 +11,7 @@ import {
   IconButton,
   Pagination,
   TextField,
+  useTheme,
 } from '@mui/material';
 import FileDownloadIcon from '@mui/icons-material/FileDownload';
 import {
@@ -67,6 +68,8 @@ const Reports: React.FC = () => {
     isAdmin: boolean;
     isSystemAdmin: boolean;
   } | null>(null);
+
+  const theme = useTheme();
 
   useEffect(() => {
     try {
@@ -616,7 +619,7 @@ const Reports: React.FC = () => {
                 '& input::-webkit-calendar-picker-indicator': {
                   filter:
                     theme.palette.mode === 'dark' ? 'invert(1)' : 'invert(0)',
-                  opacity: 0.7,
+                  opacity: theme.palette.mode === 'dark' ? 0.5 : 1,
                   cursor: 'pointer',
                 },
               })}
@@ -657,51 +660,51 @@ const Reports: React.FC = () => {
                 sx={{ backgroundColor: darkMode ? '#2a2a2a' : '#f5f5f5' }}
               >
                 <TableRow>
-                  <TableCell sx={{ color: darkMode ? '#fff' : '#000' }}>
+                  <TableCell sx={{ color: theme.palette.text.primary }}>
                     <b>Employee Name</b>
                   </TableCell>
-                  <TableCell sx={{ color: darkMode ? '#fff' : '#000' }}>
+                  <TableCell sx={{ color: theme.palette.text.primary }}>
                     <b>Department</b>
                   </TableCell>
-                  <TableCell sx={{ color: darkMode ? '#fff' : '#000' }}>
+                  <TableCell sx={{ color: theme.palette.text.primary }}>
                     <b>Designation</b>
                   </TableCell>
-                  <TableCell sx={{ color: darkMode ? '#fff' : '#000' }}>
+                  <TableCell sx={{ color: theme.palette.text.primary }}>
                     <b>Leave Type</b>
                   </TableCell>
                   <TableCell
                     align='center'
-                    sx={{ color: darkMode ? '#fff' : '#000' }}
+                    sx={{ color: theme.palette.text.primary }}
                   >
                     <b>Total</b>
                   </TableCell>
                   <TableCell
                     align='center'
-                    sx={{ color: darkMode ? '#fff' : '#000' }}
+                    sx={{ color: theme.palette.text.primary }}
                   >
                     <b>Used</b>
                   </TableCell>
                   <TableCell
                     align='center'
-                    sx={{ color: darkMode ? '#fff' : '#000' }}
+                    sx={{ color: theme.palette.text.primary }}
                   >
                     <b>Remaining</b>
                   </TableCell>
                   <TableCell
                     align='center'
-                    sx={{ color: darkMode ? '#fff' : '#000' }}
+                    sx={{ color: theme.palette.text.primary }}
                   >
                     <b>Approved Days</b>
                   </TableCell>
                   <TableCell
                     align='center'
-                    sx={{ color: darkMode ? '#fff' : '#000' }}
+                    sx={{ color: theme.palette.text.primary }}
                   >
                     <b>Pending Days</b>
                   </TableCell>
                   <TableCell
                     align='center'
-                    sx={{ color: darkMode ? '#fff' : '#000' }}
+                    sx={{ color: theme.palette.text.primary }}
                   >
                     <b>Rejected Days</b>
                   </TableCell>
@@ -717,7 +720,7 @@ const Reports: React.FC = () => {
                     <TableCell
                       colSpan={11}
                       align='center'
-                      sx={{ color: darkMode ? '#ccc' : '#000' }}
+                      sx={{ color: theme.palette.text.secondary }}
                     >
                       <CircularProgress size={24} />
                     </TableCell>
@@ -731,7 +734,7 @@ const Reports: React.FC = () => {
                     <TableCell
                       colSpan={11}
                       align='center'
-                      sx={{ color: darkMode ? '#ccc' : '#000' }}
+                      sx={{ color: theme.palette.text.secondary }}
                     >
                       No leave reports found
                     </TableCell>
@@ -798,27 +801,27 @@ const Reports: React.FC = () => {
                             },
                           }}
                         >
-                          <TableCell sx={{ color: darkMode ? '#ccc' : '#000' }}>
+                          <TableCell sx={{ color: theme.palette.text.secondary }}>
                             {row.employeeName}
                           </TableCell>
-                          <TableCell sx={{ color: darkMode ? '#ccc' : '#000' }}>
+                          <TableCell sx={{ color: theme.palette.text.secondary }}>
                             {row.department}
                           </TableCell>
-                          <TableCell sx={{ color: darkMode ? '#ccc' : '#000' }}>
+                          <TableCell sx={{ color: theme.palette.text.secondary }}>
                             {row.designation}
                           </TableCell>
-                          <TableCell sx={{ color: darkMode ? '#ccc' : '#000' }}>
+                          <TableCell sx={{ color: theme.palette.text.secondary }}>
                             {row.summary.leaveTypeName}
                           </TableCell>
                           <TableCell
                             align='center'
-                            sx={{ color: darkMode ? '#ccc' : '#000' }}
+                            sx={{ color: theme.palette.text.secondary }}
                           >
                             {row.summary.maxDaysPerYear}
                           </TableCell>
                           <TableCell
                             align='center'
-                            sx={{ color: darkMode ? '#ccc' : '#000' }}
+                            sx={{ color: theme.palette.text.secondary }}
                           >
                             {row.summary.used ??
                               (row.summary.approvedDays ?? 0) +
@@ -826,7 +829,7 @@ const Reports: React.FC = () => {
                           </TableCell>
                           <TableCell
                             align='center'
-                            sx={{ color: darkMode ? '#ccc' : '#000' }}
+                            sx={{ color: theme.palette.text.secondary }}
                           >
                             {row.summary.remaining ??
                               row.summary.remainingDays ??
@@ -834,19 +837,19 @@ const Reports: React.FC = () => {
                           </TableCell>
                           <TableCell
                             align='center'
-                            sx={{ color: darkMode ? '#ccc' : '#000' }}
+                            sx={{ color: theme.palette.text.secondary }}
                           >
                             {row.summary.approvedDays ?? 0}
                           </TableCell>
                           <TableCell
                             align='center'
-                            sx={{ color: darkMode ? '#ccc' : '#000' }}
+                            sx={{ color: theme.palette.text.secondary }}
                           >
                             {row.summary.pendingDays ?? 0}
                           </TableCell>
                           <TableCell
                             align='center'
-                            sx={{ color: darkMode ? '#ccc' : '#000' }}
+                            sx={{ color: theme.palette.text.secondary }}
                           >
                             {row.summary.rejectedDays ?? 0}
                           </TableCell>
@@ -858,19 +861,19 @@ const Reports: React.FC = () => {
                             backgroundColor: darkMode ? '#1e1e1e' : '#ffffff',
                           }}
                         >
-                          <TableCell sx={{ color: darkMode ? '#ccc' : '#000' }}>
+                          <TableCell sx={{ color: theme.palette.text.secondary }}>
                             {row.employeeName}
                           </TableCell>
-                          <TableCell sx={{ color: darkMode ? '#ccc' : '#000' }}>
+                          <TableCell sx={{ color: theme.palette.text.secondary }}>
                             {row.department}
                           </TableCell>
-                          <TableCell sx={{ color: darkMode ? '#ccc' : '#000' }}>
+                          <TableCell sx={{ color: theme.palette.text.secondary }}>
                             {row.designation}
                           </TableCell>
                           <TableCell
                             colSpan={8}
                             align='center'
-                            sx={{ color: darkMode ? '#ccc' : '#000' }}
+                            sx={{ color: theme.palette.text.secondary }}
                           >
                             No leave data available
                           </TableCell>
@@ -1007,7 +1010,7 @@ const Reports: React.FC = () => {
                 {leaveBalance.map((item, idx) => (
                   <AppCard key={idx} compact sx={getCardStyle(darkMode)}>
                     <Typography
-                      sx={{ color: darkMode ? '#ccc' : 'text.secondary' }}
+                      sx={{ color: theme.palette.text.primary }}
                       gutterBottom
                     >
                       {item.leaveTypeName}
@@ -1015,12 +1018,12 @@ const Reports: React.FC = () => {
                     <Typography
                       variant='h4'
                       fontWeight={600}
-                      sx={{ color: 'var(--primary-dark-color)' }}
+                      sx={{ color: theme.palette.primary.main }}
                     >
                       {item.remaining}
                     </Typography>
                     <Typography
-                      sx={{ color: darkMode ? '#ccc' : 'text.secondary' }}
+                      sx={{ color: theme.palette.text.primary }}
                       variant='body2'
                     >
                       Used: {item.used} / {item.maxDaysPerYear}
@@ -1033,7 +1036,6 @@ const Reports: React.FC = () => {
                 sx={{
                   p: 0,
                   boxShadow: 'none',
-                  borderRadius: 0,
                   backgroundColor: 'unset',
                   overflowX: 'auto',
                 }}
@@ -1043,19 +1045,19 @@ const Reports: React.FC = () => {
                     <TableRow
                       sx={{ backgroundColor: darkMode ? '#2a2a2a' : '#ffffff' }}
                     >
-                      <TableCell sx={{ color: darkMode ? '#fff' : '#000' }}>
+                      <TableCell sx={{ color: theme.palette.text.primary }}>
                         Leave Type
                       </TableCell>
-                      <TableCell sx={{ color: darkMode ? '#fff' : '#000' }}>
+                      <TableCell sx={{ color: theme.palette.text.primary }}>
                         Max Days
                       </TableCell>
-                      <TableCell sx={{ color: darkMode ? '#fff' : '#000' }}>
+                      <TableCell sx={{ color: theme.palette.text.primary }}>
                         Used
                       </TableCell>
-                      <TableCell sx={{ color: darkMode ? '#fff' : '#000' }}>
+                      <TableCell sx={{ color: theme.palette.text.primary }}>
                         Remaining
                       </TableCell>
-                      <TableCell sx={{ color: darkMode ? '#fff' : '#000' }}>
+                      <TableCell sx={{ color: theme.palette.text.primary }}>
                         Carry Forward
                       </TableCell>
                     </TableRow>
@@ -1069,19 +1071,19 @@ const Reports: React.FC = () => {
                           backgroundColor: darkMode ? '#1e1e1e' : '#ffffff',
                         }}
                       >
-                        <TableCell sx={{ color: darkMode ? '#ccc' : '#000' }}>
+                        <TableCell sx={{ color: theme.palette.text.primary }}>
                           {item.leaveTypeName}
                         </TableCell>
-                        <TableCell sx={{ color: darkMode ? '#ccc' : '#000' }}>
+                        <TableCell sx={{ color: theme.palette.text.primary }}>
                           {item.maxDaysPerYear}
                         </TableCell>
-                        <TableCell sx={{ color: darkMode ? '#ccc' : '#000' }}>
+                        <TableCell sx={{ color: theme.palette.text.primary }}>
                           {item.used}
                         </TableCell>
-                        <TableCell sx={{ color: darkMode ? '#ccc' : '#000' }}>
+                        <TableCell sx={{ color: theme.palette.text.primary }}>
                           {item.remaining}
                         </TableCell>
-                        <TableCell sx={{ color: darkMode ? '#ccc' : '#000' }}>
+                        <TableCell sx={{ color: theme.palette.text.primary }}>
                           {item.carryForward ? 'Yes' : 'No'}
                         </TableCell>
                       </TableRow>

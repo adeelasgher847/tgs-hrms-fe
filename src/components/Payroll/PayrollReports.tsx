@@ -208,7 +208,6 @@ const PayrollReports: React.FC = () => {
     );
 
     return {
-      chart: { type: 'bar', toolbar: { show: false } },
       plotOptions: { bar: { horizontal: true, borderRadius: 4 } },
       chart: { type: 'bar', toolbar: { show: false }, offsetX: 0 },
       grid: { padding: { left: 72, right: 16 } },
@@ -286,8 +285,6 @@ const PayrollReports: React.FC = () => {
             options={tenants.map(t => ({ value: t.id, label: t.name }))}
             value={selectedTenantId}
             onChange={e => setSelectedTenantId(String(e.target.value))}
-            containerSx={{ width: { xs: '100%', sm: 200 } }}
-            sx={{ width: '100%' }}
             size='small'
             showLabel={true}
             disabled={loadingTenants}

@@ -106,7 +106,7 @@ const AddEmployeeForm: React.FC<AddEmployeeFormProps> = ({
 }) => {
   const theme = useTheme();
   const isSm = useMediaQuery(theme.breakpoints.down('sm'));
-  const { darkMode, language } = useOutletContext<OutletContext>();
+  const { language } = useOutletContext<OutletContext>();
 
   const [values, setValues] = useState<FormValues>({
     first_name: initialData?.firstName ?? '',
@@ -894,10 +894,7 @@ const AddEmployeeForm: React.FC<AddEmployeeFormProps> = ({
                         height: '100%',
                         boxShadow: 'none',
                         minWidth: '80px',
-                        color:
-                          theme.palette.mode === 'dark'
-                            ? theme.palette.text.primary
-                            : theme.palette.common.white,
+                        color: theme.palette.common.white,
                         '&:hover': {
                           backgroundColor: 'primary.main',
                           boxShadow: 'none',
@@ -957,10 +954,7 @@ const AddEmployeeForm: React.FC<AddEmployeeFormProps> = ({
                         height: '100%',
                         boxShadow: 'none',
                         minWidth: '80px',
-                        color:
-                          theme.palette.mode === 'dark'
-                            ? theme.palette.text.primary
-                            : theme.palette.common.white,
+                        color: theme.palette.common.white,
                         '&:hover': {
                           backgroundColor: 'primary.main',
                           boxShadow: 'none',
@@ -1023,10 +1017,7 @@ const AddEmployeeForm: React.FC<AddEmployeeFormProps> = ({
                         height: '100%',
                         boxShadow: 'none',
                         minWidth: '80px',
-                        color:
-                          theme.palette.mode === 'dark'
-                            ? theme.palette.text.primary
-                            : theme.palette.common.white,
+                        color: theme.palette.common.white,
                         '&:hover': {
                           backgroundColor: 'primary.main',
                           boxShadow: 'none',
@@ -1206,10 +1197,7 @@ const AddEmployeeForm: React.FC<AddEmployeeFormProps> = ({
               sx={{
                 p: 2,
                 bgcolor: theme.palette.primary.main,
-                color:
-                  theme.palette.mode === 'dark'
-                    ? theme.palette.text.primary
-                    : theme.palette.common.white,
+                color: theme.palette.common.white,
                 borderRadius: 1,
                 textAlign: 'center',
               }}
