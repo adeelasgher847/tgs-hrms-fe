@@ -575,7 +575,7 @@ const TeamMembersAvatar: React.FC<TeamMembersAvatarProps> = ({
                   width: 38,
                   height: 38,
                   backgroundColor: 'var(--primary-light-color)',
-                  color: theme.palette.text.primary,
+                  color: theme.palette.common.white,
                   fontSize: '0.8rem',
                   fontWeight: 700,
                   border: '2px solid white',

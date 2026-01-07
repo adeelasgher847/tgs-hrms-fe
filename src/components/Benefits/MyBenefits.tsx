@@ -11,7 +11,6 @@ import {
 } from '@mui/material';
 import { Download } from '@mui/icons-material';
 import AppButton from '../common/AppButton';
-import AppCard from '../common/AppCard';
 import AppTable from '../common/AppTable';
 import { listBenefits, listEmployeeBenefits } from '../../api/benefits';
 import type { Benefit, EmployeeBenefitAssignment } from '../../types/benefits';
@@ -170,62 +169,60 @@ export default function MyBenefits({ employeeId }: MyBenefitsProps) {
           Benefit Summary
         </AppButton>
       </Stack>
-      <AppCard>
+      <Box>
         {loading ? (
           <Stack alignItems='center' py={4}>
             <CircularProgress />
           </Stack>
         ) : (
           <>
-            <Box sx={{ overflowX: 'auto', width: '100%' }}>
-              <AppTable size='small' sx={{ minWidth: 600 }}>
-                <TableHead>
-                  <TableRow>
-                    <TableCell>Benefit Name</TableCell>
-                    <TableCell>Type</TableCell>
-                    <TableCell>Start Date</TableCell>
-                    <TableCell>End Date</TableCell>
-                    <TableCell>Status</TableCell>
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {assignments.map(a => {
-                    const benefit = getBenefitDetails(a.benefitId);
-                    return (
-                      <TableRow key={a.id} hover>
-                        <TableCell>
-                          <Stack>
-                            <Typography variant='body2' fontWeight='medium'>
-                              {benefit?.name || a.benefitId}
+            <AppTable>
+              <TableHead>
+                <TableRow>
+                  <TableCell>Benefit Name</TableCell>
+                  <TableCell>Type</TableCell>
+                  <TableCell>Start Date</TableCell>
+                  <TableCell>End Date</TableCell>
+                  <TableCell>Status</TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {assignments.map(a => {
+                  const benefit = getBenefitDetails(a.benefitId);
+                  return (
+                    <TableRow key={a.id} hover>
+                      <TableCell>
+                        <Stack>
+                          <Typography variant='body2' fontWeight='medium'>
+                            {benefit?.name || a.benefitId}
+                          </Typography>
+                          {benefit?.description && (
+                            <Typography
+                              variant='caption'
+                              color='text.secondary'
+                            >
+                              {benefit.description}
                             </Typography>
-                            {benefit?.description && (
-                              <Typography
-                                variant='caption'
-                                color='text.secondary'
-                              >
-                                {benefit.description}
-                              </Typography>
-                            )}
-                            {benefit?.eligibility && (
-                              <Typography
-                                variant='caption'
-                                color='text.secondary'
-                              >
-                                Eligibility: {benefit.eligibility}
-                              </Typography>
-                            )}
-                          </Stack>
-                        </TableCell>
-                        <TableCell>{benefit?.type || '-'}</TableCell>
-                        <TableCell>{a.startDate}</TableCell>
-                        <TableCell>{a.endDate || '-'}</TableCell>
-                        <TableCell>{statusMap[a.status]}</TableCell>
-                      </TableRow>
-                    );
-                  })}
-                </TableBody>
-              </AppTable>
-            </Box>
+                          )}
+                          {benefit?.eligibility && (
+                            <Typography
+                              variant='caption'
+                              color='text.secondary'
+                            >
+                              Eligibility: {benefit.eligibility}
+                            </Typography>
+                          )}
+                        </Stack>
+                      </TableCell>
+                      <TableCell>{benefit?.type || '-'}</TableCell>
+                      <TableCell>{a.startDate}</TableCell>
+                      <TableCell>{a.endDate || '-'}</TableCell>
+                      <TableCell>{statusMap[a.status]}</TableCell>
+                    </TableRow>
+                  );
+                })}
+              </TableBody>
+            </AppTable>
             {assignments.length === 0 && (
               <Stack alignItems='center' py={4}>
                 <Typography color='text.secondary'>
@@ -235,7 +232,7 @@ export default function MyBenefits({ employeeId }: MyBenefitsProps) {
             )}
           </>
         )}
-      </AppCard>
+      </Box>
     </Stack>
   );
 }
