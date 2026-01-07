@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useParams, useLocation } from 'react-router-dom';
 import {
   Box,
   Typography,
@@ -27,6 +28,9 @@ import AppTable from '../common/AppTable';
 
 const EmployeeProfileView: React.FC = () => {
   const theme = useTheme();
+  const { employeeId } = useParams<{ employeeId: string }>();
+  const location = useLocation();
+  const stateUserId = location.state?.userId as string | undefined;
   const [profile, setProfile] = useState<EmployeeFullProfile | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
@@ -116,13 +120,39 @@ const EmployeeProfileView: React.FC = () => {
       try {
         setIsLoading(true);
         setError(null);
-        const userId = resolveUserId();
-        if (!userId) {
-          setError('Unable to resolve user id from token. Please re-login.');
+
+        let targetUserId = null;
+
+        if (employeeId) {
+          // Check if userId was passed in state first (e.g. from search)
+          if (stateUserId) {
+            targetUserId = stateUserId;
+          } else {
+            try {
+              const employee = await employeeApi.getEmployeeById(employeeId);
+              if (employee && employee.user_id) {
+                targetUserId = employee.user_id;
+              } else {
+                throw new Error('Employee record found but missing User ID');
+              }
+            } catch (err) {
+              console.error('Failed to resolve employee to user', err);
+              setError('Failed to find employee details.');
+              setIsLoading(false);
+              return;
+            }
+          }
+        } else {
+          // Only fallback to self if no ID provided in URL
+          targetUserId = resolveUserId();
+        }
+
+        if (!targetUserId) {
+          setError('Unable to resolve user id from token or parameter. Please re-login.');
           setIsLoading(false);
           return;
         }
-        const res = await employeeApi.getEmployeeProfile(userId);
+        const res = await employeeApi.getEmployeeProfile(targetUserId);
         setProfile(res);
       } catch (e: unknown) {
         if (
@@ -131,7 +161,7 @@ const EmployeeProfileView: React.FC = () => {
           'response' in e &&
           (e as { response: { status: number } }).response.status === 404
         ) {
-          setError('Profile not found for the resolved user id.');
+          setError('Profile not found.');
         } else {
           setError((e as Error)?.message || 'Failed to load profile');
         }
@@ -141,7 +171,7 @@ const EmployeeProfileView: React.FC = () => {
     };
     loadProfile();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [employeeId]);
 
   const formatTime = (iso: string | null) => {
     if (!iso) return '--:--';

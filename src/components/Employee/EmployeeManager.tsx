@@ -89,6 +89,12 @@ interface OutletContext {
   language: 'en' | 'ar';
 }
 
+import { useUser } from '../../hooks/useUser';
+import { isManager } from '../../utils/roleUtils';
+import { teamApiService, type TeamMember } from '../../api/teamApi';
+
+// ... existing imports
+
 const EmployeeManager: React.FC = () => {
   const theme = useTheme();
   const direction = theme.direction;
@@ -97,6 +103,7 @@ const EmployeeManager: React.FC = () => {
   const { darkMode } = useOutletContext<OutletContext>();
   const location = useLocation();
   const navigate = useNavigate();
+  const { user } = useUser(); // Get user context
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<null | Employee>(null);
   const [allEmployees, setAllEmployees] = useState<Employee[]>([]); // Store all employees
@@ -259,6 +266,60 @@ const EmployeeManager: React.FC = () => {
     updatedAt: emp.updatedAt,
   });
 
+  const convertTeamMemberToEmployee = (member: TeamMember): Employee => ({
+    id: member.id,
+    user_id: member.user.id,
+    name: `${member.user.first_name || ''} ${member.user.last_name || ''}`.trim(),
+    firstName: member.user.first_name,
+    lastName: member.user.last_name,
+    email: member.user.email,
+    phone: '', // Not available in TeamMember
+    departmentId: member.department?.id || member.designation.department?.id || '',
+    designationId: member.designation.id,
+    role_name: 'Employee', // Default
+    status: 'Active', // Default or fetch if available
+    profile_picture: member.user.profile_pic || undefined,
+    department: member.department
+      ? {
+        id: member.department.id,
+        name: member.department.name,
+        description: '',
+        tenantId: '',
+        createdAt: '',
+        updatedAt: '',
+        ...member.department,
+      }
+      : member.designation.department
+        ? {
+          id: member.designation.department.id,
+          name: member.designation.department.name,
+          description: '',
+          tenantId: '',
+          createdAt: '',
+          updatedAt: '',
+          ...member.designation.department,
+        }
+        : {
+          id: '',
+          name: 'Unknown',
+          description: '',
+          tenantId: '',
+          createdAt: '',
+          updatedAt: '',
+        },
+    designation: {
+      id: member.designation.id,
+      title: member.designation.title,
+      tenantId: '', // Not available
+      departmentId: member.department?.id || '',
+      createdAt: '',
+      updatedAt: '',
+    },
+    tenantId: '', // Not available
+    createdAt: member.created_at || new Date().toISOString(),
+    updatedAt: member.updated_at || new Date().toISOString(),
+  });
+
   // Fetch all employees from all pages
   const loadEmployees = useCallback(async () => {
     // Prevent duplicate calls
@@ -270,46 +331,76 @@ const EmployeeManager: React.FC = () => {
       isLoadingRef.current = true;
       setLoading(true);
 
-      const filters = {
-        departmentId: departmentFilter || undefined,
-        designationId: designationFilter || undefined,
-      };
+      // Check current user role
+      // Note: user object might trigger re-renders, but ref/checking inside callback is safer
+      const currentUserRole =
+        user?.role || (user as { role_name?: string })?.role_name;
 
-      // Fetch all pages sequentially
-      const allEmployeesData: Employee[] = [];
-      let page = 1;
-      let hasMorePages = true;
-      let backendLimit = 25; // Default limit
+      if (isManager(currentUserRole)) {
+        // Fetch manager's team members
+        const allMembers: TeamMember[] = [];
+        let page = 1;
+        let hasMore = true;
 
-      while (hasMorePages) {
-        const response = await employeeApi.getAllEmployees(filters, page);
-
-        // Extract limit from first page response
-        if (page === 1 && response.limit) {
-          backendLimit = response.limit;
-          setPaginationLimit(backendLimit);
+        while (hasMore) {
+          const res = await teamApiService.getMyTeamMembers(page);
+          if (res.items && res.items.length > 0) {
+            allMembers.push(...res.items);
+            if (page >= res.totalPages) hasMore = false;
+            else page++;
+          } else {
+            hasMore = false;
+          }
         }
 
-        // Convert and add employees
-        const convertedEmployees: Employee[] =
-          response.items.map(convertToEmployee);
-        allEmployeesData.push(...convertedEmployees);
+        const mappedEmployees = allMembers.map(convertTeamMemberToEmployee);
+        setAllEmployees(mappedEmployees);
+        setPaginationLimit(mappedEmployees.length > 0 ? mappedEmployees.length : 25);
+        setCurrentPage(1);
 
-        // Check if there are more pages
-        if (response.totalPages) {
-          // Use backend pagination info
-          hasMorePages = page < response.totalPages;
-          page++;
-        } else {
-          // Estimate: if we got less than backend limit, it's the last page
-          hasMorePages = convertedEmployees.length >= backendLimit;
-          page++;
+      } else {
+        // Admin/HR Admin logic - fetch full list
+        const filters = {
+          departmentId: departmentFilter || undefined,
+          designationId: designationFilter || undefined,
+        };
+
+        // Fetch all pages sequentially
+        const allEmployeesData: Employee[] = [];
+        let page = 1;
+        let hasMorePages = true;
+        let backendLimit = 25; // Default limit
+
+        while (hasMorePages) {
+          const response = await employeeApi.getAllEmployees(filters, page);
+
+          // Extract limit from first page response
+          if (page === 1 && response.limit) {
+            backendLimit = response.limit;
+            setPaginationLimit(backendLimit);
+          }
+
+          // Convert and add employees
+          const convertedEmployees: Employee[] =
+            response.items.map(convertToEmployee);
+          allEmployeesData.push(...convertedEmployees);
+
+          // Check if there are more pages
+          if (response.totalPages) {
+            // Use backend pagination info
+            hasMorePages = page < response.totalPages;
+            page++;
+          } else {
+            // Estimate: if we got less than backend limit, it's the last page
+            hasMorePages = convertedEmployees.length >= backendLimit;
+            page++;
+          }
         }
+
+        setAllEmployees(allEmployeesData);
+        // Reset to page 1 when data is loaded
+        setCurrentPage(1);
       }
-
-      setAllEmployees(allEmployeesData);
-      // Reset to page 1 when data is loaded
-      setCurrentPage(1);
     } catch (error: unknown) {
       const errorResult = extractErrorMessage(error);
       showError(errorResult.message);
@@ -318,7 +409,7 @@ const EmployeeManager: React.FC = () => {
       setLoading(false);
       isLoadingRef.current = false;
     }
-  }, [departmentFilter, designationFilter, showError]);
+  }, [departmentFilter, designationFilter, showError, user]);
 
   // Mark initial mount as complete after first render
   useEffect(() => {

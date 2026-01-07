@@ -21,6 +21,7 @@ import { useLanguage } from '../../hooks/useLanguage';
 import type { Team, TeamMember } from '../../api/teamApi';
 import { teamApiService } from '../../api/teamApi';
 import { snackbar } from '../../utils/snackbar';
+import { isAdmin } from '../../utils/auth';
 import TeamMemberList from './TeamMemberList';
 import AppButton from '../common/AppButton';
 import AppCard from '../common/AppCard';
@@ -285,29 +286,33 @@ const MyTeams: React.FC<MyTeamsProps> = ({ teams, darkMode = false }) => {
                 >
                   {lang.viewMembers}
                 </AppButton>
-                <AppButton
-                  variant='outlined'
-                  variantType='secondary'
-                  size='small'
-                  startIcon={<AddIcon sx={{ fontSize: { xs: 16, sm: 18 } }} />}
-                  onClick={() => handleAddMember(team)}
-                  sx={{
-                    flex: 1,
-                    borderColor: '#3083DC',
-                    color: '#3083DC',
-                    backgroundColor: 'transparent',
-                    fontSize: { xs: '0.75rem', sm: '0.875rem' },
-                    py: { xs: 0.75, sm: 1 },
-                    px: { xs: 1, sm: 1.5 },
-                    minWidth: 0,
-                    '&:hover': {
+                {isAdmin() && (
+                  <AppButton
+                    variant='outlined'
+                    variantType='secondary'
+                    size='small'
+                    startIcon={
+                      <AddIcon sx={{ fontSize: { xs: 16, sm: 18 } }} />
+                    }
+                    onClick={() => handleAddMember(team)}
+                    sx={{
+                      flex: 1,
                       borderColor: '#3083DC',
-                      backgroundColor: 'rgba(48, 131, 220, 0.1)',
-                    },
-                  }}
-                >
-                  {lang.addMember}
-                </AppButton>
+                      color: '#3083DC',
+                      backgroundColor: 'transparent',
+                      fontSize: { xs: '0.75rem', sm: '0.875rem' },
+                      py: { xs: 0.75, sm: 1 },
+                      px: { xs: 1, sm: 1.5 },
+                      minWidth: 0,
+                      '&:hover': {
+                        borderColor: '#3083DC',
+                        backgroundColor: 'rgba(48, 131, 220, 0.1)',
+                      },
+                    }}
+                  >
+                    {lang.addMember}
+                  </AppButton>
+                )}
               </Stack>
             </Box>
           </AppCard>
@@ -356,7 +361,6 @@ const MyTeams: React.FC<MyTeamsProps> = ({ teams, darkMode = false }) => {
             value={selectedEmployeeId || 'all'}
             onChange={e => setSelectedEmployeeId(String(e.target.value || ''))}
             disabled={loadingEmployees}
-            align='left'
             containerSx={{ mt: 2, width: '100%' }}
             options={[
               {
@@ -367,11 +371,10 @@ const MyTeams: React.FC<MyTeamsProps> = ({ teams, darkMode = false }) => {
               },
               ...availableEmployees.map(employee => ({
                 value: employee.id,
-                label: `${
-                  employee.user
-                    ? `${employee.user.first_name || ''} ${employee.user.last_name || ''}`
-                    : 'Unknown User'
-                } - ${employee.designation?.title || 'N/A'}`,
+                label: `${employee.user
+                  ? `${employee.user.first_name || ''} ${employee.user.last_name || ''}`
+                  : 'Unknown User'
+                  } - ${employee.designation?.title || 'N/A'}`,
               })),
             ]}
           />

@@ -64,8 +64,13 @@ const LeaveRequestPage = () => {
   const [viewMode, setViewMode] = useState<'team' | 'you'>('you');
   const previousViewModeRef = useRef<'team' | 'you'>(viewMode);
   const previousPageRef = useRef<number>(1);
-  const [dateFilter, setDateFilter] = useState<string>('all');
-  const previousDateFilterRef = useRef<string>('all');
+  const [dateFilter, setDateFilter] = useState<string>(() => {
+    const now = new Date();
+    const y = now.getFullYear();
+    const m = String(now.getMonth() + 1).padStart(2, '0');
+    return `${y}-${m}`;
+  });
+  const previousDateFilterRef = useRef<string>(dateFilter);
 
   const handleDateFilterChange = (filter: string) => {
     setDateFilter(filter);
@@ -101,18 +106,21 @@ const LeaveRequestPage = () => {
         let res;
 
         // Calculate date params
-        const now = new Date();
-        const currentYear = now.getFullYear();
         let queryParams: { month?: number; year?: number } = {};
 
-        if (filter === 'all') {
-          queryParams = {};
-        } else if (filter && filter.startsWith('month-')) {
-          const m = parseInt(filter.replace('month-', ''), 10);
-          queryParams = { month: m, year: currentYear };
+        if (filter && /^\d{4}-\d{2}$/.test(filter)) {
+          const [yStr, mStr] = filter.split('-');
+          queryParams = {
+            year: parseInt(yStr, 10),
+            month: parseInt(mStr, 10),
+          };
         } else {
-          // Default to all if no filter matches or is undefined
-          queryParams = {};
+          // Fallback to current month if filter is somehow invalid
+          const now = new Date();
+          queryParams = {
+            year: now.getFullYear(),
+            month: now.getMonth() + 1
+          };
         }
 
         if (
@@ -189,8 +197,8 @@ const LeaveRequestPage = () => {
 
           const leaveTypeName =
             (leave.leaveType &&
-            typeof leave.leaveType === 'object' &&
-            typeof (leave.leaveType as Record<string, unknown>).name ===
+              typeof leave.leaveType === 'object' &&
+              typeof (leave.leaveType as Record<string, unknown>).name ===
               'string'
               ? ((leave.leaveType as Record<string, unknown>).name as string)
               : undefined) || 'Unknown';
@@ -482,9 +490,9 @@ const LeaveRequestPage = () => {
             const leaveRec = leave as unknown as Record<string, unknown>;
             const employeeId = String(
               (leaveRec.employee as Record<string, unknown> | undefined)?.id ||
-                (leaveRec.user as Record<string, unknown> | undefined)?.id ||
-                (leaveRec.employeeId as string | undefined) ||
-                ''
+              (leaveRec.user as Record<string, unknown> | undefined)?.id ||
+              (leaveRec.employeeId as string | undefined) ||
+              ''
             );
 
             const r = leaveRec.remarks;
