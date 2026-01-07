@@ -277,12 +277,18 @@ const BenefitDetails: React.FC = () => {
             <CircularProgress />
           </Box>
         ) : shouldUseAppTable ? (
-          <Paper sx={{ overflowX: 'auto', boxShadow: 'none', background: 'transparent' }}>
-          <AppTable>{tableContent}</AppTable>
+          <Paper
+            sx={{
+              overflowX: 'auto',
+              boxShadow: 'none',
+              background: 'transparent',
+            }}
+          >
+            <AppTable>{tableContent}</AppTable>
           </Paper>
         ) : (
           <Paper sx={{ mt: 2, overflowX: 'auto', boxShadow: 'none' }}>
-            <Table>{tableContent}</Table>
+            <Table sx={{boxShadow: 'none'}}>{tableContent}</Table>
           </Paper>
         )}
 

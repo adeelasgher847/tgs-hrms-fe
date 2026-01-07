@@ -357,3 +357,8 @@ h3 {
 .MuiCircularProgress-root {
   color: var(--primary-dark-color) !important;
 }
+
+/* Remove box-shadow from Paper used as TableContainer globally */
+.MuiPaper-root.MuiTableContainer-root {
+  box-shadow: none !important;
+}
