@@ -157,7 +157,6 @@ function App() {
                 />
                 <Route path='/signup/success' element={<SignupSuccess />} />
 
-                {/* Stripe may redirect employee payments back to /employees */}
                 <Route path='/employees' element={<EmployeePaymentReturn />} />
 
                 <Route
@@ -207,6 +206,10 @@ function App() {
                   />
                   <Route
                     path='EmployeeProfileView'
+                    element={<EmployeeProfileView />}
+                  />
+                  <Route
+                    path='EmployeeProfileView/:employeeId'
                     element={<EmployeeProfileView />}
                   />
                   <Route

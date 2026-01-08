@@ -64,6 +64,18 @@ const LeaveRequestPage = () => {
   const [viewMode, setViewMode] = useState<'team' | 'you'>('you');
   const previousViewModeRef = useRef<'team' | 'you'>(viewMode);
   const previousPageRef = useRef<number>(1);
+  const [dateFilter, setDateFilter] = useState<string>(() => {
+    const now = new Date();
+    const y = now.getFullYear();
+    const m = String(now.getMonth() + 1).padStart(2, '0');
+    return `${y}-${m}`;
+  });
+  const previousDateFilterRef = useRef<string>(dateFilter);
+
+  const handleDateFilterChange = (filter: string) => {
+    setDateFilter(filter);
+    setCurrentPage(1);
+  };
 
   const currentUser = getCurrentUser();
   const currentUserId = currentUser?.id ?? '';
@@ -83,6 +95,7 @@ const LeaveRequestPage = () => {
       page = currentPage,
       view = viewMode,
       skipFullPageLoader = false,
+      filter = dateFilter,
     } = {}) => {
       const showFullPageLoader =
         !hasLoadedOnceRef.current && !skipFullPageLoader;
@@ -92,10 +105,28 @@ const LeaveRequestPage = () => {
 
         let res;
 
+        // Calculate date params
+        let queryParams: { month?: number; year?: number } = {};
+
+        if (filter && /^\d{4}-\d{2}$/.test(filter)) {
+          const [yStr, mStr] = filter.split('-');
+          queryParams = {
+            year: parseInt(yStr, 10),
+            month: parseInt(mStr, 10),
+          };
+        } else {
+          // Fallback to current month if filter is somehow invalid
+          const now = new Date();
+          queryParams = {
+            year: now.getFullYear(),
+            month: now.getMonth() + 1
+          };
+        }
+
         if (
-          ['system-admin', 'network-admin', 'admin', 'hr-admin'].includes(role)
+          ['system-admin', 'network-admin', 'admin', 'hr-admin', 'oe-admin'].includes(role)
         ) {
-          res = await leaveApi.getAllLeaves(page);
+          res = await leaveApi.getAllLeaves(page, queryParams);
         } else if (role === 'manager') {
           res =
             view === 'you'
@@ -166,8 +197,8 @@ const LeaveRequestPage = () => {
 
           const leaveTypeName =
             (leave.leaveType &&
-            typeof leave.leaveType === 'object' &&
-            typeof (leave.leaveType as Record<string, unknown>).name ===
+              typeof leave.leaveType === 'object' &&
+              typeof (leave.leaveType as Record<string, unknown>).name ===
               'string'
               ? ((leave.leaveType as Record<string, unknown>).name as string)
               : undefined) || 'Unknown';
@@ -247,7 +278,7 @@ const LeaveRequestPage = () => {
         else setTableLoading(false);
       }
     },
-    [currentUserId, role, currentPage, viewMode]
+    [currentUserId, role, currentPage, viewMode, dateFilter]
   );
 
   useEffect(() => {
@@ -264,9 +295,16 @@ const LeaveRequestPage = () => {
     // Always reload if page changed, even if going back to page 1
     const pageChanged = previousPageRef.current !== currentPage;
     const viewModeChanged = previousViewModeRef.current !== effectiveViewMode;
+    const filterChanged = previousDateFilterRef.current !== dateFilter;
 
     // Only skip loading if nothing has changed (initial load already happened)
-    if (hasLoadedOnceRef.current && !pageChanged && !viewModeChanged) return;
+    if (
+      hasLoadedOnceRef.current &&
+      !pageChanged &&
+      !viewModeChanged &&
+      !filterChanged
+    )
+      return;
 
     // Use table loader (not full page loader) if we've loaded before and only the page changed
     const skipFullPageLoader =
@@ -277,10 +315,12 @@ const LeaveRequestPage = () => {
       page: currentPage,
       view: effectiveViewMode,
       skipFullPageLoader,
+      filter: dateFilter,
     });
     previousViewModeRef.current = effectiveViewMode;
     previousPageRef.current = currentPage;
-  }, [currentPage, viewMode, role, loadLeaves]);
+    previousDateFilterRef.current = dateFilter;
+  }, [currentPage, viewMode, role, loadLeaves, dateFilter]);
 
   const getErrorMessage = (error: unknown): string => {
     if (error && typeof error === 'object' && 'response' in error) {
@@ -450,9 +490,9 @@ const LeaveRequestPage = () => {
             const leaveRec = leave as unknown as Record<string, unknown>;
             const employeeId = String(
               (leaveRec.employee as Record<string, unknown> | undefined)?.id ||
-                (leaveRec.user as Record<string, unknown> | undefined)?.id ||
-                (leaveRec.employeeId as string | undefined) ||
-                ''
+              (leaveRec.user as Record<string, unknown> | undefined)?.id ||
+              (leaveRec.employeeId as string | undefined) ||
+              ''
             );
 
             const r = leaveRec.remarks;
@@ -543,6 +583,7 @@ const LeaveRequestPage = () => {
             justifyContent: 'space-between',
             textAlign: { xs: 'start', sm: 'left' },
             gap: { xs: 1, sm: 0 },
+            color: '#fff',
           }}
         >
           <Box>
@@ -758,11 +799,13 @@ const LeaveRequestPage = () => {
         ) : (
           <LeaveHistory
             leaves={leaves}
-            isAdmin={['hr-admin', 'system-admin', 'admin'].includes(role)}
+            isAdmin={['hr-admin', 'system-admin', 'admin', 'oe-admin'].includes(role)}
             isManager={false}
             currentUserId={currentUserId || undefined}
             onAction={handleAction}
             onWithdraw={handleWithdraw}
+            dateFilter={dateFilter}
+            onDateFilterChange={handleDateFilterChange}
             currentPage={currentPage}
             totalPages={totalPages}
             totalItems={totalItems}

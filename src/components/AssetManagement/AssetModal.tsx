@@ -4,7 +4,6 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
-  TextField,
   FormControl,
   InputLabel,
   Select,
@@ -25,6 +24,8 @@ import type { Asset, MockUser } from '../../types/asset';
 import { assetApi, type AssetSubcategory } from '../../api/assetApi';
 import AppButton from '../common/AppButton';
 import { Close as CloseIcon } from '@mui/icons-material';
+import AppInputField from '../common/AppInputField';
+import { CalendarIcon } from '@mui/x-date-pickers';
 
 interface AssetCategory {
   id: string;
@@ -72,7 +73,6 @@ const AssetModal: React.FC<AssetModalProps> = ({
   const [categories, setCategories] = useState<AssetCategory[]>([]);
   const [subcategories, setSubcategories] = useState<AssetSubcategory[]>([]);
   const [loadingData, setLoadingData] = useState(false);
-
   type ExtendedAsset = Asset & {
     category_id?: string;
     subcategory_id?: string;
@@ -351,6 +351,8 @@ const AssetModal: React.FC<AssetModalProps> = ({
             maxHeight: '90vh',
           },
         }}
+        disableAutoFocus
+        disableEnforceFocus
         sx={{
           '& .MuiDialog-paper': {
             margin: { xs: '16px', lg: 'auto' },
@@ -398,7 +400,7 @@ const AssetModal: React.FC<AssetModalProps> = ({
                       name='name'
                       control={control}
                       render={({ field }) => (
-                        <TextField
+                        <AppInputField
                           {...field}
                           fullWidth
                           label='Asset Name'
@@ -536,11 +538,26 @@ const AssetModal: React.FC<AssetModalProps> = ({
                         }
                       }}
                       disabled={loading}
+                      slots={{ openPickerIcon: CalendarIcon }} 
                       slotProps={{
                         textField: {
                           fullWidth: true,
                           error: !!errors.purchaseDate,
                           helperText: errors.purchaseDate?.message,
+                          sx: {
+                            '& .MuiInputBase-input': {
+                              color: theme.palette.text.primary,
+                            },
+                            '& .MuiInputLabel-root': {
+                              color: theme.palette.text.secondary,
+                            },
+                            '& .MuiIconButton-root': {
+                              color: theme.palette.text.secondary,
+                            },
+                            '& .MuiIconButton-root svg': {
+                              color: theme.palette.text.secondary,
+                            },
+                          },
                         },
                       }}
                     />

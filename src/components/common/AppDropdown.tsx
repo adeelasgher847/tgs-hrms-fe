@@ -36,7 +36,6 @@ interface AppDropdownProps
 
 const ArrowIcon = ({ open }: { open: boolean }) => {
   const theme = useTheme();
-
   return (
     <Box
       component='img'
@@ -108,18 +107,20 @@ const AppDropdown = React.forwardRef<HTMLDivElement, AppDropdownProps>(
                 fontSize: 'var(--subheading3-font-size)',
                 lineHeight: 'var(--subheading2-line-height)',
                 letterSpacing: 'var(--subheading2-letter-spacing)',
-                color: 'text.primary',
+                color:
+                  theme.palette.mode === 'dark'
+                    ? theme.palette.text.primary
+                    : 'var(--black-color)',
               }}
             >
               {label}
             </Typography>
-
             {error && helperText && (
               <Typography
                 sx={{
                   fontSize: 'var(--label-font-size)',
                   lineHeight: 'var(--label-line-height)',
-                  color: theme.palette.error.main,
+                  color: '#d32f2f',
                   fontWeight: 400,
                   textAlign: 'right',
                   ml: 2,
@@ -130,50 +131,60 @@ const AppDropdown = React.forwardRef<HTMLDivElement, AppDropdownProps>(
             )}
           </Box>
         )}
-
         <FormControl
           ref={ref}
           fullWidth
           error={error}
           sx={[
             {
+              width: '100%',
               '& .MuiOutlinedInput-root': {
-                backgroundColor: 'transparent',
+                backgroundColor:
+                  inputBackgroundColor || theme.palette.background.paper,
                 borderRadius: '12px',
                 minHeight: { xs: '40px', sm: '44px' },
-
+                width: '100%',
+                padding: '0 !important',
                 '& fieldset': {
                   borderColor: error
                     ? theme.palette.error.main
                     : theme.palette.divider,
+                  borderWidth: '1px',
                 },
-
                 '&:hover fieldset': {
                   borderColor: error
                     ? theme.palette.error.main
                     : theme.palette.divider,
                 },
-
                 '&.Mui-focused fieldset': {
                   borderColor: error
                     ? theme.palette.error.main
                     : theme.palette.primary.main,
+                  borderWidth: '1px',
                 },
               },
               '& .MuiInputBase-input': {
+                padding: { xs: '8px 12px', sm: '10px 16px' },
                 backgroundColor: 'transparent !important',
               },
-
-              '& .MuiSelect-select': {
+              '& .MuiOutlinedInput-input': {
                 backgroundColor: 'transparent !important',
+                color: theme.palette.text.primary,
+              },
+              '& .MuiOutlinedInput-input.MuiSelect-select': {
+                color: theme.palette.text.primary + ' !important',
+              },
+              '& .MuiSelect-select': {
                 color: theme.palette.text.primary,
                 fontSize: 'var(--label-font-size)',
                 lineHeight: 'var(--label-line-height)',
                 letterSpacing: 'var(--label-letter-spacing)',
+                fontWeight: 400,
                 padding: { xs: '8px 12px', sm: '10px 16px' },
                 paddingRight: { xs: '36px', sm: '40px' },
                 display: 'flex',
                 alignItems: 'center',
+                backgroundColor: 'transparent !important',
               },
               '& .MuiSelect-icon': {
                 color: theme.palette.text.secondary,
@@ -186,6 +197,7 @@ const AppDropdown = React.forwardRef<HTMLDivElement, AppDropdownProps>(
           <Select
             {...rest}
             variant='outlined'
+            id={rest.id || (rest.name ? `dropdown-${rest.name}` : undefined)}
             value={value === 'all' ? '' : value}
             onChange={onChange}
             displayEmpty
@@ -194,36 +206,55 @@ const AppDropdown = React.forwardRef<HTMLDivElement, AppDropdownProps>(
             onClose={() => setOpen(false)}
             IconComponent={() => <ArrowIcon open={open} />}
             renderValue={selected => {
-              if (!selected) {
+              if (!selected || selected === '') {
                 const allOption = options.find(opt => opt.value === 'all');
-                return (
-                  <Typography color='text.secondary'>
-                    {allOption?.label || placeholder}
-                  </Typography>
-                );
+                return allOption ? allOption.label : placeholder || '';
               }
-
               const selectedOption = options.find(
                 opt => opt.value === selected
               );
-
-              return (
-                <Typography color='text.primary'>
-                  {selectedOption?.label}
-                </Typography>
-              );
+              return selectedOption ? selectedOption.label : '';
+            }}
+            sx={{
+              '& .MuiOutlinedInput-notchedOutline': {
+                border: error
+                  ? `1px solid ${theme.palette.error.main}`
+                  : `1px solid ${theme.palette.divider}`,
+              },
+              '& .MuiSelect-select': {
+                backgroundColor: 'transparent !important',
+                color: theme.palette.text.primary,
+              },
             }}
             MenuProps={{
               PaperProps: {
                 sx: {
                   borderRadius: '12px',
                   mt: 1,
-                  // backgroundColor: theme.palette.background.paper,
-
+                  backgroundColor: theme.palette.background.paper,
                   '& .MuiMenuItem-root': {
                     fontSize: 'var(--label-font-size)',
-                    minHeight: { xs: 40, sm: 44 },
+                    lineHeight: 'var(--label-line-height)',
+                    letterSpacing: 'var(--label-letter-spacing)',
                     color: theme.palette.text.primary,
+                    minHeight: { xs: 40, sm: 44 },
+                    backgroundColor: 'transparent !important',
+                    '&:hover': {
+                      backgroundColor: `${theme.palette.action.hover} !important`,
+                    },
+                    '&.Mui-selected': {
+                      backgroundColor: 'transparent !important',
+                      color: theme.palette.text.primary,
+                      '&:hover': {
+                        backgroundColor: `${theme.palette.action.hover} !important`,
+                      },
+                    },
+                    '&.Mui-selected.Mui-focusVisible': {
+                      backgroundColor: 'transparent !important',
+                    },
+                    '&.Mui-focusVisible': {
+                      backgroundColor: 'transparent !important',
+                    },
                   },
                 },
               },
@@ -233,6 +264,23 @@ const AppDropdown = React.forwardRef<HTMLDivElement, AppDropdownProps>(
               <MenuItem
                 key={option.value}
                 value={option.value === 'all' ? '' : option.value}
+                sx={{
+                  color: theme.palette.text.primary,
+                  backgroundColor: 'transparent !important',
+                  '&.Mui-selected': {
+                    backgroundColor: 'transparent !important',
+                    color: theme.palette.text.primary,
+                    '&:hover': {
+                      backgroundColor: `${theme.palette.action.hover} !important`,
+                    },
+                  },
+                  '&.Mui-focusVisible': {
+                    backgroundColor: 'transparent !important',
+                  },
+                  '&:hover': {
+                    backgroundColor: `${theme.palette.action.hover} !important`,
+                  },
+                }}
               >
                 {option.label}
               </MenuItem>

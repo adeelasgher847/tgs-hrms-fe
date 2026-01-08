@@ -78,6 +78,7 @@ const ROLE_MENU_ALLOWLIST: Record<NormalizedRole, readonly string[]> = {
     'benefits',
     'leave-analytics',
     'payroll',
+    'employees',
   ],
   admin: [
     'dashboard',
@@ -338,7 +339,7 @@ const DASHBOARD_ALLOWLIST_ENTRIES: Record<NormalizedRole, readonly string[]> = {
     'employee-benefit',
   ],
   'hr-admin': [
-    '',
+    'EmployeeManager',
     'Designations',
     'AttendanceCheck',
     'attendance-summary',
@@ -392,6 +393,7 @@ const DASHBOARD_ALLOWLIST_ENTRIES: Record<NormalizedRole, readonly string[]> = {
     'employee-salary',
   ],
   manager: [
+    'EmployeeManager',
     'AttendanceCheck',
     'AttendanceTable',
     'Reports',
@@ -409,6 +411,7 @@ const DASHBOARD_ALLOWLIST_ENTRIES: Record<NormalizedRole, readonly string[]> = {
     'benefit-details',
     'employee-salary',
     'my-salary',
+    'EmployeeProfileView',
   ],
   employee: [
     'AttendanceCheck',
@@ -455,5 +458,17 @@ export const isDashboardPathAllowedForRole = (
 ): boolean => {
   const r = normalizeRole(role);
   const normalizedPath = (pathAfterDashboard || '').replace(/^\/+|\/+$/g, '');
-  return DASHBOARD_ALLOWLIST[r].has(normalizedPath);
+  const allowedSet = DASHBOARD_ALLOWLIST[r];
+
+  if (allowedSet.has(normalizedPath)) {
+    return true;
+  }
+
+  for (const allowedPath of allowedSet) {
+    if (allowedPath && normalizedPath.startsWith(allowedPath + '/')) {
+      return true;
+    }
+  }
+
+  return false;
 };

@@ -69,7 +69,6 @@ const BenefitList: React.FC = () => {
           ? resp
           : null;
 
-      setBenefits(itemsArr);
       setTypes(Array.from(new Set(itemsArr.map(b => b.type))));
       setStatuses(Array.from(new Set(itemsArr.map(b => b.status))));
 

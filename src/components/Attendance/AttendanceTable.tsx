@@ -853,7 +853,7 @@ const AttendanceTable = () => {
 
       const adminTenantId =
         !isSystemAdminFlag &&
-        (isAdminFlag || isNetworkAdminFlag || isHRAdminFlag)
+          (isAdminFlag || isNetworkAdminFlag || isHRAdminFlag)
           ? getAdminTenantId(currentUser)
           : undefined;
 
@@ -1504,426 +1504,428 @@ const AttendanceTable = () => {
       {((tab === 0 && !isManager && !isAdminLike) ||
         (isManager && !isAdminLike && managerView === 'my') ||
         (isAdminLike && (adminView === 'my' || adminView === 'all'))) && (
-        <Paper sx={{ background: 'unset', boxShadow: 'none' }}>
-          <Box
-            sx={{
-              mb: 3,
-              mt: 3,
-              display: 'flex',
-              flexDirection: { xs: 'column', sm: 'row' },
-              gap: 2,
-              alignItems: { xs: 'stretch', sm: 'center' },
-              justifyContent: 'space-between',
-            }}
-          >
+          <Paper sx={{ background: 'unset', boxShadow: 'none' }}>
             <Box
               sx={{
+                mb: 3,
+                mt: 3,
                 display: 'flex',
                 flexDirection: { xs: 'column', sm: 'row' },
                 gap: 2,
-                alignItems: { xs: 'stretch', sm: 'center' },
-                flex: 1,
+                alignItems: { xs: 'stretch', sm: 'flex-end' },
+                justifyContent: 'space-between',
               }}
             >
-              {canViewAllAttendance && (
-                <>
-                  <AppButton
-                    variant={adminView === 'my' ? 'contained' : 'outlined'}
-                    variantType={adminView === 'my' ? 'primary' : 'secondary'}
-                    onClick={handleMyAttendance}
-                    sx={{
-                      width: { xs: '100%', sm: '200px' },
-                      minWidth: { xs: '100%', sm: '200px' },
-                      maxWidth: { sm: '200px' },
-                      boxSizing: 'border-box',
-                      flexShrink: 0,
-                      backgroundColor:
-                        adminView === 'my' ? 'primary.dark' : undefined,
-                      color: adminView === 'my' ? '#fff' : 'primary.dark',
-                      borderColor: 'primary.dark',
-                      '&:hover': {
-                        backgroundColor:
-                          adminView === 'my' ? 'primary.dark' : undefined,
-                        borderColor: 'primary.dark',
-                      },
-                    }}
-                  >
-                    My Attendance
-                  </AppButton>
-                  <AppButton
-                    variant={adminView === 'all' ? 'contained' : 'outlined'}
-                    variantType={adminView === 'all' ? 'primary' : 'secondary'}
-                    onClick={handleAllAttendance}
-                    sx={{
-                      width: { xs: '100%', sm: '200px' },
-                      minWidth: { xs: '100%', sm: '200px' },
-                      maxWidth: { sm: '200px' },
-                      boxSizing: 'border-box',
-                      flexShrink: 0,
-                      backgroundColor: 'primary.dark',
-                      color: '#fff',
-                      borderColor: 'primary.dark',
-                      '&:hover': {
-                        backgroundColor: 'primary.dark',
-                        borderColor: 'primary.dark',
-                      },
-                    }}
-                  >
-                    All Attendance
-                  </AppButton>
-                </>
-              )}
-
-              {isManager && !isAdminLike && (
-                <>
-                  <AppButton
-                    variant={managerView === 'my' ? 'contained' : 'outlined'}
-                    variantType={managerView === 'my' ? 'primary' : 'secondary'}
-                    onClick={handleManagerMyAttendance}
-                    sx={{
-                      width: { xs: '100%', sm: '200px' },
-                      minWidth: { xs: '100%', sm: '200px' },
-                      maxWidth: { sm: '200px' },
-                      boxSizing: 'border-box',
-                      flexShrink: 0,
-                      backgroundColor:
-                        managerView === 'my' ? 'primary.dark' : undefined,
-                      color: managerView === 'my' ? '#fff' : 'primary.dark',
-                      borderColor: 'primary.dark',
-                      '&:hover': {
-                        backgroundColor:
-                          managerView === 'my' ? 'primary.dark' : undefined,
-                        borderColor: 'primary.dark',
-                      },
-                    }}
-                  >
-                    My Attendance
-                  </AppButton>
-                  <AppButton
-                    variant={managerView === 'team' ? 'contained' : 'outlined'}
-                    variantType={
-                      managerView === 'team' ? 'primary' : 'secondary'
-                    }
-                    onClick={handleManagerTeamAttendance}
-                    sx={{
-                      width: { xs: '100%', sm: '200px' },
-                      minWidth: { xs: '100%', sm: '200px' },
-                      maxWidth: { sm: '200px' },
-                      boxSizing: 'border-box',
-                      flexShrink: 0,
-                    }}
-                  >
-                    Team Attendance
-                  </AppButton>
-                </>
-              )}
-
-              {adminView === 'all' && isSystemAdminUser && (
-                <>
-                  <AppDropdown
-                    label='Tenant'
-                    value={selectedTenant || ''}
-                    onChange={(e: SelectChangeEvent<string | number>) =>
-                      handleTenantChange(e.target.value as string)
-                    }
-                    options={[
-                      { value: '', label: 'All Tenants' },
-                      ...tenants.map(tenant => ({
-                        value: tenant.id,
-                        label: tenant.name,
-                      })),
-                    ]}
-                    disabled={tenantsLoading}
-                    containerSx={{
-                      minWidth: { xs: '100%', sm: 220 },
-                      width: { xs: '100%', sm: 'auto' },
-                    }}
-                  />
-                  <AppDropdown
-                    label='Employee'
-                    value={selectedEmployee || ''}
-                    onChange={(e: SelectChangeEvent<string | number>) =>
-                      handleEmployeeChange(e.target.value as string)
-                    }
-                    options={[
-                      { value: '', label: 'All Employees' },
-                      ...employees.map(emp => ({
-                        value: emp.id,
-                        label: emp.name,
-                      })),
-                    ]}
-                    placeholder='SELECT EMPLOYEE'
-                    containerSx={{
-                      width: { xs: '100%', sm: '200px' },
-                      minWidth: { xs: '100%', sm: '200px' },
-                      maxWidth: { sm: '200px' },
-                      flexShrink: 0,
-                      padding: 0,
-                      margin: 0,
-                      boxSizing: 'border-box',
-                    }}
-                  />
-                </>
-              )}
               <Box
                 sx={{
-                  width: { xs: '100%', sm: '200px' },
-                  minWidth: { xs: '100%', sm: '200px' },
-                  maxWidth: { sm: '200px' },
-                  flexShrink: 0,
+                  display: 'flex',
+                  flexDirection: { xs: 'column', sm: 'row' },
+                  gap: 2,
+                  alignItems: { xs: 'stretch', sm: 'center' },
+                  flex: 1,
+                  flexWrap: 'wrap',
                 }}
               >
-                <DatePicker
-                  range
-                  numberOfMonths={2}
-                  value={
-                    startDate && endDate
-                      ? [new Date(startDate), new Date(endDate)]
-                      : startDate
-                        ? [new Date(startDate)]
-                        : []
-                  }
-                  onChange={dates => {
-                    if (Array.isArray(dates) && dates.length === 2) {
-                      const start = formatLocalYMD(dates[0].toDate());
-                      const end = formatLocalYMD(dates[1].toDate());
-                      setStartDate(start);
-                      setEndDate(end);
-                      setCurrentPage(1);
-                      const view = canViewAllAttendance ? adminView : 'my';
-                      const selectedId =
-                        view === 'all' ? selectedEmployee : undefined;
-                      fetchAttendance(view, selectedId, start, end);
-                    } else if (Array.isArray(dates) && dates.length === 1) {
-                      const start = formatLocalYMD(dates[0].toDate());
-                      setStartDate(start);
-                      setEndDate('');
-                      setCurrentPage(1);
-                      const view = canViewAllAttendance ? adminView : 'my';
-                      const selectedId =
-                        view === 'all' ? selectedEmployee : undefined;
-                      fetchAttendance(view, selectedId, start, '');
-                    } else {
-                      setStartDate('');
-                      setEndDate('');
-                      setCurrentPage(1);
-                      const view = canViewAllAttendance ? adminView : 'my';
-                      const selectedId =
-                        view === 'all' ? selectedEmployee : undefined;
-                      fetchAttendance(view, selectedId, '', '');
-                    }
-                  }}
-                  format='MM/DD/YYYY'
-                  placeholder='START DATE - END DATE'
-                  style={{
-                    width: '100%',
-                    height: '40px',
-                    padding: '6.5px 14px',
-                    border: '1px solid #3083DC',
-                    borderRadius: '12px',
-                    fontSize: '16px',
-                    outline: 'none',
-                  }}
-                  containerStyle={{
-                    width: '100%',
-                  }}
-                  inputClass={`custom-date-picker-input ${mode === 'dark' ? 'theme-dark' : ''}`}
-                  className={`custom-date-picker ${mode === 'dark' ? 'theme-dark' : ''}`}
-                  editable={false}
-                  showOtherDays={true}
-                  onOpen={() => {
-                    document.body.style.overflow = 'hidden';
-                  }}
-                  onClose={() => {
-                    document.body.style.overflow = 'auto';
-                  }}
-                />
-              </Box>
+                {canViewAllAttendance && (
+                  <>
+                    <AppButton
+                      variant={adminView === 'my' ? 'contained' : 'outlined'}
+                      variantType={adminView === 'my' ? 'primary' : 'secondary'}
+                      onClick={handleMyAttendance}
+                      sx={{
+                        width: { xs: '100%', sm: '200px' },
+                        minWidth: { xs: '100%', sm: '200px' },
+                        maxWidth: { sm: '200px' },
+                        boxSizing: 'border-box',
+                        flexShrink: 0,
+                        backgroundColor:
+                          adminView === 'my' ? 'primary.dark' : undefined,
+                        color: adminView === 'my' ? '#fff' : 'primary.dark',
+                        borderColor: 'primary.dark',
+                        '&:hover': {
+                          backgroundColor:
+                            adminView === 'my' ? 'primary.dark' : undefined,
+                          borderColor: 'primary.dark',
+                        },
+                      }}
+                    >
+                      My Attendance
+                    </AppButton>
+                    <AppButton
+                      variant={adminView === 'all' ? 'contained' : 'outlined'}
+                      variantType={adminView === 'all' ? 'primary' : 'secondary'}
+                      onClick={handleAllAttendance}
+                      sx={{
+                        width: { xs: '100%', sm: '200px' },
+                        minWidth: { xs: '100%', sm: '200px' },
+                        maxWidth: { sm: '200px' },
+                        boxSizing: 'border-box',
+                        flexShrink: 0,
+                        backgroundColor: 'primary.dark',
+                        color: '#fff',
+                        borderColor: 'primary.dark',
+                        '&:hover': {
+                          backgroundColor: 'primary.dark',
+                          borderColor: 'primary.dark',
+                        },
+                      }}
+                    >
+                      All Attendance
+                    </AppButton>
+                  </>
+                )}
 
-              <AppButton
-                variant='outlined'
-                variantType='secondary'
-                onClick={handleFilterChange}
-                sx={{
-                  width: { xs: '100%', sm: '200px' },
-                  minWidth: { xs: '100%', sm: '200px' },
-                  maxWidth: { sm: '200px' },
-                  borderRadius: '12px',
-                  boxSizing: 'border-box',
-                  flexShrink: 0,
-                  color: 'primary.dark',
-                  borderColor: 'primary.dark',
-                  '&:hover': { borderColor: 'primary.dark' },
-                }}
-              >
-                Clear Filters
-              </AppButton>
-            </Box>
+                {isManager && !isAdminLike && (
+                  <>
+                    <AppButton
+                      variant={managerView === 'my' ? 'contained' : 'outlined'}
+                      variantType={managerView === 'my' ? 'primary' : 'secondary'}
+                      onClick={handleManagerMyAttendance}
+                      sx={{
+                        width: { xs: '100%', sm: '200px' },
+                        minWidth: { xs: '100%', sm: '200px' },
+                        maxWidth: { sm: '200px' },
+                        boxSizing: 'border-box',
+                        flexShrink: 0,
+                        backgroundColor:
+                          managerView === 'my' ? 'primary.dark' : undefined,
+                        color: managerView === 'my' ? '#fff' : 'primary.dark',
+                        borderColor: 'primary.dark',
+                        '&:hover': {
+                          backgroundColor:
+                            managerView === 'my' ? 'primary.dark' : undefined,
+                          borderColor: 'primary.dark',
+                        },
+                      }}
+                    >
+                      My Attendance
+                    </AppButton>
+                    <AppButton
+                      variant={managerView === 'team' ? 'contained' : 'outlined'}
+                      variantType={
+                        managerView === 'team' ? 'primary' : 'secondary'
+                      }
+                      onClick={handleManagerTeamAttendance}
+                      sx={{
+                        width: { xs: '100%', sm: '200px' },
+                        minWidth: { xs: '100%', sm: '200px' },
+                        maxWidth: { sm: '200px' },
+                        boxSizing: 'border-box',
+                        flexShrink: 0,
+                      }}
+                    >
+                      Team Attendance
+                    </AppButton>
+                  </>
+                )}
 
-            <Box
-              sx={{
-                display: 'flex',
-                gap: 1,
-                alignItems: 'center',
-                width: { xs: '100%', sm: 'auto' },
-                justifyContent: 'flex-start',
-              }}
-            >
-              {/* Single CSV export button - behavior changes based on view and role */}
-              <Tooltip
-                title={
-                  isSystemAdminUser && adminView === 'all'
-                    ? 'Export System Attendance'
-                    : isManager && !isAdminLike && managerView === 'team'
-                      ? 'Export Team Attendance'
-                      : 'Export My Attendance'
-                }
-              >
-                <IconButton
-                  color='primary'
-                  onClick={() => {
-                    // System Admin in "All Attendance" view → use /attendance/export/system
-                    if (isSystemAdminUser && adminView === 'all') {
-                      const params = buildExportFilters();
-                      exportCSV(
-                        '/attendance/export/system',
-                        'attendance-system.csv',
-                        token || '',
-                        params
-                      );
-                    }
-                    // Manager in "Team Attendance" view → use /attendance/export/team
-                    else if (
-                      isManager &&
-                      !isAdminLike &&
-                      managerView === 'team'
-                    ) {
-                      exportCSV(
-                        '/attendance/export/team',
-                        'attendance-team.csv',
-                        token || '',
-                        buildExportFilters()
-                      );
-                    }
-                    // Everyone else (including System Admin in "My Attendance") → use /attendance/export/self
-                    else {
-                      const selfParams: Record<string, string> = {};
-                      if (startDate) selfParams.startDate = startDate;
-                      if (endDate) selfParams.endDate = endDate;
-
-                      exportCSV(
-                        '/attendance/export/self',
-                        'attendance-self.csv',
-                        token || '',
-                        selfParams
-                      );
-                    }
-                  }}
+                {adminView === 'all' && isSystemAdminUser && (
+                  <>
+                    <AppDropdown
+                      showLabel={false}
+                      value={selectedTenant || ''}
+                      onChange={(e: SelectChangeEvent<string | number>) =>
+                        handleTenantChange(e.target.value as string)
+                      }
+                      options={[
+                        { value: '', label: 'All Tenants' },
+                        ...tenants.map(tenant => ({
+                          value: tenant.id,
+                          label: tenant.name,
+                        })),
+                      ]}
+                      placeholder='SELECT TENANT'
+                      disabled={tenantsLoading}
+                      containerSx={{
+                        minWidth: { xs: '100%', sm: 220 },
+                        width: { xs: '100%', sm: 'auto' },
+                      }}
+                    />
+                    <AppDropdown
+                      showLabel={false}
+                      value={selectedEmployee || ''}
+                      onChange={(e: SelectChangeEvent<string | number>) =>
+                        handleEmployeeChange(e.target.value as string)
+                      }
+                      options={[
+                        { value: '', label: 'All Employees' },
+                        ...employees.map(emp => ({
+                          value: emp.id,
+                          label: emp.name,
+                        })),
+                      ]}
+                      placeholder='SELECT EMPLOYEE'
+                      containerSx={{
+                        width: { xs: '100%', sm: '200px' },
+                        minWidth: { xs: '100%', sm: '200px' },
+                        maxWidth: { sm: '200px' },
+                        flexShrink: 0,
+                        padding: 0,
+                        margin: 0,
+                        boxSizing: 'border-box',
+                      }}
+                    />
+                  </>
+                )}
+                <Box
                   sx={{
-                    backgroundColor: '#3083DC',
-                    borderRadius: '6px',
-                    padding: '6px',
-                    color: 'white',
-                    '&:hover': {
-                      backgroundColor: '#3083DC',
-                    },
+                    width: { xs: '100%', sm: '200px' },
+                    minWidth: { xs: '100%', sm: '200px' },
+                    maxWidth: { sm: '200px' },
+                    flexShrink: 0,
                   }}
                 >
-                  <FileDownloadIcon />
-                </IconButton>
-              </Tooltip>
-            </Box>
-          </Box>
-          <AppTable>
-            <TableHead>
-              <TableRow>
-                {canViewAllAttendance && adminView === 'all' && (
-                  <TableCell sx={{ fontWeight: 'bold' }}>Employee</TableCell>
-                )}
-                <TableCell sx={{ fontWeight: 'bold' }}>Date</TableCell>
-                <TableCell sx={{ fontWeight: 'bold' }}>Check In</TableCell>
-                <TableCell sx={{ fontWeight: 'bold' }}>Check Out</TableCell>
-                <TableCell sx={{ fontWeight: 'bold' }}>Worked Hours</TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {loading ? (
-                <TableRow>
-                  <TableCell
-                    colSpan={
-                      canViewAllAttendance && adminView === 'all' ? 5 : 4
+                  <DatePicker
+                    range
+                    numberOfMonths={2}
+                    value={
+                      startDate && endDate
+                        ? [new Date(startDate), new Date(endDate)]
+                        : startDate
+                          ? [new Date(startDate)]
+                          : []
                     }
-                    align='center'
-                  >
-                    <CircularProgress />
-                  </TableCell>
-                </TableRow>
-              ) : filteredData.length > 0 ? (
-                filteredData.map(record => (
-                  <TableRow key={record.id}>
-                    {canViewAllAttendance && adminView === 'all' && (
-                      <TableCell>
-                        {record.user?.first_name} {record.user?.last_name}
-                      </TableCell>
-                    )}
-                    <TableCell>
-                      {record.checkInISO
-                        ? formatDate(record.checkInISO.split('T')[0])
-                        : '--'}
-                    </TableCell>
-                    <TableCell>{record.checkIn || '--'}</TableCell>
-                    <TableCell>{record.checkOut || '--'}</TableCell>
-                    <TableCell>{record.workedHours ?? '--'}</TableCell>
-                  </TableRow>
-                ))
-              ) : (
-                <TableRow>
-                  <TableCell
-                    colSpan={
-                      canViewAllAttendance && adminView === 'all' ? 5 : 4
-                    }
-                    align='center'
-                  >
-                    No attendance records found.
-                  </TableCell>
-                </TableRow>
-              )}
-            </TableBody>
-          </AppTable>
+                    onChange={dates => {
+                      if (Array.isArray(dates) && dates.length === 2) {
+                        const start = formatLocalYMD(dates[0].toDate());
+                        const end = formatLocalYMD(dates[1].toDate());
+                        setStartDate(start);
+                        setEndDate(end);
+                        setCurrentPage(1);
+                        const view = canViewAllAttendance ? adminView : 'my';
+                        const selectedId =
+                          view === 'all' ? selectedEmployee : undefined;
+                        fetchAttendance(view, selectedId, start, end);
+                      } else if (Array.isArray(dates) && dates.length === 1) {
+                        const start = formatLocalYMD(dates[0].toDate());
+                        setStartDate(start);
+                        setEndDate('');
+                        setCurrentPage(1);
+                        const view = canViewAllAttendance ? adminView : 'my';
+                        const selectedId =
+                          view === 'all' ? selectedEmployee : undefined;
+                        fetchAttendance(view, selectedId, start, '');
+                      } else {
+                        setStartDate('');
+                        setEndDate('');
+                        setCurrentPage(1);
+                        const view = canViewAllAttendance ? adminView : 'my';
+                        const selectedId =
+                          view === 'all' ? selectedEmployee : undefined;
+                        fetchAttendance(view, selectedId, '', '');
+                      }
+                    }}
+                    format='MM/DD/YYYY'
+                    placeholder='START DATE - END DATE'
+                    style={{
+                      width: '100%',
+                      height: '40px',
+                      padding: '6.5px 14px',
+                      border: '1px solid #3083DC',
+                      borderRadius: '12px',
+                      fontSize: '16px',
+                      outline: 'none',
+                    }}
+                    containerStyle={{
+                      width: '100%',
+                    }}
+                    inputClass={`custom-date-picker-input ${mode === 'dark' ? 'theme-dark' : ''}`}
+                    className={`custom-date-picker ${mode === 'dark' ? 'theme-dark' : ''}`}
+                    editable={false}
+                    showOtherDays={true}
+                    onOpen={() => {
+                      document.body.style.overflow = 'hidden';
+                    }}
+                    onClose={() => {
+                      document.body.style.overflow = 'auto';
+                    }}
+                  />
+                </Box>
 
-          {canViewAllAttendance && adminView === 'all' && (
-            <DateNavigation
-              currentDate={currentNavigationDate}
-              onDateChange={handleDateNavigationChange}
-              disabled={loading}
-            />
-          )}
+                <AppButton
+                  variant='outlined'
+                  variantType='secondary'
+                  onClick={handleFilterChange}
+                  sx={{
+                    width: { xs: '100%', sm: '200px' },
+                    minWidth: { xs: '100%', sm: '200px' },
+                    maxWidth: { sm: '200px' },
+                    borderRadius: '12px',
+                    boxSizing: 'border-box',
+                    flexShrink: 0,
+                    color: 'primary.dark',
+                    borderColor: 'primary.dark',
+                    '&:hover': { borderColor: 'primary.dark' },
+                  }}
+                >
+                  Clear Filters
+                </AppButton>
+              </Box>
 
-          {(!canViewAllAttendance ||
-            (canViewAllAttendance && adminView === 'my') ||
-            (isManager && !isAdminLike && managerView === 'my')) && (
-            <DateNavigation
-              currentDate={myAttendanceNavigationDate}
-              onDateChange={handleMyAttendanceDateNavigationChange}
-              disabled={loading}
-            />
-          )}
-
-          {totalItems > 0 && (
-            <Box sx={{ display: 'flex', justifyContent: 'center', mt: 2 }}>
-              <Typography
-                fontWeight={400}
-                fontSize='16px'
-                lineHeight='24px'
-                letterSpacing='-1%'
-                color='#2C2C2C'
+              <Box
+                sx={{
+                  display: 'flex',
+                  gap: 1,
+                  alignItems: 'center',
+                  width: { xs: '100%', sm: 'auto' },
+                  justifyContent: { xs: 'flex-start', sm: 'flex-end' },
+                }}
               >
-                Showing all {totalItems} records
-              </Typography>
+                {/* Single CSV export button - behavior changes based on view and role */}
+                <Tooltip
+                  title={
+                    isSystemAdminUser && adminView === 'all'
+                      ? 'Export System Attendance'
+                      : isManager && !isAdminLike && managerView === 'team'
+                        ? 'Export Team Attendance'
+                        : 'Export My Attendance'
+                  }
+                >
+                  <IconButton
+                    color='primary'
+                    onClick={() => {
+                      // System Admin in "All Attendance" view → use /attendance/export/system
+                      if (isSystemAdminUser && adminView === 'all') {
+                        const params = buildExportFilters();
+                        exportCSV(
+                          '/attendance/export/system',
+                          'attendance-system.csv',
+                          token || '',
+                          params
+                        );
+                      }
+                      // Manager in "Team Attendance" view → use /attendance/export/team
+                      else if (
+                        isManager &&
+                        !isAdminLike &&
+                        managerView === 'team'
+                      ) {
+                        exportCSV(
+                          '/attendance/export/team',
+                          'attendance-team.csv',
+                          token || '',
+                          buildExportFilters()
+                        );
+                      }
+                      // Everyone else (including System Admin in "My Attendance") → use /attendance/export/self
+                      else {
+                        const selfParams: Record<string, string> = {};
+                        if (startDate) selfParams.startDate = startDate;
+                        if (endDate) selfParams.endDate = endDate;
+
+                        exportCSV(
+                          '/attendance/export/self',
+                          'attendance-self.csv',
+                          token || '',
+                          selfParams
+                        );
+                      }
+                    }}
+                    sx={{
+                      backgroundColor: '#3083DC',
+                      borderRadius: '6px',
+                      padding: '6px',
+                      color: 'white',
+                      '&:hover': {
+                        backgroundColor: '#3083DC',
+                      },
+                    }}
+                  >
+                    <FileDownloadIcon />
+                  </IconButton>
+                </Tooltip>
+              </Box>
             </Box>
-          )}
-        </Paper>
-      )}
+            <AppTable>
+              <TableHead>
+                <TableRow>
+                  {canViewAllAttendance && adminView === 'all' && (
+                    <TableCell sx={{ fontWeight: 'bold' }}>Employee</TableCell>
+                  )}
+                  <TableCell sx={{ fontWeight: 'bold' }}>Date</TableCell>
+                  <TableCell sx={{ fontWeight: 'bold' }}>Check In</TableCell>
+                  <TableCell sx={{ fontWeight: 'bold' }}>Check Out</TableCell>
+                  <TableCell sx={{ fontWeight: 'bold' }}>Worked Hours</TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {loading ? (
+                  <TableRow>
+                    <TableCell
+                      colSpan={
+                        canViewAllAttendance && adminView === 'all' ? 5 : 4
+                      }
+                      align='center'
+                    >
+                      <CircularProgress />
+                    </TableCell>
+                  </TableRow>
+                ) : filteredData.length > 0 ? (
+                  filteredData.map(record => (
+                    <TableRow key={record.id}>
+                      {canViewAllAttendance && adminView === 'all' && (
+                        <TableCell>
+                          {record.user?.first_name} {record.user?.last_name}
+                        </TableCell>
+                      )}
+                      <TableCell>
+                        {record.checkInISO
+                          ? formatDate(record.checkInISO.split('T')[0])
+                          : '--'}
+                      </TableCell>
+                      <TableCell>{record.checkIn || '--'}</TableCell>
+                      <TableCell>{record.checkOut || '--'}</TableCell>
+                      <TableCell>{record.workedHours ?? '--'}</TableCell>
+                    </TableRow>
+                  ))
+                ) : (
+                  <TableRow>
+                    <TableCell
+                      colSpan={
+                        canViewAllAttendance && adminView === 'all' ? 5 : 4
+                      }
+                      align='center'
+                    >
+                      No attendance records found.
+                    </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </AppTable>
+
+            {canViewAllAttendance && adminView === 'all' && (
+              <DateNavigation
+                currentDate={currentNavigationDate}
+                onDateChange={handleDateNavigationChange}
+                disabled={loading}
+              />
+            )}
+
+            {(!canViewAllAttendance ||
+              (canViewAllAttendance && adminView === 'my') ||
+              (isManager && !isAdminLike && managerView === 'my')) && (
+                <DateNavigation
+                  currentDate={myAttendanceNavigationDate}
+                  onDateChange={handleMyAttendanceDateNavigationChange}
+                  disabled={loading}
+                />
+              )}
+
+            {totalItems > 0 && (
+              <Box sx={{ display: 'flex', justifyContent: 'center', mt: 2 }}>
+                <Typography
+                  fontWeight={400}
+                  fontSize='16px'
+                  lineHeight='24px'
+                  letterSpacing='-1%'
+                  color='#2C2C2C'
+                >
+                  Showing all {totalItems} records
+                </Typography>
+              </Box>
+            )}
+          </Paper>
+        )}
 
       {tab === 1 && !isManager && !isAdminLike && (
         <Paper sx={{ p: 3 }}>
@@ -2123,15 +2125,15 @@ const AttendanceTable = () => {
                           <TableCell>
                             {attendance.checkIn
                               ? new Date(
-                                  attendance.checkIn
-                                ).toLocaleTimeString()
+                                attendance.checkIn
+                              ).toLocaleTimeString()
                               : '--'}
                           </TableCell>
                           <TableCell>
                             {attendance.checkOut
                               ? new Date(
-                                  attendance.checkOut
-                                ).toLocaleTimeString()
+                                attendance.checkOut
+                              ).toLocaleTimeString()
                               : '--'}
                           </TableCell>
                           <TableCell>{member.totalDaysWorked}</TableCell>
@@ -2392,15 +2394,15 @@ const AttendanceTable = () => {
                           <TableCell>
                             {attendance.checkIn
                               ? new Date(
-                                  attendance.checkIn
-                                ).toLocaleTimeString()
+                                attendance.checkIn
+                              ).toLocaleTimeString()
                               : '--'}
                           </TableCell>
                           <TableCell>
                             {attendance.checkOut
                               ? new Date(
-                                  attendance.checkOut
-                                ).toLocaleTimeString()
+                                attendance.checkOut
+                              ).toLocaleTimeString()
                               : '--'}
                           </TableCell>
                           <TableCell>{attendance.workedHours || 0}</TableCell>

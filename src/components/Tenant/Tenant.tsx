@@ -21,7 +21,7 @@ import {
 import type { SelectChangeEvent } from '@mui/material/Select';
 import AddIcon from '@mui/icons-material/Add';
 import RestoreIcon from '@mui/icons-material/Restore';
-import { getIcon } from '../../assets/icons';
+
 import CloseIcon from '@mui/icons-material/Close';
 import {
   SystemTenantApi,
@@ -93,8 +93,6 @@ export const TenantPage: React.FC = () => {
   const [totalPages, setTotalPages] = useState(1);
   const [totalRecords, setTotalRecords] = useState(0);
   const itemsPerPage = PAGINATION.DEFAULT_PAGE_SIZE;
-
-  const viewIcon = getIcon('password');
 
   const fetchTenants = useCallback(async () => {
     try {
@@ -461,12 +459,18 @@ export const TenantPage: React.FC = () => {
         justifyContent='space-between'
         alignItems={isMobile ? 'stretch' : 'center'}
         flexDirection={isMobile ? 'column' : 'row'}
+        aligItemns='center'
         gap={2}
-        mb={3}
+        mb={1}
       >
         <AppPageTitle>Tenant Management</AppPageTitle>
 
-        <Box display='flex' flexWrap='wrap' gap={2} alignItems='center'>
+        <Box
+          display='flex'
+          flexDirection={isMobile ? 'column' : 'row'}
+          gap={2}
+          alignItems={isMobile ? 'stretch' : 'center'}
+        >
           <AppDropdown
             options={[
               { value: 'all', label: 'All Status' },

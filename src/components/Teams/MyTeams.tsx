@@ -9,6 +9,7 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
+  useTheme,
 } from '@mui/material';
 
 import {
@@ -20,6 +21,7 @@ import { useLanguage } from '../../hooks/useLanguage';
 import type { Team, TeamMember } from '../../api/teamApi';
 import { teamApiService } from '../../api/teamApi';
 import { snackbar } from '../../utils/snackbar';
+import { isAdmin } from '../../utils/auth';
 import TeamMemberList from './TeamMemberList';
 import AppButton from '../common/AppButton';
 import AppCard from '../common/AppCard';
@@ -40,6 +42,7 @@ const MyTeams: React.FC<MyTeamsProps> = ({ teams, darkMode = false }) => {
   );
   const [loadingEmployees, setLoadingEmployees] = useState(false);
   const { language } = useLanguage();
+  const theme = useTheme();
 
   const labels = {
     en: {
@@ -161,7 +164,7 @@ const MyTeams: React.FC<MyTeamsProps> = ({ teams, darkMode = false }) => {
           alignItems: 'center',
           justifyContent: 'center',
           py: 8,
-          color: darkMode ? '#ccc' : '#666',
+          color: theme.palette.text.secondary,
         }}
       >
         <GroupIcon sx={{ fontSize: 64, mb: 2, opacity: 0.5 }} />
@@ -214,13 +217,13 @@ const MyTeams: React.FC<MyTeamsProps> = ({ teams, darkMode = false }) => {
                 <Box sx={{ flexGrow: 1 }}>
                   <Typography
                     variant='h6'
-                    sx={{ color: darkMode ? '#fff' : '#000', fontWeight: 600 }}
+                    sx={{ color: theme.palette.text.primary, fontWeight: 600 }}
                   >
                     {team.name}
                   </Typography>
                   <Typography
                     variant='body2'
-                    sx={{ color: darkMode ? '#ccc' : '#666' }}
+                    sx={{ color: theme.palette.text.secondary }}
                   >
                     {team.manager?.first_name} {team.manager?.last_name}
                   </Typography>
@@ -231,7 +234,7 @@ const MyTeams: React.FC<MyTeamsProps> = ({ teams, darkMode = false }) => {
                 <Typography
                   variant='body2'
                   sx={{
-                    color: darkMode ? '#ccc' : '#666',
+                    color: theme.palette.text.secondary,
                     fontSize: 'var(--body-font-size)',
                     mb: 2,
                     lineHeight: 1.5,
@@ -248,10 +251,10 @@ const MyTeams: React.FC<MyTeamsProps> = ({ teams, darkMode = false }) => {
                   icon={<PersonIcon />}
                   sx={{
                     backgroundColor: '#3083DC',
-                    color: '#FFFFFF',
+                    color: theme.palette.common.white,
                     fontSize: '0.75rem',
                     '& .MuiChip-icon': {
-                      color: '#F8F8F8',
+                      color: theme.palette.common.white,
                     },
                   }}
                 />
@@ -283,29 +286,33 @@ const MyTeams: React.FC<MyTeamsProps> = ({ teams, darkMode = false }) => {
                 >
                   {lang.viewMembers}
                 </AppButton>
-                <AppButton
-                  variant='outlined'
-                  variantType='secondary'
-                  size='small'
-                  startIcon={<AddIcon sx={{ fontSize: { xs: 16, sm: 18 } }} />}
-                  onClick={() => handleAddMember(team)}
-                  sx={{
-                    flex: 1,
-                    borderColor: '#3083DC',
-                    color: '#3083DC',
-                    backgroundColor: 'transparent',
-                    fontSize: { xs: '0.75rem', sm: '0.875rem' },
-                    py: { xs: 0.75, sm: 1 },
-                    px: { xs: 1, sm: 1.5 },
-                    minWidth: 0,
-                    '&:hover': {
+                {isAdmin() && (
+                  <AppButton
+                    variant='outlined'
+                    variantType='secondary'
+                    size='small'
+                    startIcon={
+                      <AddIcon sx={{ fontSize: { xs: 16, sm: 18 } }} />
+                    }
+                    onClick={() => handleAddMember(team)}
+                    sx={{
+                      flex: 1,
                       borderColor: '#3083DC',
-                      backgroundColor: 'rgba(48, 131, 220, 0.1)',
-                    },
-                  }}
-                >
-                  {lang.addMember}
-                </AppButton>
+                      color: '#3083DC',
+                      backgroundColor: 'transparent',
+                      fontSize: { xs: '0.75rem', sm: '0.875rem' },
+                      py: { xs: 0.75, sm: 1 },
+                      px: { xs: 1, sm: 1.5 },
+                      minWidth: 0,
+                      '&:hover': {
+                        borderColor: '#3083DC',
+                        backgroundColor: 'rgba(48, 131, 220, 0.1)',
+                      },
+                    }}
+                  >
+                    {lang.addMember}
+                  </AppButton>
+                )}
               </Stack>
             </Box>
           </AppCard>
@@ -319,7 +326,7 @@ const MyTeams: React.FC<MyTeamsProps> = ({ teams, darkMode = false }) => {
         maxWidth='md'
         fullWidth
       >
-        <DialogTitle sx={{ color: darkMode ? '#fff' : '#000' }}>
+        <DialogTitle sx={{ color: theme.palette.text.primary }}>
           {selectedTeam?.name} - {lang.teamMembers}
         </DialogTitle>
         <DialogContent>
@@ -345,7 +352,7 @@ const MyTeams: React.FC<MyTeamsProps> = ({ teams, darkMode = false }) => {
         maxWidth='sm'
         fullWidth
       >
-        <DialogTitle sx={{ color: darkMode ? '#fff' : '#000' }}>
+        <DialogTitle sx={{ color: theme.palette.text.primary }}>
           {lang.addMemberToTeam}
         </DialogTitle>
         <DialogContent>
@@ -354,7 +361,6 @@ const MyTeams: React.FC<MyTeamsProps> = ({ teams, darkMode = false }) => {
             value={selectedEmployeeId || 'all'}
             onChange={e => setSelectedEmployeeId(String(e.target.value || ''))}
             disabled={loadingEmployees}
-            align='left'
             containerSx={{ mt: 2, width: '100%' }}
             options={[
               {
@@ -365,11 +371,10 @@ const MyTeams: React.FC<MyTeamsProps> = ({ teams, darkMode = false }) => {
               },
               ...availableEmployees.map(employee => ({
                 value: employee.id,
-                label: `${
-                  employee.user
-                    ? `${employee.user.first_name || ''} ${employee.user.last_name || ''}`
-                    : 'Unknown User'
-                } - ${employee.designation?.title || 'N/A'}`,
+                label: `${employee.user
+                  ? `${employee.user.first_name || ''} ${employee.user.last_name || ''}`
+                  : 'Unknown User'
+                  } - ${employee.designation?.title || 'N/A'}`,
               })),
             ]}
           />

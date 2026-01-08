@@ -26,10 +26,6 @@ export function AppTable({
   const baseSx: SxProps<Theme> = {
     border: 'none',
     borderRadius: '12px',
-    boxShadow:
-      theme.palette.mode === 'dark'
-        ? '0 1px 3px rgba(0,0,0,0.3)'
-        : '0 1px 3px rgba(0,0,0,0.1)',
     overflowX: 'auto',
     overflowY: 'hidden',
     backgroundColor: theme.palette.background.paper,
@@ -46,11 +42,9 @@ export function AppTable({
         fontSize: { xs: '12px', sm: '18px' },
         lineHeight: { xs: '16px', sm: 'var(--subheading2-line-height)' },
         letterSpacing: 'var(--subheading2-letter-spacing)',
-        color: theme.palette.mode === 'dark' ? '#ffffff' : '#2C2C2C',
+        color: theme.palette.common.white,
         backgroundColor:
-          theme.palette.mode === 'dark'
-            ? 'var(--primary-light-color)'
-            : 'var(--primary-color)',
+          theme.palette.mode === 'dark' ? 'var(--primary-dark-color)' : 'var(--primary-light-color)',
         whiteSpace: { xs: 'nowrap', sm: 'normal' },
       },
     },

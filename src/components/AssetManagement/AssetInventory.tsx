@@ -196,18 +196,18 @@ const AssetInventory: React.FC = () => {
           typeof apiAsset.category === 'object'
             ? apiAsset.category
             : {
-              id: apiAsset.category_id || '',
-              name: apiAsset.categoryName || apiAsset.category || '',
-            };
+                id: apiAsset.category_id || '',
+                name: apiAsset.categoryName || apiAsset.category || '',
+              };
 
         // Handle subcategory - can be object or string
         const subcategoryObj = apiAsset.subcategory
           ? typeof apiAsset.subcategory === 'object'
             ? apiAsset.subcategory
             : {
-              id: apiAsset.subcategory_id || '',
-              name: apiAsset.subcategoryName || apiAsset.subcategory || '',
-            }
+                id: apiAsset.subcategory_id || '',
+                name: apiAsset.subcategoryName || apiAsset.subcategory || '',
+              }
           : undefined;
 
         return {
@@ -430,9 +430,9 @@ const AssetInventory: React.FC = () => {
   }));
   const subcategoryOptions = formCategoryId
     ? getSubcategoriesByCategoryId(formCategoryId).map(s => ({
-      value: s,
-      label: s,
-    }))
+        value: s,
+        label: s,
+      }))
     : [];
 
   const handleEditAsset = (asset: InventoryAsset) => {
@@ -587,11 +587,11 @@ const AssetInventory: React.FC = () => {
   // Modal form helpers for AppFormModal
   const hasFormChanges = editingAsset
     ? // compare simple fields for edit
-    formName !== (editingAsset.name || '') ||
-    formCategoryId !== resolveCategoryId(editingAsset) ||
-    formSubcategory !== (editingAsset.subcategoryId || '')
+      formName !== (editingAsset.name || '') ||
+      formCategoryId !== resolveCategoryId(editingAsset) ||
+      formSubcategory !== (editingAsset.subcategoryId || '')
     : // for create, require name and category selected
-    formName.trim() !== '' && formCategoryId !== '';
+      formName.trim() !== '' && formCategoryId !== '';
 
   const assignedOptions = mockUsers.map(u => ({ value: u.id, label: u.name }));
 
@@ -657,59 +657,67 @@ const AssetInventory: React.FC = () => {
               setFormPurchaseDate(date ? new Date(date.toString()) : null)
             }
             slotProps={{
-              // style the input field icons (calendar icon) to use primary color
               textField: {
                 fullWidth: true,
-                sx: {
-                  '& .MuiSvgIcon-root': {
-                    color: 'var(--primary-dark-color) !important',
+                sx: theme => ({
+                  '& .MuiInputBase-input': {
+                    color: theme.palette.text.primary,
                   },
-                  '& .MuiInputAdornment-root svg': {
-                    color: 'var(--primary-dark-color) !important',
+
+                  '& .MuiInputLabel-root': {
+                    color: theme.palette.text.secondary,
                   },
-                },
+
+                  '& .MuiIconButton-root': {
+                    color:
+                      theme.palette.mode === 'dark'
+                        ? theme.palette.grey[400]
+                        : theme.palette.text.secondary,
+                  },
+
+                  '& .MuiIconButton-root svg': {
+                    color:
+                      theme.palette.mode === 'dark'
+                        ? theme.palette.grey[400]
+                        : theme.palette.text.secondary,
+                  },
+                }),
               },
+
               desktopPaper: {
-                sx: {
-                  // change calendar popup background to match modal style
-                  backgroundColor: '#FFFFFF',
-                },
+                sx: theme => ({
+                  backgroundColor: theme.palette.background.paper,
+                  borderRadius: '12px',
+                }),
               },
+
               popper: {
                 sx: {
-                  // ensure popup inherits modal radius
                   '& .MuiPaper-root': {
                     borderRadius: '12px',
                   },
                 },
               },
-              // style individual days (selected) to use primary dark color
+
               day: {
-                sx: {
-                  // Selected day (clicked)
-                  '&.MuiPickersDay-root.Mui-selected, &.MuiPickersDay-root.Mui-selected:hover':
-                  {
-                    backgroundColor: 'var(--primary-dark-color) !important',
-                    color: '#FFFFFF !important',
+                sx: theme => ({
+                  '&.Mui-selected, &.Mui-selected:hover': {
+                    backgroundColor: theme.palette.primary.main,
+                    color: theme.palette.primary.contrastText,
                   },
-                  // Today (current date) when not selected
-                  '&.MuiPickersDay-root.MuiPickersDay-today:not(.Mui-selected)':
-                  {
-                    backgroundColor: 'var(--primary-dark-color) !important',
-                    color: '#FFFFFF !important',
+
+                  '&.MuiPickersDay-today:not(.Mui-selected)': {
+                    borderColor: theme.palette.primary.main,
                   },
-                  // Today outline (in case additional styling needed)
-                  '&.MuiPickersDay-root.MuiPickersDay-today': {
-                    borderColor: 'var(--primary-dark-color) !important',
-                  },
-                },
+                }),
               },
             }}
           />
         </LocalizationProvider>
       ),
-      onChange: () => { },
+      onChange: () => {},
     },
+
     {
       name: 'assignedTo',
       label: 'Assigned To',
@@ -756,7 +764,9 @@ const AssetInventory: React.FC = () => {
         >
           Asset Inventory
         </Typography>
-        <Box sx={{ display: 'flex', gap: 1, width: { xs: '100%', sm: 'auto' } }}>
+        <Box
+          sx={{ display: 'flex', gap: 1, width: { xs: '100%', sm: 'auto' } }}
+        >
           <AppButton
             variant='contained'
             variantType='primary'

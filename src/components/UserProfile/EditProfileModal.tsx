@@ -267,7 +267,6 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({
     }
   };
 
-  const darkMode = theme.palette.mode === 'dark';
   const controlBg =
     theme.palette.mode === 'dark'
       ? theme.palette.background.default
@@ -383,14 +382,13 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({
                       outline: 'none',
                       padding: '0',
                       margin: '0',
-                      fontSize: '1rem',
-                      fontFamily: '"Roboto", "Helvetica", "Arial", sans-serif',
+                      fontSize: '0.9rem',
                       backgroundColor: 'transparent',
                       width: '100%',
                       boxSizing: 'border-box',
                       flex: 1,
                       height: '100%',
-                      color: darkMode ? '#eeeeee' : '#2C2C2C',
+                      color: theme.palette.text.primary,
                     }}
                     countrySelectorStyleProps={{
                       buttonStyle: {
@@ -401,7 +399,7 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({
                         cursor: 'pointer',
                         display: 'flex',
                         alignItems: 'center',
-                        color: darkMode ? '#eeeeee' : '#2C2C2C',
+                        color: theme.palette.text.primary,
                       },
                     }}
                     className='phone-input-textfield-adornment'

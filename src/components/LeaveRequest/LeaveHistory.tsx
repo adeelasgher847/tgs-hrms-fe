@@ -12,6 +12,7 @@ import {
   IconButton,
   Tooltip,
   CircularProgress,
+  TextField,
   Dialog,
   DialogTitle,
   DialogContent,
@@ -19,6 +20,7 @@ import {
   MenuItem,
   ListItemIcon,
   ListItemText,
+  useTheme,
 } from '@mui/material';
 import AccessTimeIcon from '@mui/icons-material/AccessTime';
 import CancelIcon from '@mui/icons-material/Cancel';
@@ -27,7 +29,6 @@ import UndoIcon from '@mui/icons-material/Undo';
 import FileDownloadIcon from '@mui/icons-material/FileDownload';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
 import EditIcon from '@mui/icons-material/Edit';
-import DeleteIcon from '@mui/icons-material/Delete';
 import type { Leave } from '../../type/levetypes';
 import { formatDate } from '../../utils/dateUtils';
 import { leaveApi } from '../../api/leaveApi';
@@ -118,6 +119,8 @@ interface LeaveHistoryProps {
   onExportAll?: () => Promise<Leave[]>;
   userRole?: string;
   onRefresh?: () => Promise<void> | void;
+  dateFilter?: string;
+  onDateFilterChange?: (filter: string) => void;
 }
 
 const LeaveHistory: React.FC<LeaveHistoryProps> = ({
@@ -140,6 +143,8 @@ const LeaveHistory: React.FC<LeaveHistoryProps> = ({
   onExportAll,
   userRole,
   onRefresh,
+  dateFilter,
+  onDateFilterChange,
 }) => {
   const [selectedEmployee, setSelectedEmployee] = useState<string>('');
   const [page, setPage] = useState(1);
@@ -153,7 +158,7 @@ const LeaveHistory: React.FC<LeaveHistoryProps> = ({
   const [menuAnchorEl, setMenuAnchorEl] = useState<null | HTMLElement>(null);
   const [selectedLeaveForMenu, setSelectedLeaveForMenu] =
     useState<Leave | null>(null);
-
+  const theme = useTheme();
   // Reset page to 1 when employee filter changes
   useEffect(() => {
     setPage(1);
@@ -376,7 +381,14 @@ const LeaveHistory: React.FC<LeaveHistoryProps> = ({
         }}
       >
         <Box sx={{ display: 'flex', alignItems: 'center' }}>
-          <Typography variant='h5' fontWeight={600} fontSize={'48px'}>
+          <AccessTimeIcon
+            sx={{
+              fontSize: 32,
+              mr: 1,
+              color: 'var(--primary-dark-color)',
+            }}
+          />
+          <Typography variant='h5' fontWeight={600}>
             {title}
           </Typography>
         </Box>
@@ -391,6 +403,21 @@ const LeaveHistory: React.FC<LeaveHistoryProps> = ({
             flexWrap: 'wrap',
           }}
         >
+          {isAdmin && onDateFilterChange && (
+            <TextField
+              type='month'
+              size='small'
+              value={dateFilter}
+              onChange={e => onDateFilterChange(e.target.value)}
+              sx={{
+                width: 160,
+                bgcolor: 'background.paper',
+                borderRadius: 1,
+              }}
+              InputLabelProps={{ shrink: true }}
+            />
+          )}
+
           {!hideDropdown && (isAdmin || isManager) && (
             <AppDropdown
               label='All Employees'
@@ -623,7 +650,7 @@ const LeaveHistory: React.FC<LeaveHistoryProps> = ({
                             sx={{
                               mt: 0.5,
                               fontSize: 13,
-                              color: '#424242',
+                              color: theme.palette.text.secondary,
                               maxWidth: 250,
                               whiteSpace: 'nowrap',
                               overflow: 'hidden',
@@ -680,6 +707,12 @@ const LeaveHistory: React.FC<LeaveHistoryProps> = ({
                               Boolean(menuAnchorEl) &&
                               selectedLeaveForMenu?.id === leave.id
                             }
+                            sx={{
+                              color: theme.palette.text.primary,
+                              '&:hover': {
+                                backgroundColor: 'transparent', 
+                              },
+                            }}
                           >
                             <MoreVertIcon />
                           </IconButton>

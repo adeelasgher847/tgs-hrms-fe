@@ -1,7 +1,6 @@
 import React, { useEffect, useState, useRef } from 'react';
 import {
   Box,
-  Paper,
   Typography,
   TableHead,
   TableRow,
@@ -17,7 +16,7 @@ import {
 import AppDropdown from '../common/AppDropdown';
 import AppButton from '../common/AppButton';
 import FileDownloadIcon from '@mui/icons-material/FileDownload';
-import VisibilityIcon from '@mui/icons-material/Visibility';
+
 import { useTheme } from '@mui/material/styles';
 import systemEmployeeApiService, {
   type SystemEmployee,
@@ -71,6 +70,7 @@ const TenantBasedEmployeeManager: React.FC = () => {
 
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+  const isTablet = useMediaQuery('(min-width:601px) and (max-width:786px)');
 
   // Fetch departments + tenants once on mount
   const fetchFiltersData = async () => {
@@ -328,7 +328,7 @@ const TenantBasedEmployeeManager: React.FC = () => {
         display='flex'
         justifyContent='space-between'
         alignItems='flex-start'
-        flexWrap='wrap'
+        flexWrap={isMobile ? 'wrap' : 'nowrap'}
         flexDirection={isMobile ? 'column' : 'row'}
         gap={2}
         mb={2}
@@ -336,7 +336,11 @@ const TenantBasedEmployeeManager: React.FC = () => {
         <Stack
           direction={isMobile ? 'column' : 'row'}
           spacing={2}
-          sx={{ flex: 1, width: isMobile ? '100%' : 'auto' }}
+          sx={{
+            flex: 1,
+            width: isMobile ? '100%' : 'auto',
+            alignItems: isMobile ? 'stretch' : 'flex-start',
+          }}
         >
           <AppDropdown
             label='Tenant'
@@ -348,7 +352,7 @@ const TenantBasedEmployeeManager: React.FC = () => {
             onChange={e =>
               handleFilterChange('tenantId', String(e.target.value))
             }
-            containerSx={{ width: isMobile ? '100%' : 190 }}
+            containerSx={{ width: isMobile ? '100%' : isTablet ? '30%' : 190 }}
           />
 
           <AppDropdown
@@ -361,7 +365,7 @@ const TenantBasedEmployeeManager: React.FC = () => {
             onChange={e =>
               handleFilterChange('departmentId', String(e.target.value))
             }
-            containerSx={{ width: isMobile ? '100%' : 190 }}
+            containerSx={{ width: isMobile ? '100%' : isTablet ? '30%' : 190 }}
           />
 
           <AppDropdown
@@ -375,7 +379,7 @@ const TenantBasedEmployeeManager: React.FC = () => {
               handleFilterChange('designationId', String(e.target.value))
             }
             disabled={!filters.departmentId}
-            containerSx={{ width: isMobile ? '100%' : 190 }}
+            containerSx={{ width: isMobile ? '100%' : isTablet ? '30%' : 190 }}
           />
 
           <AppButton
@@ -383,8 +387,9 @@ const TenantBasedEmployeeManager: React.FC = () => {
             variantType='secondary'
             onClick={handleClearFilters}
             sx={{
-              width: isMobile ? '100%' : 190,
-              height: '47px',
+              width: isMobile ? '100%' : isTablet ? '30%' : 190,
+              minWidth: isTablet ? 140 : undefined,
+              // height: '47px',
               padding: isMobile ? undefined : '6px 15px',
               alignSelf: isMobile ? 'stretch' : 'flex-end',
               borderColor: 'var(--primary-dark-color)',
@@ -395,21 +400,30 @@ const TenantBasedEmployeeManager: React.FC = () => {
           </AppButton>
         </Stack>
 
-        <Tooltip title='Export Employee List'>
-          <IconButton
-            // color='pr'
-            onClick={handleDownload}
-            sx={{
-              backgroundColor: 'var(--primary-dark-color)',
-              borderRadius: '6px',
-              padding: '6px',
-              color: 'white',
-              '&:hover': { backgroundColor: 'var(--primary-dark-color)' },
-            }}
-          >
-            <FileDownloadIcon />
-          </IconButton>
-        </Tooltip>
+        <Box
+          sx={{
+            width: isMobile ? '100%' : 'auto',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: isMobile ? 'flex-start' : 'flex-end',
+            alignSelf: isMobile ? 'stretch' : 'flex-end',
+          }}
+        >
+          <Tooltip title='Export Employee List'>
+            <IconButton
+              onClick={handleDownload}
+              sx={{
+                backgroundColor: 'var(--primary-dark-color)',
+                borderRadius: '6px',
+                padding: '6px',
+                color: 'white',
+                '&:hover': { backgroundColor: 'var(--primary-dark-color)' },
+              }}
+            >
+              <FileDownloadIcon />
+            </IconButton>
+          </Tooltip>
+        </Box>
       </Box>
 
       <AppTable>

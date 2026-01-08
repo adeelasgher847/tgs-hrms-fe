@@ -17,6 +17,7 @@ import {
   DialogContent,
   DialogActions,
   Pagination,
+  useTheme,
 } from '@mui/material';
 import {
   Business as BusinessIcon,
@@ -73,7 +74,7 @@ const SystemAdminAssets: React.FC = () => {
   const [totalPages, setTotalPages] = useState(1);
   const [totalRecords, setTotalRecords] = useState(0);
   const itemsPerPage = PAGINATION.DEFAULT_PAGE_SIZE;
-
+  const theme = useTheme();
   const fetchCategories = async () => {
     try {
       const data = await assetApi.getAllAssetCategories();
@@ -459,8 +460,8 @@ const SystemAdminAssets: React.FC = () => {
                   color: 'var(--primary-dark-color)',
                   borderColor: 'var(--primary-dark-color)',
                   '&:hover': {
-                    borderColor: 'var(--primary-dark-color)', 
-                    backgroundColor: 'transparent', 
+                    borderColor: 'var(--primary-dark-color)',
+                    backgroundColor: 'transparent',
                   },
                 }}
               >
@@ -478,7 +479,9 @@ const SystemAdminAssets: React.FC = () => {
         maxWidth='xl'
         fullWidth
       >
-        <DialogTitle>All Tenants</DialogTitle>
+        <DialogTitle sx={{ color: theme.palette.text.primary }}>
+          All Tenants
+        </DialogTitle>
         <DialogContent>
           <Box
             sx={{
@@ -773,205 +776,203 @@ const SystemAdminAssets: React.FC = () => {
         </CardContent>
       </Card>
 
-      <Card>
-        <AppTable>
-          <TableHead>
+      <AppTable>
+        <TableHead>
+          <TableRow>
+            <TableCell>Asset Name</TableCell>
+            <TableCell>Category</TableCell>
+            <TableCell
+              sx={{
+                display: { xs: 'none', md: 'table-cell' },
+              }}
+            >
+              Tenant
+            </TableCell>
+            <TableCell
+              sx={{
+                display: { xs: 'none', lg: 'table-cell' },
+              }}
+            >
+              Assigned To
+            </TableCell>
+            <TableCell>Status</TableCell>
+            <TableCell
+              sx={{
+                display: { xs: 'none', sm: 'table-cell' },
+              }}
+            >
+              Date
+            </TableCell>
+          </TableRow>
+        </TableHead>
+        <TableBody>
+          {loading ? (
             <TableRow>
-              <TableCell>Asset Name</TableCell>
-              <TableCell>Category</TableCell>
               <TableCell
+                colSpan={6}
+                align='center'
                 sx={{
-                  display: { xs: 'none', md: 'table-cell' },
+                  borderBottom: 'none',
                 }}
               >
-                Tenant
-              </TableCell>
-              <TableCell
-                sx={{
-                  display: { xs: 'none', lg: 'table-cell' },
-                }}
-              >
-                Assigned To
-              </TableCell>
-              <TableCell>Status</TableCell>
-              <TableCell
-                sx={{
-                  display: { xs: 'none', sm: 'table-cell' },
-                }}
-              >
-                Date
+                <Box
+                  sx={{
+                    display: 'flex',
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                    py: 4,
+                  }}
+                >
+                  <CircularProgress />
+                </Box>
               </TableCell>
             </TableRow>
-          </TableHead>
-          <TableBody>
-            {loading ? (
-              <TableRow>
-                <TableCell
-                  colSpan={6}
-                  align='center'
-                  sx={{
-                    borderBottom: 'none',
-                  }}
-                >
-                  <Box
+          ) : filteredAssets.length === 0 ? (
+            <TableRow>
+              <TableCell
+                colSpan={6}
+                align='center'
+                sx={{
+                  borderBottom: 'none',
+                }}
+              >
+                <Typography variant='body2' color='text.secondary'>
+                  No assets found
+                </Typography>
+              </TableCell>
+            </TableRow>
+          ) : (
+            filteredAssets.map(asset => (
+              <TableRow key={asset.id} hover>
+                <TableCell>
+                  <Typography variant='body2' fontWeight={500}>
+                    {asset.name}
+                  </Typography>
+                  <Typography
+                    variant='caption'
+                    color='text.secondary'
                     sx={{
-                      display: 'flex',
-                      justifyContent: 'center',
-                      alignItems: 'center',
-                      py: 4,
+                      display: { xs: 'block', md: 'none' },
                     }}
                   >
-                    <CircularProgress />
+                    {asset.tenant?.name || 'N/A'}
+                  </Typography>
+                </TableCell>
+                <TableCell>
+                  <Box>
+                    {(() => {
+                      const extendedAsset = asset as ExtendedSystemAsset;
+                      const categoryId = extendedAsset.category_id;
+                      const subcategoryId = extendedAsset.subcategory_id;
+                      return (
+                        <>
+                          <Chip
+                            label={
+                              categoryId && categoryMap.has(categoryId)
+                                ? categoryMap.get(categoryId)
+                                : 'N/A'
+                            }
+                            size='small'
+                          />
+                          {subcategoryId &&
+                            subcategoryMap.has(subcategoryId) && (
+                              <Typography
+                                variant='caption'
+                                color='text.secondary'
+                                sx={{ ml: 1, display: 'block', mt: 0.5 }}
+                              >
+                                {subcategoryMap.get(subcategoryId)}
+                              </Typography>
+                            )}
+                        </>
+                      );
+                    })()}
                   </Box>
                 </TableCell>
-              </TableRow>
-            ) : filteredAssets.length === 0 ? (
-              <TableRow>
                 <TableCell
-                  colSpan={6}
-                  align='center'
                   sx={{
-                    borderBottom: 'none',
+                    display: { xs: 'none', md: 'table-cell' },
                   }}
                 >
-                  <Typography variant='body2' color='text.secondary'>
-                    No assets found
+                  <Typography variant='body2'>
+                    {asset.tenant?.name || 'N/A'}
+                  </Typography>
+                </TableCell>
+                <TableCell
+                  sx={{
+                    display: { xs: 'none', lg: 'table-cell' },
+                  }}
+                >
+                  {asset.assignedToUser ? (
+                    <Box
+                      sx={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 1,
+                      }}
+                    >
+                      <Box>
+                        <Typography variant='body2' fontWeight={500}>
+                          {asset.assignedToUser.first_name}{' '}
+                          {asset.assignedToUser.last_name}
+                        </Typography>
+                        <Typography variant='caption' color='text.secondary'>
+                          {asset.assignedToUser.email}
+                        </Typography>
+                      </Box>
+                    </Box>
+                  ) : (
+                    <Typography variant='body2' color='text.secondary'>
+                      Unassigned
+                    </Typography>
+                  )}
+                </TableCell>
+                <TableCell>
+                  <StatusChip
+                    status={
+                      asset.status as
+                        | 'available'
+                        | 'assigned'
+                        | 'under_maintenance'
+                        | 'retired'
+                    }
+                    type='asset'
+                  />
+                </TableCell>
+                <TableCell
+                  sx={{
+                    display: { xs: 'none', sm: 'table-cell' },
+                  }}
+                >
+                  <Typography variant='body2'>
+                    {formatDate(asset.purchase_date)}
                   </Typography>
                 </TableCell>
               </TableRow>
-            ) : (
-              filteredAssets.map(asset => (
-                <TableRow key={asset.id} hover>
-                  <TableCell>
-                    <Typography variant='body2' fontWeight={500}>
-                      {asset.name}
-                    </Typography>
-                    <Typography
-                      variant='caption'
-                      color='text.secondary'
-                      sx={{
-                        display: { xs: 'block', md: 'none' },
-                      }}
-                    >
-                      {asset.tenant?.name || 'N/A'}
-                    </Typography>
-                  </TableCell>
-                  <TableCell>
-                    <Box>
-                      {(() => {
-                        const extendedAsset = asset as ExtendedSystemAsset;
-                        const categoryId = extendedAsset.category_id;
-                        const subcategoryId = extendedAsset.subcategory_id;
-                        return (
-                          <>
-                            <Chip
-                              label={
-                                categoryId && categoryMap.has(categoryId)
-                                  ? categoryMap.get(categoryId)
-                                  : 'N/A'
-                              }
-                              size='small'
-                            />
-                            {subcategoryId &&
-                              subcategoryMap.has(subcategoryId) && (
-                                <Typography
-                                  variant='caption'
-                                  color='text.secondary'
-                                  sx={{ ml: 1, display: 'block', mt: 0.5 }}
-                                >
-                                  {subcategoryMap.get(subcategoryId)}
-                                </Typography>
-                              )}
-                          </>
-                        );
-                      })()}
-                    </Box>
-                  </TableCell>
-                  <TableCell
-                    sx={{
-                      display: { xs: 'none', md: 'table-cell' },
-                    }}
-                  >
-                    <Typography variant='body2'>
-                      {asset.tenant?.name || 'N/A'}
-                    </Typography>
-                  </TableCell>
-                  <TableCell
-                    sx={{
-                      display: { xs: 'none', lg: 'table-cell' },
-                    }}
-                  >
-                    {asset.assignedToUser ? (
-                      <Box
-                        sx={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: 1,
-                        }}
-                      >
-                        <Box>
-                          <Typography variant='body2' fontWeight={500}>
-                            {asset.assignedToUser.first_name}{' '}
-                            {asset.assignedToUser.last_name}
-                          </Typography>
-                          <Typography variant='caption' color='text.secondary'>
-                            {asset.assignedToUser.email}
-                          </Typography>
-                        </Box>
-                      </Box>
-                    ) : (
-                      <Typography variant='body2' color='text.secondary'>
-                        Unassigned
-                      </Typography>
-                    )}
-                  </TableCell>
-                  <TableCell>
-                    <StatusChip
-                      status={
-                        asset.status as
-                          | 'available'
-                          | 'assigned'
-                          | 'under_maintenance'
-                          | 'retired'
-                      }
-                      type='asset'
-                    />
-                  </TableCell>
-                  <TableCell
-                    sx={{
-                      display: { xs: 'none', sm: 'table-cell' },
-                    }}
-                  >
-                    <Typography variant='body2'>
-                      {formatDate(asset.purchase_date)}
-                    </Typography>
-                  </TableCell>
-                </TableRow>
-              ))
-            )}
-          </TableBody>
-        </AppTable>
-        {!loading && totalPages > 1 && (
-          <Box display='flex' justifyContent='center' p={2}>
-            <Pagination
-              count={totalPages}
-              page={currentPage}
-              onChange={(_, page) => setCurrentPage(page)}
-              color='primary'
-              showFirstButton
-              showLastButton
-            />
-          </Box>
-        )}
-        {!loading && totalRecords > 0 && (
-          <Box display='flex' justifyContent='center' pb={2}>
-            <Typography variant='body2' color='textSecondary'>
-              Showing page {currentPage} of {totalPages} ({totalRecords} total
-              records)
-            </Typography>
-          </Box>
-        )}
-      </Card>
+            ))
+          )}
+        </TableBody>
+      </AppTable>
+      {!loading && totalPages > 1 && (
+        <Box display='flex' justifyContent='center' p={2}>
+          <Pagination
+            count={totalPages}
+            page={currentPage}
+            onChange={(_, page) => setCurrentPage(page)}
+            color='primary'
+            showFirstButton
+            showLastButton
+          />
+        </Box>
+      )}
+      {!loading && totalRecords > 0 && (
+        <Box display='flex' justifyContent='center' pb={2}>
+          <Typography variant='body2' color='textSecondary'>
+            Showing page {currentPage} of {totalPages} ({totalRecords} total
+            records)
+          </Typography>
+        </Box>
+      )}
     </Box>
   );
 };

@@ -20,8 +20,9 @@ import {
   Stack,
   Pagination,
   Alert,
+  useTheme,
 } from '@mui/material';
-import { useTheme } from '../../theme/hooks';
+
 import {
   CheckCircle as ApproveIcon,
   Cancel as RejectIcon,
@@ -173,7 +174,7 @@ const RequestManagement: React.FC = () => {
   const [selectedRequestId, setSelectedRequestId] = useState<string | null>(
     null
   );
-  const { mode } = useTheme();
+  const theme = useTheme();
 
   // Get status filter based on active tab
   const getStatusFilter = (tabIndex: number): string | undefined => {
@@ -1757,6 +1758,7 @@ const RequestManagement: React.FC = () => {
         <IconButton
           onClick={e => handleMenuClick(e, request.id)}
           size='small'
+          sx={{color: theme.palette.text.primary}}
           aria-label={`Actions menu for request ${request.id}`}
           aria-haspopup='true'
           aria-expanded={Boolean(anchorEl) && selectedRequestId === request.id}
