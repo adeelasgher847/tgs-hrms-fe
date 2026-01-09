@@ -78,11 +78,18 @@ const AppDropdown = React.forwardRef<HTMLDivElement, AppDropdownProps>(
   ) => {
     const theme = useTheme();
     const [open, setOpen] = useState(false);
+    // Provide a sensible default container sizing for large screens
+    // Pages can still override by passing `containerSx` prop.
+    const defaultContainerSx = {
+      minWidth: { md: 220 },
+      width: { xs: '100%', md: 'auto' },
+    };
+    const mergedContainerSx = { ...defaultContainerSx, ...(containerSx || {}) };
 
     return (
       <Box
         sx={{
-          ...containerSx,
+          ...mergedContainerSx,
           display: 'flex',
           flexDirection: 'column',
           gap: '8px',
