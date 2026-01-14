@@ -183,7 +183,7 @@ export class EmployeeKpiApiService {
     // Get KPI summary for an employee
     async getKPISummary(params: {
         employeeId: string;
-        cycle: string;
+        cycle?: string;
     }): Promise<KPISummary> {
         try {
             const response = await axiosInstance.get<KPISummary>(
@@ -203,7 +203,7 @@ export class EmployeeKpiApiService {
 
     // Get KPI summary for team
     async getTeamKPISummary(params: {
-        cycle: string;
+        cycle?: string;
     }): Promise<TeamKPISummary[]> {
         try {
             const response = await axiosInstance.get<TeamKPISummary[]>(

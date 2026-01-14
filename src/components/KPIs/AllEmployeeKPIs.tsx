@@ -38,7 +38,10 @@ const AllEmployeeKPIs: React.FC = () => {
     const fetchAllSummaries = useCallback(async () => {
         setLoading(true);
         try {
-            const params = { cycle: filterCycle };
+            const params: any = {};
+            if (filterCycle !== 'All Time') {
+                params.cycle = filterCycle;
+            }
 
             const [kpiData, allEmployees] = await Promise.all([
                 employeeKpiApiService.getEmployeeKPIs(params),
@@ -49,43 +52,44 @@ const AllEmployeeKPIs: React.FC = () => {
                 setEmployees(allEmployees);
             }
 
-            // Aggregation logic: Group KPIs by employee_id and calculate scores
-            const grouped = kpiData.reduce((acc: Record<string, typeof kpiData>, item) => {
-                const id = item.employee_id;
-                if (!acc[id]) acc[id] = [];
-                acc[id].push(item);
+            // Aggregation logic: Group KPIs by employee_id and calculate lifetime performance
+            const grouped = kpiData.reduce((acc: Record<string, TeamKPISummary>, item) => {
+                const empId = item.employee_id;
+
+                if (!acc[empId]) {
+                    const emp = allEmployees.find(e => e.id === empId || e.user_id === empId);
+                    acc[empId] = {
+                        employeeId: empId,
+                        employeeName: item.employee?.user?.first_name
+                            ? `${item.employee.user.first_name} ${item.employee.user.last_name}`
+                            : (emp ? emp.name : 'Unknown'),
+                        employeeEmail: item.employee?.user?.email || (emp ? emp.email : ''),
+                        cycle: filterCycle === 'All Time' ? 'All Time' : item.reviewCycle,
+                        totalScore: 0,
+                        recordCount: 0,
+                        kpis: []
+                    };
+                }
+
+                const summary = acc[empId];
+                const newTotalWeight = summary.recordCount + 1;
+                summary.totalScore = (summary.totalScore * summary.recordCount + (item.score || 0)) / newTotalWeight;
+                summary.recordCount = newTotalWeight;
+
+                summary.kpis.push({
+                    kpiId: item.kpi_id,
+                    kpiTitle: item.kpi?.title || 'Unknown',
+                    targetValue: item.targetValue,
+                    achievedValue: item.achievedValue,
+                    score: item.score,
+                    weight: item.kpi?.weight || 0,
+                    weightedScore: (item.score || 0) * (item.kpi?.weight || 0) / 100
+                });
+
                 return acc;
             }, {});
 
-            const manualSummaries: TeamKPISummary[] = Object.entries(grouped).map(([empId, empKpis]) => {
-                const firstKpi = empKpis[0];
-                const emp = allEmployees.find(e => e.id === empId || e.user_id === empId);
-
-                const totalScore = empKpis.reduce((sum, k) => sum + (k.score || 0), 0);
-                const avgScore = empKpis.length > 0 ? totalScore / empKpis.length : 0;
-
-                return {
-                    employeeId: empId,
-                    employeeName: firstKpi.employee?.user?.first_name
-                        ? `${firstKpi.employee.user.first_name} ${firstKpi.employee.user.last_name}`
-                        : (emp ? emp.name : 'Unknown'),
-                    employeeEmail: firstKpi.employee?.user?.email || (emp ? emp.email : ''),
-                    cycle: filterCycle,
-                    totalScore: avgScore,
-                    recordCount: empKpis.length,
-                    kpis: empKpis.map(k => ({
-                        kpiId: k.kpi_id,
-                        kpiTitle: k.kpi?.title || 'Unknown',
-                        targetValue: k.targetValue,
-                        achievedValue: k.achievedValue,
-                        score: k.score,
-                        weight: k.kpi?.weight || 0,
-                        weightedScore: (k.score || 0) * (k.kpi?.weight || 0) / 100 // Example weighting if needed
-                    }))
-                };
-            });
-
-            setSummaries(manualSummaries);
+            setSummaries(Object.values(grouped));
         } catch (error) {
             showError(error);
         } finally {
@@ -107,7 +111,7 @@ const AllEmployeeKPIs: React.FC = () => {
         s.employeeEmail.toLowerCase().includes(searchQuery.toLowerCase())
     );
 
-    const cycles = ['Q1-2025', 'Q2-2025', 'Q3-2025', 'Q4-2025', 'Q1-2026', 'Q2-2026'];
+    const cycles = ['All Time', 'Q1-2025', 'Q2-2025', 'Q3-2025', 'Q4-2025', 'Q1-2026', 'Q2-2026'];
 
     return (
         <Box>

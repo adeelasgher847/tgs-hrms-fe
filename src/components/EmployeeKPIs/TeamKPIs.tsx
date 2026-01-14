@@ -53,7 +53,10 @@ const TeamKPIs: React.FC = () => {
   const fetchTeamData = useCallback(async () => {
     setLoading(true);
     try {
-      const params = { cycle };
+      const params: any = {};
+      if (cycle !== 'All Time') {
+        params.cycle = cycle;
+      }
       const [data, allEmployees] = await Promise.all([
         employeeKpiApiService.getTeamKPISummary(params),
         employees.length > 0
@@ -65,7 +68,26 @@ const TeamKPIs: React.FC = () => {
         setEmployees(allEmployees);
       }
 
-      const enrichedData = data.map(item => {
+      // Group by employeeId to ensure 1 card per person even if backend returns multiple cycles
+      const grouped = data.reduce((acc: Record<string, TeamKPISummary>, item) => {
+        const empId = item.employeeId;
+        if (!acc[empId]) {
+          acc[empId] = { ...item, cycle: cycle === 'All Time' ? 'All Time' : item.cycle };
+        } else {
+          const existing = acc[empId];
+          // Recalculate average: (avg1 * count1 + avg2 * count2) / (count1 + count2)
+          const totalExistingPoints = existing.totalScore * existing.recordCount;
+          const totalNewPoints = item.totalScore * item.recordCount;
+          existing.recordCount += item.recordCount;
+          existing.totalScore = existing.recordCount > 0 ? (totalExistingPoints + totalNewPoints) / existing.recordCount : 0;
+          existing.kpis = [...existing.kpis, ...item.kpis];
+        }
+        return acc;
+      }, {});
+
+      const aggregatedData = Object.values(grouped);
+
+      const enrichedData = aggregatedData.map(item => {
         if (!item.employeeName || item.employeeName === item.employeeId) {
           const emp = allEmployees.find(e => e.id === item.employeeId);
           if (emp) {
@@ -135,6 +157,7 @@ const TeamKPIs: React.FC = () => {
   );
 
   const cycles = [
+    'All Time',
     'Q1-2025',
     'Q2-2025',
     'Q3-2025',

@@ -35,10 +35,11 @@ const EmployeeKPIDetailsModal: React.FC<EmployeeKPIDetailsModalProps> = ({ open,
         if (!summary) return;
         setLoading(true);
         try {
-            const data = await employeeKpiApiService.getEmployeeKPIs({
-                employeeId: summary.employeeId,
-                cycle: summary.cycle
-            });
+            const params: any = { employeeId: summary.employeeId };
+            if (summary.cycle !== 'All Time') {
+                params.cycle = summary.cycle;
+            }
+            const data = await employeeKpiApiService.getEmployeeKPIs(params);
             setKpis(data);
         } catch (error) {
             showError(error);
@@ -107,9 +108,41 @@ const EmployeeKPIDetailsModal: React.FC<EmployeeKPIDetailsModalProps> = ({ open,
                         <Typography color="text.secondary">No detailed KPIs found for this cycle.</Typography>
                     </Box>
                 ) : (
-                    <Box display="grid" gridTemplateColumns={{ xs: '1fr', sm: '1fr 1fr' }} gap={3}>
-                        {kpis.map((kpi) => (
-                            <KPIItemCard key={kpi.id} kpi={kpi} onUpdate={onUpdateKPI} />
+                    <Box display="flex" flexDirection="column" gap={4}>
+                        {Object.entries(
+                            kpis.reduce((acc: Record<string, EmployeeKPI[]>, k) => {
+                                const cycle = k.reviewCycle || 'Unknown Cycle';
+                                if (!acc[cycle]) acc[cycle] = [];
+                                acc[cycle].push(k);
+                                return acc;
+                            }, {})
+                        ).sort(([a], [b]) => b.localeCompare(a)).map(([cycle, cycleKpis]) => (
+                            <Box key={cycle}>
+                                <Typography
+                                    variant="subtitle1"
+                                    fontWeight="700"
+                                    sx={{
+                                        mb: 2,
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: 1,
+                                        color: 'primary.main',
+                                        '&::after': {
+                                            content: '""',
+                                            flex: 1,
+                                            height: '1px',
+                                            bgcolor: 'divider'
+                                        }
+                                    }}
+                                >
+                                    {cycle}
+                                </Typography>
+                                <Box display="grid" gridTemplateColumns={{ xs: '1fr', sm: '1fr 1fr' }} gap={3}>
+                                    {cycleKpis.map((kpi) => (
+                                        <KPIItemCard key={kpi.id} kpi={kpi} onUpdate={onUpdateKPI} />
+                                    ))}
+                                </Box>
+                            </Box>
                         ))}
                     </Box>
                 )}
