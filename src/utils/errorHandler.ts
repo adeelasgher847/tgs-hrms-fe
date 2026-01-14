@@ -171,7 +171,7 @@ export function handleApiError(
   error: unknown,
   context?: {
     operation: 'create' | 'update' | 'delete' | 'fetch';
-    resource: 'department' | 'designation' | 'employee';
+    resource: 'department' | 'designation' | 'employee' | 'kpi';
     isGlobal?: boolean;
   }
 ): ErrorHandlingResult {

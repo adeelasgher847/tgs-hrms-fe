@@ -133,6 +133,9 @@ const PayrollReports = lazy(
   () => import('./components/Payroll/PayrollReports')
 );
 
+const KPIList = lazy(() => import('./components/KPIs/KPIList'));
+const EmployeeKPIMain = lazy(() => import('./components/EmployeeKPIs/EmployeeKPIMain'));
+
 function App() {
   return (
     <LanguageProvider>
@@ -142,6 +145,8 @@ function App() {
             <Suspense fallback={<LoadingFallback />}>
               <Routes>
                 <Route path='/' element={<Login />} />
+                <Route path='kpis' element={<KPIList />} />
+                <Route path='employee-kpis' element={<EmployeeKPIMain />} />
                 <Route path='/forget' element={<Forget />} />
                 <Route path='/reset-password' element={<ResetPassword />} />
                 <Route path='/confirm-password' element={<ConfirmPassword />} />
@@ -179,6 +184,8 @@ function App() {
                       </RouteErrorBoundary>
                     }
                   />
+                  <Route path='kpis' element={<KPIList />} />
+                  <Route path='employee-kpis' element={<EmployeeKPIMain />} />
                   <Route
                     path='tenant'
                     element={
@@ -239,6 +246,7 @@ function App() {
                     element={<SystemAdminAssets />}
                   />
                   <Route path='benefits-list' element={<BenefitList />} />
+                  <Route path='kpi-management' element={<KPIList />} />
                   <Route
                     path='employee-benefit'
                     element={<EmployeeBenefits />}

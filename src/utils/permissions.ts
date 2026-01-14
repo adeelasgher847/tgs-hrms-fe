@@ -59,6 +59,8 @@ const ROLE_MENU_ALLOWLIST: Record<NormalizedRole, readonly string[]> = {
     'report',
     'audit logs',
     'performance',
+    'performance',
+    'employee-kpis',
     'payroll',
   ],
   'network-admin': [
@@ -79,6 +81,7 @@ const ROLE_MENU_ALLOWLIST: Record<NormalizedRole, readonly string[]> = {
     'leave-analytics',
     'payroll',
     'employees',
+    'performance',
   ],
   admin: [
     'dashboard',
@@ -91,6 +94,7 @@ const ROLE_MENU_ALLOWLIST: Record<NormalizedRole, readonly string[]> = {
     'leave-analytics',
     'payroll',
     'benefits',
+    'performance',
   ],
   manager: [
     'teams',
@@ -100,8 +104,9 @@ const ROLE_MENU_ALLOWLIST: Record<NormalizedRole, readonly string[]> = {
     'leave-analytics',
     'payroll',
     'benefits',
+    'performance',
   ],
-  employee: ['attendance', 'assets', 'benefits', 'leave-analytics', 'payroll'],
+  employee: ['attendance', 'assets', 'benefits', 'leave-analytics', 'payroll', 'performance'],
   user: ['attendance', 'assets', 'benefits', 'payroll'],
   unknown: ['benefits'],
 };
@@ -146,6 +151,7 @@ type ParentKey =
   | 'payroll'
   | 'assets'
   | 'employees'
+  | 'performance'
   | 'audit logs'
   | 'misc';
 
@@ -158,6 +164,7 @@ const PARENT_KEY_MATCHERS: Array<{ key: ParentKey; patterns: string[] }> = [
   { key: 'assets', patterns: ['asset'] },
   { key: 'employees', patterns: ['employee'] },
   { key: 'audit logs', patterns: ['audit logs'] },
+  { key: 'performance', patterns: ['performance'] },
 ];
 
 const getParentKey = (label: string): ParentKey => {
@@ -188,6 +195,7 @@ const ROLE_SUBMENU_POLICIES: Record<
     payroll: { allowOnly: ['payroll reports'] },
     assets: { allowOnly: ['assets overview'] },
     employees: { deny: ['employee list'] },
+    performance: { allowOnly: ['employee performance', 'employee kpis', 'kpi management'] }
   },
   'network-admin': {
     employees: { deny: ['tenant employees'] },
@@ -205,6 +213,7 @@ const ROLE_SUBMENU_POLICIES: Record<
     assets: { deny: ['assets overview', 'asset requests'] },
     benefits: { deny: ['benefits report', 'benefit details'] },
     'leave-analytics': { deny: ['cross tenant leaves'] },
+    performance: { allowOnly: ['kpi management', 'employee kpis'] }
   },
   admin: {
     employees: { deny: ['tenant employees'] },
@@ -215,6 +224,7 @@ const ROLE_SUBMENU_POLICIES: Record<
     benefits: { deny: ['benefits report', 'benefit details'] },
     payroll: { deny: ['payroll reports', 'my salary'] },
     assets: { deny: ['assets overview', 'asset requests'] },
+    performance: { allowOnly: ['kpi management'] }
   },
   manager: {
     employees: { deny: ['tenant employees'] },
@@ -224,6 +234,7 @@ const ROLE_SUBMENU_POLICIES: Record<
     assets: { deny: ['assets overview', 'asset inventory', 'management'] },
     benefits: { allowOnly: ['benefit details'] },
     'leave-analytics': { deny: ['cross tenant leaves'] },
+    performance: { allowOnly: ['employee kpis'] }
   },
   employee: {
     employees: { deny: ['tenant employees'] },
@@ -233,6 +244,7 @@ const ROLE_SUBMENU_POLICIES: Record<
     'leave-analytics': { allowOnly: ['report'] },
     'audit logs': { denyAll: true },
     payroll: { allowOnly: ['my salary'] },
+    performance: { allowOnly: ['employee kpis'] }
   },
   user: {
     employees: { deny: ['tenant employees'] },
@@ -317,7 +329,9 @@ const DASHBOARD_ALLOWLIST_ENTRIES: Record<NormalizedRole, readonly string[]> = {
     'TenantEmployees',
     'performance-dashboard',
     'payroll-reports',
+    'payroll-reports',
     'benefit-report',
+    'employee-kpis',
   ],
   'network-admin': [
     '',
@@ -337,6 +351,7 @@ const DASHBOARD_ALLOWLIST_ENTRIES: Record<NormalizedRole, readonly string[]> = {
     'settings',
     'benefits-list',
     'employee-benefit',
+    'employee-kpis',
   ],
   'hr-admin': [
     'EmployeeManager',
@@ -361,6 +376,8 @@ const DASHBOARD_ALLOWLIST_ENTRIES: Record<NormalizedRole, readonly string[]> = {
     'payroll-configuration',
     'payroll-records',
     'employee-salary',
+    'kpi-management',
+    'employee-kpis',
   ],
   admin: [
     '',
@@ -391,6 +408,8 @@ const DASHBOARD_ALLOWLIST_ENTRIES: Record<NormalizedRole, readonly string[]> = {
     'payroll-configuration',
     'payroll-records',
     'employee-salary',
+    'kpi-management',
+    'employee-kpis',
   ],
   manager: [
     'EmployeeManager',
@@ -412,6 +431,7 @@ const DASHBOARD_ALLOWLIST_ENTRIES: Record<NormalizedRole, readonly string[]> = {
     'employee-salary',
     'my-salary',
     'EmployeeProfileView',
+    'employee-kpis',
   ],
   employee: [
     'AttendanceCheck',
@@ -424,6 +444,7 @@ const DASHBOARD_ALLOWLIST_ENTRIES: Record<NormalizedRole, readonly string[]> = {
     'settings',
     'benefit-details',
     'my-salary',
+    'employee-kpis',
   ],
   user: [
     'AttendanceCheck',
