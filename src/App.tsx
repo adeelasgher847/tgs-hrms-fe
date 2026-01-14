@@ -9,6 +9,7 @@ import { LanguageProvider } from './context/LanguageContext';
 import { UserProvider } from './context/UserContext';
 import { ProfilePictureProvider } from './context/ProfilePictureContext';
 import { CompanyProvider } from './context/CompanyContext';
+import { NotificationProvider } from './context/NotificationContext';
 import { ThemeProvider } from './theme';
 import './App.css';
 
@@ -92,6 +93,11 @@ const TimesheetLayout = lazy(
   () => import('./components/TimerTracker/TimesheetLayout')
 );
 const TeamManager = lazy(() => import('./components/Teams/TeamManager'));
+const TeamsTaskList = lazy(() => import('./components/Teams/TeamList'));
+const TeamTasks = lazy(
+  () => import('./components/Teams/TaskManagement/TeamTasks')
+);
+const MyTasks = lazy(() => import('./components/Teams/TaskManagement/MyTasks'));
 const AssetInventory = lazy(
   () => import('./components/AssetManagement/AssetInventory')
 );
@@ -132,6 +138,12 @@ const MySalary = lazy(() => import('./components/Payroll/MySalary'));
 const PayrollReports = lazy(
   () => import('./components/Payroll/PayrollReports')
 );
+const ManagerTaskBoard = lazy(
+  () => import('./components/TaskManagement/ManagerTaskBoard')
+);
+const EmployeeTasks = lazy(
+  () => import('./components/TaskManagement/EmployeeTasks')
+);
 
 function App() {
   return (
@@ -164,9 +176,11 @@ function App() {
                   element={
                     <ProtectedRoute>
                       <CompanyProvider>
-                        <ThemeProvider>
-                          <Layout />
-                        </ThemeProvider>
+                        <NotificationProvider>
+                          <ThemeProvider>
+                            <Layout />
+                          </ThemeProvider>
+                        </NotificationProvider>
                       </CompanyProvider>
                     </ProtectedRoute>
                   }
@@ -226,6 +240,54 @@ function App() {
                     element={<TimesheetLayout />}
                   />
                   <Route path='teams' element={<TeamManager />} />
+                  <Route
+                    path='teams/list'
+                    element={
+                      <RouteErrorBoundary>
+                        <TeamsTaskList />
+                      </RouteErrorBoundary>
+                    }
+                  />
+                  <Route
+                    path='teams/tasks'
+                    element={
+                      <RouteErrorBoundary>
+                        <TeamTasks />
+                      </RouteErrorBoundary>
+                    }
+                  />
+                  <Route
+                    path='teams/tasks/:teamId'
+                    element={
+                      <RouteErrorBoundary>
+                        <TeamTasks />
+                      </RouteErrorBoundary>
+                    }
+                  />
+                  <Route
+                    path='my-tasks'
+                    element={
+                      <RouteErrorBoundary>
+                        <MyTasks />
+                      </RouteErrorBoundary>
+                    }
+                  />
+                  <Route
+                    path='manager-tasks'
+                    element={
+                      <RouteErrorBoundary>
+                        <ManagerTaskBoard />
+                      </RouteErrorBoundary>
+                    }
+                  />
+                  <Route
+                    path='teams/employee/:employeeId'
+                    element={
+                      <RouteErrorBoundary>
+                        <EmployeeTasks />
+                      </RouteErrorBoundary>
+                    }
+                  />
                   <Route path='settings' element={<SettingsPage />} />
                   <Route path='assets' element={<AssetInventory />} />
                   <Route path='assets/inventory' element={<AssetInventory />} />

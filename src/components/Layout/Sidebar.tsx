@@ -17,7 +17,11 @@ import {
   isSubMenuVisibleForRole,
 } from '../../utils/permissions';
 import { clearAuthData } from '../../utils/authValidation';
-import { getRoleName } from '../../utils/roleUtils';
+import {
+  getRoleName,
+  isSystemAdmin as isSystemAdminRole,
+} from '../../utils/roleUtils';
+import { isUser as isEmployeeUser } from '../../utils/auth';
 import { Icons } from '../../assets/icons';
 import {
   Apps,
@@ -218,7 +222,11 @@ const menuItems: MenuItem[] = [
     label: 'Teams',
     icon: Icons.teams,
     iconFill: Icons.teamsFill,
-    subItems: [{ label: 'Team Management', path: 'teams' }],
+    subItems: [
+      { label: 'Team Management', path: 'teams' },
+      { label: 'Manager Tasks', path: 'manager-tasks' },
+      { label: 'My Tasks', path: 'my-tasks' },
+    ],
   },
   {
     label: 'Assets',
@@ -337,6 +345,9 @@ export default function Sidebar({
   const navigate = useNavigate();
   const { user } = useUser();
   const role = user?.role;
+  const userRoleName = getRoleName(role).toLowerCase();
+  const isEmployee =
+    userRoleName === 'user' || userRoleName === 'employee' || isEmployeeUser();
 
   const handleLogout = () => {
     clearAuthData();
@@ -348,6 +359,8 @@ export default function Sidebar({
 
   const filteredMenuItems = useMemo(() => {
     const userRole = getRoleName(role);
+
+    const isSystemAdmin = isSystemAdminRole(role);
 
     const filtered = menuItems
       .filter(item => {
@@ -366,8 +379,39 @@ export default function Sidebar({
           return isSubVisible;
         }),
       }));
+    // If the signed-in user is a plain employee, show a simplified Teams menu
+    // labeled as "My Tasks" (this places quick access to their tasks)
+    if (isEmployee) {
+      return filtered.map(item => {
+        if (item.label === 'Teams') {
+          return {
+            ...item,
+            label: 'My Tasks',
+            subItems: [{ label: 'My Tasks', path: 'my-tasks' }],
+          } as MenuItem;
+        }
+        return item;
+      });
+    }
+
+    // For system admins, keep the menu structure but hide the visible label
+    // for the Manager Tasks subitem (show icon/navigation only).
+    if (isSystemAdmin) {
+      return filtered.map(item => {
+        if (item.label === 'Teams') {
+          return {
+            ...item,
+            subItems: (item.subItems || []).map(sub =>
+              sub.path === 'manager-tasks' ? { ...sub, label: '' } : sub
+            ),
+          } as MenuItem;
+        }
+        return item;
+      });
+    }
+
     return filtered;
-  }, [role]);
+  }, [role, isEmployee]);
 
   useEffect(() => {
     let currentPath = location.pathname.replace('/dashboard/', '');

@@ -1,12 +1,15 @@
-import React from 'react';
+import React, { useRef } from 'react';
 import {
   TextField,
   Typography,
   Box,
   FormHelperText,
   useTheme,
+  InputAdornment,
+  IconButton,
   type TextFieldProps,
 } from '@mui/material';
+import CalendarTodayIcon from '@mui/icons-material/CalendarToday';
 
 interface AppInputFieldProps extends Omit<TextFieldProps, 'label'> {
   label: string;
@@ -30,8 +33,34 @@ const AppInputField = React.forwardRef<HTMLDivElement, AppInputFieldProps>(
     ref
   ) => {
     const theme = useTheme();
+    const inputRef = useRef<HTMLInputElement | null>(null);
     // Check if this is a phone input (has PhoneInput in InputProps)
     const isPhoneInput = rest.InputProps?.startAdornment !== undefined;
+    const isDateInput = String(rest.type) === 'date';
+
+    const handleAdornmentClick = (e: React.MouseEvent) => {
+      e.preventDefault();
+      // Focus the underlying input and try to open native picker where supported
+      const el = inputRef.current as HTMLInputElement | null;
+      if (!el) return;
+      try {
+        // Some browsers support showPicker()
+        const maybePicker = (el as unknown as { showPicker?: () => void }).showPicker;
+        if (typeof maybePicker === 'function') {
+          maybePicker.call(el);
+          return;
+        }
+      } catch {
+        // ignore
+      }
+      el.focus();
+      // fallback: dispatch click
+      try {
+        el.click();
+      } catch {
+        /* ignore */
+      }
+    };
 
     return (
       <Box
@@ -103,10 +132,45 @@ const AppInputField = React.forwardRef<HTMLDivElement, AppInputFieldProps>(
             fullWidth
             id={rest.id || (rest.name ? `input-${rest.name}` : undefined)}
             variant='outlined'
-            InputProps={rest.InputProps}
+            InputProps={
+              // If caller provided InputProps, keep them and merge
+              isDateInput
+                ? {
+                    ...rest.InputProps,
+                    endAdornment:
+                      rest.InputProps && rest.InputProps.endAdornment ? (
+                        rest.InputProps.endAdornment
+                      ) : (
+                        <InputAdornment position='end'>
+                          <IconButton
+                            size='small'
+                            onClick={handleAdornmentClick}
+                            aria-label='open date picker'
+                            sx={{ color: theme.palette.text.secondary }}
+                          >
+                            <CalendarTodayIcon fontSize='small' />
+                          </IconButton>
+                        </InputAdornment>
+                      ),
+                  }
+                : rest.InputProps
+            }
+            inputRef={inputRef}
             helperText={undefined}
             sx={{
               position: isPhoneInput ? 'relative' : 'static',
+              '& input[type="date"]': {
+                WebkitAppearance: 'none',
+                MozAppearance: 'textfield',
+                appearance: 'textfield',
+              },
+              '& input[type="date"]::-webkit-calendar-picker-indicator': {
+                display: 'none',
+                WebkitAppearance: 'none',
+              },
+              '& input[type="date"]::-webkit-inner-spin-button': {
+                display: 'none',
+              },
               '& .MuiOutlinedInput-root': {
                 borderRadius: '12px',
                 height: rest.multiline ? 'auto' : { xs: 40, sm: 44 },
