@@ -3,8 +3,8 @@ import { Box, Typography, Chip, IconButton, TextField } from '@mui/material';
 import { useParams } from 'react-router-dom';
 import { useNavigate } from 'react-router-dom';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
-import AppCard from '../../common/AppCard';
-import AppDropdown from '../../common/AppDropdown';
+import AppCard from '../common/AppCard';
+import AppDropdown from '../common/AppDropdown';
 
 type LocalTask = {
   id: string;

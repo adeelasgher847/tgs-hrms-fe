@@ -94,10 +94,8 @@ const TimesheetLayout = lazy(
 );
 const TeamManager = lazy(() => import('./components/Teams/TeamManager'));
 const TeamsTaskList = lazy(() => import('./components/Teams/TeamList'));
-const TeamTasks = lazy(
-  () => import('./components/Teams/TaskManagement/TeamTasks')
-);
-const MyTasks = lazy(() => import('./components/Teams/TaskManagement/MyTasks'));
+const TeamTasks = lazy(() => import('./components/TaskManagement/TeamTasks'));
+const MyTasks = lazy(() => import('./components/TaskManagement/MyTasks'));
 const AssetInventory = lazy(
   () => import('./components/AssetManagement/AssetInventory')
 );

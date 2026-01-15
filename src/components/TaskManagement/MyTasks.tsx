@@ -1,14 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { Box, Typography, Chip } from '@mui/material';
-import AppPageTitle from '../../common/AppPageTitle';
-import AppCard from '../../common/AppCard';
-import AppDropdown from '../../common/AppDropdown';
-import * as tasksApi from '../../../api/tasksApi';
-import { getStoredUser } from '../../../utils/authSession';
-import { useErrorHandler } from '../../../hooks/useErrorHandler';
-import ErrorSnackbar from '../../common/ErrorSnackbar';
+import AppPageTitle from '../common/AppPageTitle';
+import AppCard from '../common/AppCard';
+import AppDropdown from '../common/AppDropdown';
+import * as tasksApi from '../../api/tasksApi';
+import { getStoredUser } from '../../utils/authSession';
+import { useErrorHandler } from '../../hooks/useErrorHandler';
+import ErrorSnackbar from '../common/ErrorSnackbar';
 // teamApiService not required in this component
-import type { Task, TaskStatus } from '../../../Data/taskMockData';
+import type { Task, TaskStatus } from '../../Data/taskMockData';
 
 function formatDateLocal(isoDate?: string) {
   if (!isoDate) return '';
@@ -31,7 +31,7 @@ function getStatusColorLocal(status: string) {
       return 'default';
   }
 }
-import { useNotifications } from '../../../context/NotificationContext';
+import { useNotifications } from '../../context/NotificationContext';
 
 const CURRENT_USER_ID = localStorage.getItem('employeeId') ?? undefined;
 
@@ -237,6 +237,20 @@ export default function MyTasks() {
                   </Typography>
                   <Typography variant='body2'>
                     {formatDateLocal(task.createdAt)}
+                  </Typography>
+                </Box>
+
+                {/* Deadline */}
+                <Box>
+                  <Typography
+                    variant='caption'
+                    color='text.secondary'
+                    sx={{ display: 'block', mb: 0.5 }}
+                  >
+                    Deadline
+                  </Typography>
+                  <Typography variant='body2'>
+                    {task.deadline ? formatDateLocal(task.deadline) : '—'}
                   </Typography>
                 </Box>
 

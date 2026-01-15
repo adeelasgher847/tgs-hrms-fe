@@ -45,7 +45,8 @@ const AppInputField = React.forwardRef<HTMLDivElement, AppInputFieldProps>(
       if (!el) return;
       try {
         // Some browsers support showPicker()
-        const maybePicker = (el as unknown as { showPicker?: () => void }).showPicker;
+        const maybePicker = (el as unknown as { showPicker?: () => void })
+          .showPicker;
         if (typeof maybePicker === 'function') {
           maybePicker.call(el);
           return;
