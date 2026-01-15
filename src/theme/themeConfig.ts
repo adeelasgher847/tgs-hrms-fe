@@ -273,6 +273,30 @@ export const createAppTheme = (mode: 'light' | 'dark') => {
           },
         },
       },
+      MuiDialog: {
+        defaultProps: {
+          fullWidth: true,
+        },
+        styleOverrides: {
+          paper: {
+            maxWidth: '900px',
+            width: '92%',
+            maxHeight: '85vh',
+            // ensure on very large screens the dialog doesn't get too wide
+            '@media (min-width:1200px)': {
+              width: '900px',
+            },
+          },
+        },
+      },
+      MuiDialogContent: {
+        styleOverrides: {
+          root: {
+            padding: '24px',
+            overflowY: 'auto',
+          },
+        },
+      },
     },
   });
 };
