@@ -269,6 +269,7 @@ const menuItems: MenuItem[] = [
       { label: 'Employee Performance', path: 'performance-dashboard' },
       { label: 'Employee KPIs', path: 'employee-kpis' },
       { label: 'KPI Management', path: 'kpi-management' },
+      { label: 'Performance Reviews', path: 'performance-reviews' },
     ],
   },
   {

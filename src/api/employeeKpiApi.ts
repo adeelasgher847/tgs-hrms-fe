@@ -186,12 +186,25 @@ export class EmployeeKpiApiService {
         cycle?: string;
     }): Promise<KPISummary> {
         try {
+            // Try query params first
             const response = await axiosInstance.get<KPISummary>(
                 `${this.baseEmployeeKpiUrl}/summary`,
                 { params }
             );
             return response.data;
-        } catch (error) {
+        } catch (error: any) {
+            // fallback for potential 404 or path-based endpoint
+            if (error.response?.status === 404) {
+                try {
+                    const response = await axiosInstance.get<KPISummary>(
+                        `${this.baseEmployeeKpiUrl}/employee/${params.employeeId}/summary`,
+                        { params: { cycle: params.cycle } }
+                    );
+                    return response.data;
+                } catch {
+                    // If both fail, the caller should handle it
+                }
+            }
             const errorResult = handleApiError(error, {
                 operation: 'fetch',
                 resource: 'kpi',

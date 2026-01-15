@@ -5,11 +5,21 @@ import { Icons } from '../../assets/icons';
 
 interface TeamKPISummaryCardProps {
     summary: TeamKPISummary;
-    onAssignKPI: () => void;
+    onAssignKPI?: () => void;
     onViewDetails: () => void;
+    viewLabel?: string;
+    viewIcon?: string;
+    hideAssignKpi?: boolean;
 }
 
-const TeamKPISummaryCard: React.FC<TeamKPISummaryCardProps> = ({ summary, onAssignKPI, onViewDetails }) => {
+const TeamKPISummaryCard: React.FC<TeamKPISummaryCardProps> = ({
+    summary,
+    onAssignKPI,
+    onViewDetails,
+    viewLabel = 'View',
+    viewIcon = Icons.password,
+    hideAssignKpi = false
+}) => {
     const theme = useTheme();
 
     const getScoreColor = (s: number) => {
@@ -75,25 +85,27 @@ const TeamKPISummaryCard: React.FC<TeamKPISummaryCardProps> = ({ summary, onAssi
                 </Box>
 
                 <Box display="flex" gap={1.5} flexDirection={{ xs: 'column', sm: 'row' }}>
-                    <Button
-                        variant="outlined"
-                        color="primary"
-                        fullWidth
-                        size="medium"
-                        startIcon={<Box sx={{
-                            width: 18,
-                            height: 18,
-                            bgcolor: 'currentColor',
-                            maskImage: `url(${Icons.add})`,
-                            maskSize: 'contain',
-                            maskRepeat: 'no-repeat',
-                            maskPosition: 'center'
-                        }} />}
-                        onClick={onAssignKPI}
-                        sx={{ borderRadius: 2, textTransform: 'none', fontWeight: 600 }}
-                    >
-                        Assign KPI
-                    </Button>
+                    {!hideAssignKpi && onAssignKPI && (
+                        <Button
+                            variant="outlined"
+                            color="primary"
+                            fullWidth
+                            size="medium"
+                            startIcon={<Box sx={{
+                                width: 18,
+                                height: 18,
+                                bgcolor: 'currentColor',
+                                maskImage: `url(${Icons.add})`,
+                                maskSize: 'contain',
+                                maskRepeat: 'no-repeat',
+                                maskPosition: 'center'
+                            }} />}
+                            onClick={onAssignKPI}
+                            sx={{ borderRadius: 2, textTransform: 'none', fontWeight: 600 }}
+                        >
+                            Assign KPI
+                        </Button>
+                    )}
                     <Button
                         variant="contained"
                         color="inherit"
@@ -103,7 +115,7 @@ const TeamKPISummaryCard: React.FC<TeamKPISummaryCardProps> = ({ summary, onAssi
                             width: 18,
                             height: 18,
                             bgcolor: 'currentColor',
-                            maskImage: `url(${Icons.password})`,
+                            maskImage: `url(${viewIcon})`,
                             maskSize: 'contain',
                             maskRepeat: 'no-repeat',
                             maskPosition: 'center'
@@ -121,7 +133,7 @@ const TeamKPISummaryCard: React.FC<TeamKPISummaryCardProps> = ({ summary, onAssi
                             }
                         }}
                     >
-                        View
+                        {viewLabel}
                     </Button>
                 </Box>
             </Box>

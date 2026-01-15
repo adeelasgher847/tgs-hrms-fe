@@ -106,7 +106,14 @@ const ROLE_MENU_ALLOWLIST: Record<NormalizedRole, readonly string[]> = {
     'benefits',
     'performance',
   ],
-  employee: ['attendance', 'assets', 'benefits', 'leave-analytics', 'payroll', 'performance'],
+  employee: [
+    'attendance',
+    'assets',
+    'benefits',
+    'leave-analytics',
+    'payroll',
+    'performance',
+  ],
   user: ['attendance', 'assets', 'benefits', 'payroll'],
   unknown: ['benefits'],
 };
@@ -195,7 +202,14 @@ const ROLE_SUBMENU_POLICIES: Record<
     payroll: { allowOnly: ['payroll reports'] },
     assets: { allowOnly: ['assets overview'] },
     employees: { deny: ['employee list'] },
-    performance: { allowOnly: ['employee performance', 'employee kpis', 'kpi management'] }
+    performance: {
+      allowOnly: [
+        'employee performance',
+        'employee kpis',
+        'kpi management',
+        'performance reviews',
+      ],
+    },
   },
   'network-admin': {
     employees: { deny: ['tenant employees'] },
@@ -213,7 +227,7 @@ const ROLE_SUBMENU_POLICIES: Record<
     assets: { deny: ['assets overview', 'asset requests'] },
     benefits: { deny: ['benefits report', 'benefit details'] },
     'leave-analytics': { deny: ['cross tenant leaves'] },
-    performance: { allowOnly: ['kpi management', 'employee kpis'] }
+    performance: { allowOnly: ['kpi management', 'performance reviews'] },
   },
   admin: {
     employees: { deny: ['tenant employees'] },
@@ -224,7 +238,7 @@ const ROLE_SUBMENU_POLICIES: Record<
     benefits: { deny: ['benefits report', 'benefit details'] },
     payroll: { deny: ['payroll reports', 'my salary'] },
     assets: { deny: ['assets overview', 'asset requests'] },
-    performance: { allowOnly: ['kpi management'] }
+    performance: { allowOnly: ['kpi management', 'performance reviews'] },
   },
   manager: {
     employees: { deny: ['tenant employees'] },
@@ -234,7 +248,7 @@ const ROLE_SUBMENU_POLICIES: Record<
     assets: { deny: ['assets overview', 'asset inventory', 'management'] },
     benefits: { allowOnly: ['benefit details'] },
     'leave-analytics': { deny: ['cross tenant leaves'] },
-    performance: { allowOnly: ['employee kpis'] }
+    performance: { allowOnly: ['employee kpis', 'performance reviews'] },
   },
   employee: {
     employees: { deny: ['tenant employees'] },
@@ -244,7 +258,7 @@ const ROLE_SUBMENU_POLICIES: Record<
     'leave-analytics': { allowOnly: ['report'] },
     'audit logs': { denyAll: true },
     payroll: { allowOnly: ['my salary'] },
-    performance: { allowOnly: ['employee kpis'] }
+    performance: { allowOnly: ['employee kpis', 'performance reviews'] },
   },
   user: {
     employees: { deny: ['tenant employees'] },
@@ -332,6 +346,7 @@ const DASHBOARD_ALLOWLIST_ENTRIES: Record<NormalizedRole, readonly string[]> = {
     'payroll-reports',
     'benefit-report',
     'employee-kpis',
+    'performance-reviews',
   ],
   'network-admin': [
     '',
@@ -352,6 +367,7 @@ const DASHBOARD_ALLOWLIST_ENTRIES: Record<NormalizedRole, readonly string[]> = {
     'benefits-list',
     'employee-benefit',
     'employee-kpis',
+    'performance-reviews',
   ],
   'hr-admin': [
     'EmployeeManager',
@@ -378,6 +394,7 @@ const DASHBOARD_ALLOWLIST_ENTRIES: Record<NormalizedRole, readonly string[]> = {
     'employee-salary',
     'kpi-management',
     'employee-kpis',
+    'performance-reviews',
   ],
   admin: [
     '',
@@ -410,6 +427,7 @@ const DASHBOARD_ALLOWLIST_ENTRIES: Record<NormalizedRole, readonly string[]> = {
     'employee-salary',
     'kpi-management',
     'employee-kpis',
+    'performance-reviews',
   ],
   manager: [
     'EmployeeManager',
@@ -432,6 +450,7 @@ const DASHBOARD_ALLOWLIST_ENTRIES: Record<NormalizedRole, readonly string[]> = {
     'my-salary',
     'EmployeeProfileView',
     'employee-kpis',
+    'performance-reviews',
   ],
   employee: [
     'AttendanceCheck',
@@ -445,6 +464,7 @@ const DASHBOARD_ALLOWLIST_ENTRIES: Record<NormalizedRole, readonly string[]> = {
     'benefit-details',
     'my-salary',
     'employee-kpis',
+    'performance-reviews',
   ],
   user: [
     'AttendanceCheck',

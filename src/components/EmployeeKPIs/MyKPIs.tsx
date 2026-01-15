@@ -14,7 +14,7 @@ const MyKPIs: React.FC = () => {
     const [loading, setLoading] = useState(true);
     const [myKpis, setMyKpis] = useState<EmployeeKPI[]>([]);
     const [summary, setSummary] = useState<KPISummary | null>(null);
-    const [cycle, setCycle] = useState('all');
+    const [cycle, setCycle] = useState('All Time');
 
     const user = JSON.parse(localStorage.getItem('user') || '{}');
     const employeeId = user.employeeId || user.id;
@@ -28,14 +28,14 @@ const MyKPIs: React.FC = () => {
                 employeeId: employeeId,
             };
 
-            if (cycle !== 'all') {
+            if (cycle !== 'All Time') {
                 params.cycle = cycle;
             }
 
             // Parallel fetch
             const [kpiData, summaryData] = await Promise.all([
                 employeeKpiApiService.getEmployeeKPIs(params),
-                employeeKpiApiService.getKPISummary({ ...params, cycle: cycle === 'all' ? '' : cycle, employeeId: params.employeeId! })
+                employeeKpiApiService.getKPISummary({ ...params, cycle: cycle === 'All Time' ? '' : cycle, employeeId: params.employeeId! })
             ]);
 
             setMyKpis(kpiData);
@@ -52,7 +52,7 @@ const MyKPIs: React.FC = () => {
         fetchData();
     }, [fetchData]);
 
-    const cycles = ['Q1-2025', 'Q2-2025', 'Q3-2025', 'Q4-2025'];
+    const cycles = ['All Time', 'Q1-2025', 'Q2-2025', 'Q3-2025', 'Q4-2025'];
 
     if (loading) {
         return (
@@ -73,12 +73,9 @@ const MyKPIs: React.FC = () => {
                     <AppDropdown
                         label='Review Cycle'
                         showLabel={false}
-                        options={[
-                            { value: 'all', label: 'All Cycles' },
-                            ...cycles.map(c => ({ value: c, label: c })),
-                        ]}
+                        options={cycles.map(c => ({ value: c, label: c }))}
                         value={cycle}
-                        onChange={e => setCycle(String(e.target.value || 'all'))}
+                        onChange={e => setCycle(String(e.target.value || 'All Time'))}
                     />
                 </Box>
             </Box>
@@ -87,7 +84,7 @@ const MyKPIs: React.FC = () => {
                 <KPIScoreCard
                     score={summary?.totalScore || 0}
                     totalKPIs={summary?.recordCount || 0}
-                    cycle={cycle === 'all' ? 'Overall' : cycle}
+                    cycle={cycle}
                 />
             </Box>
 

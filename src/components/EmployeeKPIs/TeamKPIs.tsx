@@ -32,7 +32,7 @@ const TeamKPIs: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [summaries, setSummaries] = useState<TeamKPISummary[]>([]);
   const [employees, setEmployees] = useState<BackendEmployee[]>([]);
-  const [cycle, setCycle] = useState('Q1-2025');
+  const [cycle, setCycle] = useState('All Time');
   const [searchQuery, setSearchQuery] = useState('');
 
   // Modals
@@ -69,21 +69,31 @@ const TeamKPIs: React.FC = () => {
       }
 
       // Group by employeeId to ensure 1 card per person even if backend returns multiple cycles
-      const grouped = data.reduce((acc: Record<string, TeamKPISummary>, item) => {
-        const empId = item.employeeId;
-        if (!acc[empId]) {
-          acc[empId] = { ...item, cycle: cycle === 'All Time' ? 'All Time' : item.cycle };
-        } else {
-          const existing = acc[empId];
-          // Recalculate average: (avg1 * count1 + avg2 * count2) / (count1 + count2)
-          const totalExistingPoints = existing.totalScore * existing.recordCount;
-          const totalNewPoints = item.totalScore * item.recordCount;
-          existing.recordCount += item.recordCount;
-          existing.totalScore = existing.recordCount > 0 ? (totalExistingPoints + totalNewPoints) / existing.recordCount : 0;
-          existing.kpis = [...existing.kpis, ...item.kpis];
-        }
-        return acc;
-      }, {});
+      const grouped = data.reduce(
+        (acc: Record<string, TeamKPISummary>, item) => {
+          const empId = item.employeeId;
+          if (!acc[empId]) {
+            acc[empId] = {
+              ...item,
+              cycle: cycle === 'All Time' ? 'All Time' : item.cycle,
+            };
+          } else {
+            const existing = acc[empId];
+            // Recalculate average: (avg1 * count1 + avg2 * count2) / (count1 + count2)
+            const totalExistingPoints =
+              existing.totalScore * existing.recordCount;
+            const totalNewPoints = item.totalScore * item.recordCount;
+            existing.recordCount += item.recordCount;
+            existing.totalScore =
+              existing.recordCount > 0
+                ? (totalExistingPoints + totalNewPoints) / existing.recordCount
+                : 0;
+            existing.kpis = [...existing.kpis, ...item.kpis];
+          }
+          return acc;
+        },
+        {}
+      );
 
       const aggregatedData = Object.values(grouped);
 
@@ -126,17 +136,18 @@ const TeamKPIs: React.FC = () => {
     try {
       if (!selectedSummary) return;
       // Fetch all KPIs for the employee and find the target one to avoid 404 on single get endpoint
-      const kpis = await employeeKpiApiService.getEmployeeKPIs({
-        employeeId: selectedSummary.employeeId,
-        cycle: selectedSummary.cycle,
-      });
-
+      const params: any = { employeeId: selectedSummary.employeeId };
+      if (selectedSummary.cycle !== 'All Time') {
+        params.cycle = selectedSummary.cycle;
+      }
+      const kpis = await employeeKpiApiService.getEmployeeKPIs(params);
       // Match against either EmployeeKPI ID or the KPI Definition ID to be safe
       const kpi = kpis.find(k => k.id === kpiId || k.kpi_id === kpiId);
 
       if (kpi) {
         setSelectedKPI(kpi);
-        setUpdateModalOpen(true);
+        // small delay to ensure selectedKPI state applied before opening dialog
+        setTimeout(() => setUpdateModalOpen(true), 50);
       } else {
         throw new Error('KPI details not found');
       }
@@ -203,7 +214,7 @@ const TeamKPIs: React.FC = () => {
                   maskImage: `url(${Icons.add})`,
                   maskSize: 'contain',
                   maskRepeat: 'no-repeat',
-                  maskPosition: 'center'
+                  maskPosition: 'center',
                 }}
               />
             }
@@ -297,9 +308,9 @@ const TeamKPIs: React.FC = () => {
         onClose={() => setDetailsModalOpen(false)}
         summary={selectedSummary}
         onUpdateKPI={kpiId => {
-          setDetailsModalOpen(false); // Close details to show update modal
+          // The modal closing is now handled in EmployeeKPIDetailsModal's wrapper
           handleUpdateClick(kpiId);
-        }}
+        }} // Managers can edit KPIs assigned to their team
       />
 
       {selectedKPI && (
