@@ -767,54 +767,58 @@ export default function Sidebar({
                       id={`${item.label}-submenu`}
                     >
                       <List component='div' disablePadding role='menu'>
-                        {item.subItems?.map(sub => (
-                          <ListItemButton
-                            key={sub.path}
-                            component={NavLink}
-                            to={`/dashboard/${sub.path}`}
-                            onClick={() =>
-                              handleSubItemClick(item.label, sub.label)
-                            }
-                            sx={{
-                              pl: { xs: 7.5, lg: 8 },
-                              py: 1,
-                              fontSize: {
-                                xs: '14px',
-                                lg: 'var(--body-font-size)',
-                              },
-                              color:
-                                activeSubItem === sub.label
-                                  ? theme.palette.mode === 'dark'
-                                    ? 'var(--primary-light-color)'
-                                    : theme.palette.primary.main
-                                  : theme.palette.text.primary,
-                              // '&:hover': {
-                              //   backgroundColor: 'var(--white-100-color)',
-                              //   borderRadius: 'var(--border-radius-lg)',
-                              // },
-                            }}
-                            role='menuitem'
-                            aria-label={`Navigate to ${sub.label}`}
-                          >
-                            <ListItemText
-                              primary={sub.label}
-                              primaryTypographyProps={{
+                        {item.subItems
+                          ?.filter(
+                            sub => !!(sub.label && String(sub.label).trim())
+                          )
+                          .map(sub => (
+                            <ListItemButton
+                              key={sub.path}
+                              component={NavLink}
+                              to={`/dashboard/${sub.path}`}
+                              onClick={() =>
+                                handleSubItemClick(item.label, sub.label)
+                              }
+                              sx={{
+                                pl: { xs: 7.5, lg: 8 },
+                                py: 1,
                                 fontSize: {
                                   xs: '14px',
                                   lg: 'var(--body-font-size)',
                                 },
-                                fontWeight:
-                                  activeSubItem === sub.label ? 600 : 400,
                                 color:
                                   activeSubItem === sub.label
                                     ? theme.palette.mode === 'dark'
                                       ? 'var(--primary-light-color)'
                                       : theme.palette.primary.main
                                     : theme.palette.text.primary,
+                                // '&:hover': {
+                                //   backgroundColor: 'var(--white-100-color)',
+                                //   borderRadius: 'var(--border-radius-lg)',
+                                // },
                               }}
-                            />
-                          </ListItemButton>
-                        ))}
+                              role='menuitem'
+                              aria-label={`Navigate to ${sub.label}`}
+                            >
+                              <ListItemText
+                                primary={sub.label}
+                                primaryTypographyProps={{
+                                  fontSize: {
+                                    xs: '14px',
+                                    lg: 'var(--body-font-size)',
+                                  },
+                                  fontWeight:
+                                    activeSubItem === sub.label ? 600 : 400,
+                                  color:
+                                    activeSubItem === sub.label
+                                      ? theme.palette.mode === 'dark'
+                                        ? 'var(--primary-light-color)'
+                                        : theme.palette.primary.main
+                                      : theme.palette.text.primary,
+                                }}
+                              />
+                            </ListItemButton>
+                          ))}
                       </List>
                     </Collapse>
                   </>
