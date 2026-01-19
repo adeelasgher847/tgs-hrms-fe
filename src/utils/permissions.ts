@@ -208,6 +208,7 @@ const ROLE_SUBMENU_POLICIES: Record<
         'employee kpis',
         'kpi management',
         'performance reviews',
+        'promotions',
       ],
     },
   },
@@ -227,7 +228,9 @@ const ROLE_SUBMENU_POLICIES: Record<
     assets: { deny: ['assets overview', 'asset requests'] },
     benefits: { deny: ['benefits report', 'benefit details'] },
     'leave-analytics': { deny: ['cross tenant leaves'] },
-    performance: { allowOnly: ['kpi management', 'performance reviews'] },
+    performance: {
+      allowOnly: ['kpi management', 'performance reviews', 'promotions'],
+    },
   },
   admin: {
     employees: { deny: ['tenant employees'] },
@@ -238,7 +241,9 @@ const ROLE_SUBMENU_POLICIES: Record<
     benefits: { deny: ['benefits report', 'benefit details'] },
     payroll: { deny: ['payroll reports', 'my salary'] },
     assets: { deny: ['assets overview', 'asset requests'] },
-    performance: { allowOnly: ['kpi management', 'performance reviews'] },
+    performance: {
+      allowOnly: ['kpi management', 'performance reviews', 'promotions'],
+    },
   },
   manager: {
     employees: { deny: ['tenant employees'] },
@@ -248,7 +253,9 @@ const ROLE_SUBMENU_POLICIES: Record<
     assets: { deny: ['assets overview', 'asset inventory', 'management'] },
     benefits: { allowOnly: ['benefit details'] },
     'leave-analytics': { deny: ['cross tenant leaves'] },
-    performance: { allowOnly: ['employee kpis', 'performance reviews'] },
+    performance: {
+      allowOnly: ['employee kpis', 'performance reviews', 'promotions'],
+    },
   },
   employee: {
     employees: { deny: ['tenant employees'] },
@@ -258,7 +265,9 @@ const ROLE_SUBMENU_POLICIES: Record<
     'leave-analytics': { allowOnly: ['report'] },
     'audit logs': { denyAll: true },
     payroll: { allowOnly: ['my salary'] },
-    performance: { allowOnly: ['employee kpis', 'performance reviews'] },
+    performance: {
+      allowOnly: ['employee kpis', 'performance reviews', 'promotions'],
+    },
   },
   user: {
     employees: { deny: ['tenant employees'] },
@@ -347,6 +356,7 @@ const DASHBOARD_ALLOWLIST_ENTRIES: Record<NormalizedRole, readonly string[]> = {
     'benefit-report',
     'employee-kpis',
     'performance-reviews',
+    'promotions',
   ],
   'network-admin': [
     '',
@@ -368,6 +378,7 @@ const DASHBOARD_ALLOWLIST_ENTRIES: Record<NormalizedRole, readonly string[]> = {
     'employee-benefit',
     'employee-kpis',
     'performance-reviews',
+    'promotions',
   ],
   'hr-admin': [
     'EmployeeManager',
@@ -395,6 +406,7 @@ const DASHBOARD_ALLOWLIST_ENTRIES: Record<NormalizedRole, readonly string[]> = {
     'kpi-management',
     'employee-kpis',
     'performance-reviews',
+    'promotions',
   ],
   admin: [
     '',
@@ -428,6 +440,7 @@ const DASHBOARD_ALLOWLIST_ENTRIES: Record<NormalizedRole, readonly string[]> = {
     'kpi-management',
     'employee-kpis',
     'performance-reviews',
+    'promotions',
   ],
   manager: [
     'EmployeeManager',
@@ -451,6 +464,7 @@ const DASHBOARD_ALLOWLIST_ENTRIES: Record<NormalizedRole, readonly string[]> = {
     'EmployeeProfileView',
     'employee-kpis',
     'performance-reviews',
+    'promotions',
   ],
   employee: [
     'AttendanceCheck',
@@ -465,6 +479,7 @@ const DASHBOARD_ALLOWLIST_ENTRIES: Record<NormalizedRole, readonly string[]> = {
     'my-salary',
     'employee-kpis',
     'performance-reviews',
+    'promotions',
   ],
   user: [
     'AttendanceCheck',

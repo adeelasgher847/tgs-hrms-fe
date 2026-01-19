@@ -134,8 +134,15 @@ const PayrollReports = lazy(
 );
 
 const KPIList = lazy(() => import('./components/KPIs/KPIList'));
-const EmployeeKPIMain = lazy(() => import('./components/EmployeeKPIs/EmployeeKPIMain'));
-const PerformanceReviewsMain = lazy(() => import('./components/PerformanceReviews/PerformanceReviewsMain'));
+const EmployeeKPIMain = lazy(
+  () => import('./components/EmployeeKPIs/EmployeeKPIMain')
+);
+const PerformanceReviewsMain = lazy(
+  () => import('./components/PerformanceReviews/PerformanceReviewsMain')
+);
+const PromotionsPage = lazy(
+  () => import('./components/Promotions/PromotionsList')
+);
 
 function App() {
   return (
@@ -148,7 +155,10 @@ function App() {
                 <Route path='/' element={<Login />} />
                 <Route path='kpis' element={<KPIList />} />
                 <Route path='employee-kpis' element={<EmployeeKPIMain />} />
-                <Route path='performance-reviews' element={<PerformanceReviewsMain />} />
+                <Route
+                  path='performance-reviews'
+                  element={<PerformanceReviewsMain />}
+                />
                 <Route path='/forget' element={<Forget />} />
                 <Route path='/reset-password' element={<ResetPassword />} />
                 <Route path='/confirm-password' element={<ConfirmPassword />} />
@@ -249,7 +259,11 @@ function App() {
                   />
                   <Route path='benefits-list' element={<BenefitList />} />
                   <Route path='kpi-management' element={<KPIList />} />
-                  <Route path='performance-reviews' element={<PerformanceReviewsMain />} />
+                  <Route
+                    path='performance-reviews'
+                    element={<PerformanceReviewsMain />}
+                  />
+                  <Route path='promotions' element={<PromotionsPage />} />
                   <Route
                     path='employee-benefit'
                     element={<EmployeeBenefits />}

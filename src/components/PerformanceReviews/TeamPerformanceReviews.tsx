@@ -15,6 +15,7 @@ import { Icons } from '../../assets/icons';
 import TeamKPISummaryCard from '../KPIs/TeamKPISummaryCard';
 import ReviewPerformanceModal from './ReviewPerformanceModal';
 import PerformanceReviewDetailsModal from './PerformanceReviewDetailsModal';
+import PromotionsList from '../Promotions/PromotionsList';
 import {
   isAdmin as checkIsAdmin,
   isHRAdmin as checkIsHRAdmin,
@@ -306,6 +307,7 @@ const TeamPerformanceReviews: React.FC = () => {
           {(isAdmin || isHRAdmin) && <Tab label='Pending Approvals' />}
           {(isAdmin || isHRAdmin) && <Tab label='Completed Reviews' />}
           {isManager && <Tab label='Review History' />}
+          {(isManager || isAdmin || isHRAdmin) && <Tab label='Promotions' />}
         </Tabs>
       </Box>
 
@@ -463,7 +465,7 @@ const TeamPerformanceReviews: React.FC = () => {
             ))
           )}
         </Box>
-      ) : isManager && activeTab === 1 ? (
+      ) : isManager && activeTab === 3 ? (
         // Manager: Review History Tab
         <Box
           display='grid'
@@ -485,6 +487,9 @@ const TeamPerformanceReviews: React.FC = () => {
                 No performance reviews found.
               </Typography>
             </Box>
+          ) : activeTab === 4 && (isManager || isAdmin || isHRAdmin) ? (
+            // Promotions tab
+            <PromotionsList />
           ) : (
             filteredHistorySummaries.map((summary: any) => (
               <TeamKPISummaryCard
