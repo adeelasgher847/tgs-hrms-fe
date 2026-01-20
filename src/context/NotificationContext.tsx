@@ -1,7 +1,49 @@
 /* eslint-disable react-refresh/only-export-components */
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import type { Notification } from '../Data/taskMockData';
+import axiosInstance from '../api/axiosInstance';
 
+// Local Notification type for the UI notifications used by the Navbar
+export interface Notification {
+  id: string;
+  title: string;
+  text: string;
+  timestamp: string;
+  read: boolean;
+}
+
+// API shapes for dashboard alerts
+interface PendingApproval {
+  id?: string;
+  user_id?: string;
+  employee?: { first_name?: string; last_name?: string; email?: string } | null;
+  check_in_time?: string;
+  approval_status?: string;
+  message?: string;
+  timestamp?: string;
+}
+
+interface AutoCheckout {
+  id?: string;
+  title?: string;
+  message?: string;
+  reason?: string;
+  timestamp?: string;
+}
+
+interface SalaryIssue {
+  id?: string;
+  title?: string;
+  message?: string;
+  details?: string;
+  timestamp?: string;
+}
+
+interface AlertsResponse {
+  auto_checkouts?: AutoCheckout[];
+  pending_approvals?: PendingApproval[];
+  salary_issues?: SalaryIssue[];
+  timestamp?: string;
+}
 interface NotificationContextType {
   notifications: Notification[];
   addNotification: (
@@ -28,8 +70,12 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
     try {
       const stored = localStorage.getItem(STORAGE_KEY);
       if (stored) {
-        return JSON.parse(stored);
+        const parsed = JSON.parse(stored) as Notification[];
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
       }
+
+      // Start empty; we'll try to fetch server alerts on mount and
+      // fallback to a small mock when the fetch fails or returns no items.
       return [];
     } catch (error) {
       console.error('Error loading notifications from localStorage:', error);
@@ -45,6 +91,102 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
       console.error('Error saving notifications to localStorage:', error);
     }
   }, [notifications]);
+
+  // Fetch server-side dashboard alerts and normalize them into our Notification[]
+  useEffect(() => {
+    let mounted = true;
+
+    // No local mock seeding — prefer server data or stored notifications
+
+    const fetchAlerts = async () => {
+      try {
+        const resp = await axiosInstance.get('/dashboard/alerts');
+        const data = resp?.data || resp;
+
+        // Expected shape: { auto_checkouts: [], pending_approvals: [], salary_issues: [], timestamp }
+        const items: Notification[] = [];
+
+        const pushNormalized = (
+          id: string,
+          title: string,
+          text: string,
+          ts?: string
+        ) => {
+          items.push({
+            id,
+            title,
+            text,
+            timestamp: ts ?? data.timestamp ?? new Date().toISOString(),
+            read: false,
+          });
+        };
+
+        if (Array.isArray((data as AlertsResponse).pending_approvals)) {
+          (data as AlertsResponse).pending_approvals!.forEach(
+            (p: PendingApproval) => {
+              const emp = p.employee ?? {};
+              const name =
+                `${emp.first_name ?? ''} ${emp.last_name ?? ''}`.trim();
+              const title = `Pending approval${name ? ` - ${name}` : ''}`;
+              const text = p.message ?? 'Pending approval';
+              const ts =
+                p.check_in_time ??
+                p.timestamp ??
+                (data as AlertsResponse).timestamp;
+              const id =
+                p.id ?? `pending-${Math.random().toString(36).slice(2, 9)}`;
+              pushNormalized(id, title, text, ts);
+            }
+          );
+        }
+
+        if (Array.isArray((data as AlertsResponse).auto_checkouts)) {
+          (data as AlertsResponse).auto_checkouts!.forEach(
+            (a: AutoCheckout, idx: number) => {
+              const id =
+                a.id ?? `auto-${idx}-${Math.random().toString(36).slice(2, 9)}`;
+              const title = a.title ?? 'Auto checkout alert';
+              const text = a.message ?? a.reason ?? 'Employee missing checkout';
+              const ts = a.timestamp ?? (data as AlertsResponse).timestamp;
+              pushNormalized(id, title, text, ts);
+            }
+          );
+        }
+
+        if (Array.isArray((data as AlertsResponse).salary_issues)) {
+          (data as AlertsResponse).salary_issues!.forEach(
+            (s: SalaryIssue, idx: number) => {
+              const id =
+                s.id ??
+                `salary-${idx}-${Math.random().toString(36).slice(2, 9)}`;
+              const title = s.title ?? 'Salary issue';
+              const text = s.message ?? s.details ?? 'Payroll issue detected';
+              const ts = s.timestamp ?? (data as AlertsResponse).timestamp;
+              pushNormalized(id, title, text, ts);
+            }
+          );
+        }
+
+        if (mounted && items.length > 0) {
+          // sort by timestamp desc
+          items.sort(
+            (a, b) =>
+              new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
+          );
+          setNotifications(items);
+        }
+      } catch (err) {
+        // On failure, keep any stored notifications
+        console.warn('Failed to fetch dashboard alerts', err);
+      }
+    };
+
+    fetchAlerts();
+
+    return () => {
+      mounted = false;
+    };
+  }, []);
 
   // Calculate unread count
   const unreadCount = notifications.filter(n => !n.read).length;
