@@ -132,6 +132,9 @@ const MySalary = lazy(() => import('./components/Payroll/MySalary'));
 const PayrollReports = lazy(
   () => import('./components/Payroll/PayrollReports')
 );
+const GeofencingManagement = lazy(
+  () => import('./components/Geofencing/GeofencingManagement')
+);
 
 function App() {
   return (
@@ -263,6 +266,7 @@ function App() {
                     element={<EmployeeSalaryPage />}
                   />
                   <Route path='my-salary' element={<MySalary />} />
+                  <Route path='geofencing' element={<GeofencingManagement />} />
                 </Route>
                 <Route path='/company-details' element={<CompanyDetails />} />
                 <Route path='*' element={<Error404 />} />

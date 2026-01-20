@@ -361,6 +361,7 @@ const DASHBOARD_ALLOWLIST_ENTRIES: Record<NormalizedRole, readonly string[]> = {
     'payroll-configuration',
     'payroll-records',
     'employee-salary',
+    'geofencing',
   ],
   admin: [
     '',
@@ -391,6 +392,7 @@ const DASHBOARD_ALLOWLIST_ENTRIES: Record<NormalizedRole, readonly string[]> = {
     'payroll-configuration',
     'payroll-records',
     'employee-salary',
+    'geofencing',
   ],
   manager: [
     'EmployeeManager',

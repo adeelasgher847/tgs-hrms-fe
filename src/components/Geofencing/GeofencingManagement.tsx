@@ -1,0 +1,590 @@
+import { useEffect, useState } from 'react';
+import {
+  Box,
+  Typography,
+  Paper,
+  Alert,
+  Snackbar,
+  IconButton,
+  Tooltip,
+  CircularProgress,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+} from '@mui/material';
+import {
+  Delete as DeleteIcon,
+  Edit as EditIcon,
+  LocationOn as LocationIcon,
+  Visibility as VisibilityIcon,
+  VisibilityOff as VisibilityOffIcon,
+  Add as AddIcon,
+  Close as CloseIcon,
+  Info as ViewIcon,
+} from '@mui/icons-material';
+import {
+  MapContainer,
+  TileLayer,
+  Circle,
+  Polygon,
+  Rectangle,
+  useMap,
+  Marker,
+  Popup,
+} from 'react-leaflet';
+import 'leaflet/dist/leaflet.css';
+import L from 'leaflet';
+import icon from 'leaflet/dist/images/marker-icon.png';
+import iconShadow from 'leaflet/dist/images/marker-shadow.png';
+import type { Geofence } from '../../types/geofencing';
+import { geofencingApi } from '../../api/geofencingApi';
+import AppPageTitle from '../common/AppPageTitle';
+import AppButton from '../common/AppButton';
+import GeofenceFormModal from './GeofenceFormModal';
+import DeleteConfirmationDialog from '../common/DeleteConfirmationDialog';
+import { Icons } from '../../assets/icons';
+
+// Fix for default marker icons in React-Leaflet
+const DefaultIcon = L.icon({
+  iconUrl: icon,
+  shadowUrl: iconShadow,
+  iconSize: [25, 41],
+  iconAnchor: [12, 41],
+});
+L.Marker.prototype.options.icon = DefaultIcon;
+
+interface MapControllerProps {
+  center: [number, number];
+  zoom: number;
+}
+
+function MapController({ center, zoom }: MapControllerProps) {
+  const map = useMap();
+  useEffect(() => {
+    map.setView(center, zoom);
+  }, [map, center, zoom]);
+  return null;
+}
+
+const GeofencingManagement = () => {
+  const [geofences, setGeofences] = useState<Geofence[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [visibleGeofences, setVisibleGeofences] = useState<Set<string>>(
+    new Set()
+  );
+  const [editingGeofence, setEditingGeofence] = useState<Geofence | null>(null);
+  const [viewingGeofence, setViewingGeofence] = useState<Geofence | null>(null);
+  const [deletingGeofence, setDeletingGeofence] = useState<Geofence | null>(
+    null
+  );
+  const [formModalOpen, setFormModalOpen] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [snackbar, setSnackbar] = useState<{
+    open: boolean;
+    message: string;
+    severity: 'success' | 'error';
+  }>({
+    open: false,
+    message: '',
+    severity: 'success',
+  });
+
+  useEffect(() => {
+    fetchGeofences();
+  }, []);
+
+  const fetchGeofences = async () => {
+    try {
+      setLoading(true);
+      const data = await geofencingApi.getGeofences();
+      setGeofences(data);
+      setVisibleGeofences(new Set(data.map(g => g.id)));
+    } catch (error) {
+      showSnackbar('Failed to load geofences', 'error');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const showSnackbar = (
+    message: string,
+    severity: 'success' | 'error' = 'success'
+  ) => {
+    setSnackbar({ open: true, message, severity });
+  };
+
+  const handleCloseSnackbar = () => {
+    setSnackbar({ ...snackbar, open: false });
+  };
+
+  const handleCreate = () => {
+    setEditingGeofence(null);
+    setFormModalOpen(true);
+  };
+
+  const handleEdit = (geofence: Geofence) => {
+    setEditingGeofence(geofence);
+    setFormModalOpen(true);
+  };
+
+  const handleView = (geofence: Geofence) => {
+    setViewingGeofence(geofence);
+  };
+
+  const handleDelete = (geofence: Geofence) => {
+    setDeletingGeofence(geofence);
+  };
+
+  const handleFormSubmit = async (
+    data: Omit<Geofence, 'id' | 'createdAt' | 'updatedAt'>
+  ) => {
+    try {
+      setSaving(true);
+      if (editingGeofence) {
+        await geofencingApi.updateGeofence(editingGeofence.id, data);
+        showSnackbar('Geofence updated successfully', 'success');
+      } else {
+        await geofencingApi.createGeofence(data);
+        showSnackbar('Geofence created successfully', 'success');
+      }
+      setFormModalOpen(false);
+      setEditingGeofence(null);
+      fetchGeofences();
+    } catch (error) {
+      showSnackbar('Failed to save geofence', 'error');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!deletingGeofence) return;
+
+    try {
+      await geofencingApi.deleteGeofence(deletingGeofence.id);
+      showSnackbar('Geofence deleted successfully', 'success');
+      setDeletingGeofence(null);
+      fetchGeofences();
+    } catch (error) {
+      showSnackbar('Failed to delete geofence', 'error');
+    }
+  };
+
+  const handleToggleVisibility = (id: string) => {
+    setVisibleGeofences(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(id)) {
+        newSet.delete(id);
+      } else {
+        newSet.add(id);
+      }
+      return newSet;
+    });
+  };
+
+  if (loading) {
+    return (
+      <Box
+        display='flex'
+        justifyContent='center'
+        alignItems='center'
+        minHeight='400px'
+      >
+        <CircularProgress />
+      </Box>
+    );
+  }
+
+  return (
+    <Box>
+      <Box
+        display='flex'
+        justifyContent='space-between'
+        alignItems='center'
+        mb={3}
+      >
+        <AppPageTitle>Geofencing Management</AppPageTitle>
+        <AppButton
+          onClick={handleCreate}
+          startIcon={<AddIcon />}
+          variant='contained'
+        >
+          Create Geofence
+        </AppButton>
+      </Box>
+
+      {/* Geofence List */}
+      {geofences.length === 0 ? (
+        <Alert severity='info'>
+          No geofences created yet. Click "Create Geofence" to add one.
+        </Alert>
+      ) : (
+        <Box
+          sx={{
+            display: 'grid',
+            gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)' },
+            gap: 2,
+          }}
+        >
+          {geofences.map(geofence => (
+            <Paper
+              key={geofence.id}
+              sx={{
+                p: 2,
+                display: 'flex',
+                flexDirection: 'column',
+                height: '100%',
+                borderLeft: `4px solid ${
+                  geofence.isActive ? '#3083dc' : '#888'
+                }`,
+              }}
+            >
+              <Box sx={{ flex: 1 }}>
+                <Box display='flex' alignItems='center' gap={1} mb={1}>
+                  <LocationIcon
+                    color={geofence.isActive ? 'primary' : 'disabled'}
+                  />
+                  <Typography variant='subtitle1' fontWeight='bold'>
+                    {geofence.name}
+                  </Typography>
+                  {geofence.isActive ? (
+                    <Typography variant='caption' color='success.main'>
+                      Active
+                    </Typography>
+                  ) : (
+                    <Typography variant='caption' color='text.disabled'>
+                      Inactive
+                    </Typography>
+                  )}
+                </Box>
+                {geofence.description && (
+                  <Typography variant='body2' color='text.secondary' mb={1}>
+                    {geofence.description}
+                  </Typography>
+                )}
+                <Typography variant='caption' color='text.secondary'>
+                  Type: {geofence.type} | Created:{' '}
+                  {new Date(geofence.createdAt).toLocaleDateString()}
+                </Typography>
+              </Box>
+              <Box display='flex' gap={1} mt={2} justifyContent='flex-end'>
+                <Tooltip title='View'>
+                  <IconButton
+                    size='small'
+                    color='info'
+                    onClick={() => handleView(geofence)}
+                  >
+                    <img
+                      src={Icons.password}
+                      alt='View'
+                      style={{ width: 20, height: 20, display: 'block' }}
+                    />
+                  </IconButton>
+                </Tooltip>
+                <Tooltip title='Edit'>
+                  <IconButton
+                    size='small'
+                    color='primary'
+                    onClick={() => handleEdit(geofence)}
+                  >
+                    <EditIcon />
+                  </IconButton>
+                </Tooltip>
+                <Tooltip title='Delete'>
+                  <IconButton
+                    size='small'
+                    color='error'
+                    onClick={() => handleDelete(geofence)}
+                  >
+                    <DeleteIcon />
+                  </IconButton>
+                </Tooltip>
+              </Box>
+            </Paper>
+          ))}
+        </Box>
+      )}
+
+      {/* Create/Edit Form Modal */}
+      <GeofenceFormModal
+        open={formModalOpen}
+        onClose={() => {
+          setFormModalOpen(false);
+          setEditingGeofence(null);
+        }}
+        onSubmit={handleFormSubmit}
+        geofence={editingGeofence}
+        loading={saving}
+      />
+
+      {/* View Dialog */}
+      <Dialog
+        open={!!viewingGeofence}
+        onClose={() => setViewingGeofence(null)}
+        maxWidth='lg'
+        fullWidth
+      >
+        <DialogTitle>
+          <Box
+            sx={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+            }}
+          >
+            <Typography variant='h6'>
+              View Geofence: {viewingGeofence?.name}
+            </Typography>
+            <IconButton onClick={() => setViewingGeofence(null)} size='small'>
+              <CloseIcon />
+            </IconButton>
+          </Box>
+        </DialogTitle>
+        <DialogContent dividers>
+          {viewingGeofence && (
+            <Box
+              sx={{
+                display: 'flex',
+                flexDirection: { xs: 'column', md: 'row' },
+                gap: 3,
+              }}
+            >
+              {/* Left side - Details */}
+              <Box sx={{ width: { xs: '100%', md: '40%' } }}>
+                <Box sx={{ mb: 3 }}>
+                  <Typography
+                    variant='body2'
+                    color='text.secondary'
+                    gutterBottom
+                  >
+                    Name
+                  </Typography>
+                  <Typography variant='body1'>
+                    {viewingGeofence.name}
+                  </Typography>
+                </Box>
+                {viewingGeofence.description && (
+                  <Box sx={{ mb: 3 }}>
+                    <Typography
+                      variant='body2'
+                      color='text.secondary'
+                      gutterBottom
+                    >
+                      Description
+                    </Typography>
+                    <Typography variant='body1'>
+                      {viewingGeofence.description}
+                    </Typography>
+                  </Box>
+                )}
+                <Box sx={{ mb: 3 }}>
+                  <Typography
+                    variant='body2'
+                    color='text.secondary'
+                    gutterBottom
+                  >
+                    Type
+                  </Typography>
+                  <Typography variant='body1'>
+                    {viewingGeofence.type}
+                  </Typography>
+                </Box>
+                <Box sx={{ mb: 3 }}>
+                  <Typography
+                    variant='body2'
+                    color='text.secondary'
+                    gutterBottom
+                  >
+                    Status
+                  </Typography>
+                  <Typography variant='body1'>
+                    {viewingGeofence.isActive ? 'Active' : 'Inactive'}
+                  </Typography>
+                </Box>
+                <Box sx={{ mb: 3 }}>
+                  <Typography
+                    variant='body2'
+                    color='text.secondary'
+                    gutterBottom
+                  >
+                    Coordinates
+                  </Typography>
+                  <Typography variant='body1'>
+                    {viewingGeofence.center[0].toFixed(6)},{' '}
+                    {viewingGeofence.center[1].toFixed(6)}
+                  </Typography>
+                </Box>
+                {viewingGeofence.type === 'circle' && viewingGeofence.radius && (
+                  <Box sx={{ mb: 3 }}>
+                    <Typography
+                      variant='body2'
+                      color='text.secondary'
+                      gutterBottom
+                    >
+                      Radius
+                    </Typography>
+                    <Typography variant='body1'>
+                      {viewingGeofence.radius}m
+                    </Typography>
+                  </Box>
+                )}
+              </Box>
+
+              {/* Right side - Map */}
+              <Box
+                sx={{
+                  width: { xs: '100%', md: '60%' },
+                  height: '400px',
+                  borderRadius: 1,
+                  overflow: 'hidden',
+                  border: '1px solid',
+                  borderColor: 'divider',
+                  '& .leaflet-container': {
+                    height: '100%',
+                    width: '100%',
+                  },
+                }}
+              >
+                <MapContainer
+                  center={viewingGeofence.center}
+                  zoom={15}
+                  style={{ height: '100%', width: '100%' }}
+                  zoomControl={true}
+                  scrollWheelZoom={true}
+                >
+                  <TileLayer
+                    attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                    url='https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png'
+                  />
+                  <MapController center={viewingGeofence.center} zoom={15} />
+
+                  <Marker position={viewingGeofence.center}>
+                    <Popup>
+                      <Typography variant='subtitle2'>
+                        {viewingGeofence.name}
+                      </Typography>
+                    </Popup>
+                  </Marker>
+
+                  {viewingGeofence.type === 'circle' &&
+                    viewingGeofence.radius && (
+                      <Circle
+                        center={viewingGeofence.center}
+                        radius={viewingGeofence.radius}
+                        pathOptions={{
+                          color: '#3083dc',
+                          fillColor: '#3083dc',
+                          fillOpacity: 0.3,
+                        }}
+                      >
+                        <Popup>
+                          <Typography variant='subtitle2'>
+                            {viewingGeofence.name}
+                          </Typography>
+                          <Typography variant='body2'>
+                            {viewingGeofence.description}
+                          </Typography>
+                          <Typography variant='caption'>
+                            Radius: {viewingGeofence.radius}m
+                          </Typography>
+                        </Popup>
+                      </Circle>
+                    )}
+                  {viewingGeofence.type === 'rectangle' &&
+                    viewingGeofence.coordinates && (
+                      <Rectangle
+                        bounds={
+                          [
+                            [
+                              viewingGeofence.coordinates[0][0],
+                              viewingGeofence.coordinates[0][1],
+                            ],
+                            [
+                              viewingGeofence.coordinates[2][0],
+                              viewingGeofence.coordinates[2][1],
+                            ],
+                          ] as [[number, number], [number, number]]
+                        }
+                        pathOptions={{
+                          color: '#3083dc',
+                          fillColor: '#3083dc',
+                          fillOpacity: 0.3,
+                        }}
+                      >
+                        <Popup>
+                          <Typography variant='subtitle2'>
+                            {viewingGeofence.name}
+                          </Typography>
+                          <Typography variant='body2'>
+                            {viewingGeofence.description}
+                          </Typography>
+                        </Popup>
+                      </Rectangle>
+                    )}
+                  {viewingGeofence.type === 'polygon' &&
+                    viewingGeofence.coordinates && (
+                      <Polygon
+                        positions={viewingGeofence.coordinates}
+                        pathOptions={{
+                          color: '#3083dc',
+                          fillColor: '#3083dc',
+                          fillOpacity: 0.3,
+                        }}
+                      >
+                        <Popup>
+                          <Typography variant='subtitle2'>
+                            {viewingGeofence.name}
+                          </Typography>
+                          <Typography variant='body2'>
+                            {viewingGeofence.description}
+                          </Typography>
+                        </Popup>
+                      </Polygon>
+                    )}
+                </MapContainer>
+              </Box>
+            </Box>
+          )}
+        </DialogContent>
+        <DialogActions>
+          <AppButton
+            onClick={() => setViewingGeofence(null)}
+            variant='outlined'
+          >
+            Close
+          </AppButton>
+        </DialogActions>
+      </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <DeleteConfirmationDialog
+        open={!!deletingGeofence}
+        onClose={() => setDeletingGeofence(null)}
+        onConfirm={handleConfirmDelete}
+        title='Delete Geofence'
+        message={`Are you sure you want to delete the geofence "${deletingGeofence?.name}"? This action cannot be undone.`}
+        itemName={deletingGeofence?.name}
+        confirmText='Delete'
+        cancelText='Cancel'
+      />
+
+      <Snackbar
+        open={snackbar.open}
+        autoHideDuration={6000}
+        onClose={handleCloseSnackbar}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+      >
+        <Alert
+          onClose={handleCloseSnackbar}
+          severity={snackbar.severity}
+          sx={{ width: '100%' }}
+        >
+          {snackbar.message}
+        </Alert>
+      </Snackbar>
+    </Box>
+  );
+};
+
+export default GeofencingManagement;

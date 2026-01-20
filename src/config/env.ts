@@ -21,4 +21,5 @@ function getEnvVar(key: RequiredEnvKey): string {
 export const env = {
   googleClientId: getEnvVar('VITE_GOOGLE_CLIENT_ID'),
   apiBaseUrl: getEnvVar('VITE_API_BASE_URL'),
+  placesApiKey: rawEnv['VITE_GOOGLE_PLACES_API_KEY'] ?? '',
 };

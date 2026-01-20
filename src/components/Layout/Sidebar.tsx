@@ -240,6 +240,7 @@ const menuItems: MenuItem[] = [
       { label: 'Daily Attendance', path: 'AttendanceTable' },
       { label: 'Report', path: 'attendance-summary' },
       { label: 'Leave Request', path: 'leaves' },
+      { label: 'Geofencing', path: 'geofencing' },
     ],
   },
   {
