@@ -195,9 +195,7 @@ const Dashboard: React.FC = () => {
   }, []);
 
   // Horizontal-scroll helpers for Attendance chart (px per bar)
-  const attendanceBarSize = 28; // px width per bar
-  // AppDropdown maps the 'all' option to an empty string when used as Select value.
-  // Use empty string as the default so the component value and our state stay in sync.
+  const attendanceBarSize = 28; 
   const [selectedDept, setSelectedDept] = useState<string | number>('');
 
   const departmentOptions = [
@@ -205,7 +203,6 @@ const Dashboard: React.FC = () => {
     ...attendanceData.map(d => ({ value: d.department, label: d.department })),
   ];
 
-  // Treat an empty/falsy `selectedDept` or explicit 'all' as "show all departments".
   const displayedAttendance =
     !selectedDept || selectedDept === 'all'
       ? attendanceData
@@ -215,6 +212,10 @@ const Dashboard: React.FC = () => {
     displayedAttendance.length * attendanceBarSize,
     600
   );
+
+  const attendanceForceScrollThreshold = 6; // bars
+  const attendanceShouldForceMinWidthOnXs =
+    displayedAttendance.length > attendanceForceScrollThreshold;
 
   const handleExportLogs = async () => {
     const blob = await systemDashboardApiService.exportSystemLogs();
@@ -1177,22 +1178,19 @@ const Dashboard: React.FC = () => {
                   sx={{
                     width: '100%',
                     flex: 1,
-                    minHeight: 260,
+                    minHeight: { xs: 360, md: 420 },
                     overflowX: 'auto',
                   }}
                 >
                   <Box
                     sx={{
-                      // Use computed min width so small screens only scroll when
-                      // there are many departments (bars). If min width is smaller
-                      // than the viewport, no horizontal scroll will appear.
                       minWidth: {
-                        xs: `${attendanceMinChartWidth}px`,
+                        xs: attendanceShouldForceMinWidthOnXs
+                          ? `${attendanceMinChartWidth}px`
+                          : '100%',
                         md: `${attendanceMinChartWidth}px`,
                       },
-                      // Ensure a concrete pixel height on small screens so
-                      // Recharts' ResponsiveContainer can calculate dimensions.
-                      height: { xs: 260, md: '100%' },
+                      height: { xs: 360, md: 420 },
                     }}
                   >
                     {attendanceLoading ? (
