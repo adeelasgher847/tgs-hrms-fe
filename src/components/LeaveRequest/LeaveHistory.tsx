@@ -497,7 +497,7 @@ const LeaveHistory: React.FC<LeaveHistoryProps> = ({
               <TableCell>Reason</TableCell>
               <TableCell>Documents</TableCell>
               <TableCell>Status</TableCell>
-              {isAdmin && <TableCell>Manager Remarks</TableCell>}
+              <TableCell>Remarks</TableCell>
               <TableCell>Actions</TableCell>
             </TableRow>
           </TableHead>
@@ -563,106 +563,68 @@ const LeaveHistory: React.FC<LeaveHistoryProps> = ({
                     label={
                       leave.status
                         ? leave.status.charAt(0).toUpperCase() +
-                          leave.status.slice(1)
+                        leave.status.slice(1)
                         : 'Unknown'
                     }
                     color={statusConfig[leave.status]?.color}
                     sx={{ fontSize: 15, width: '100%' }}
                   />
                 </TableCell>
-                {/* Manager Response - only visible to Admin/HR Admin */}
-                {/* Managers see their response in Actions/Remarks column only */}
-                {isAdmin && (
-                  <TableCell>
-                    {leave.managerRemarks ? (
-                      <Tooltip title={leave.managerRemarks} arrow>
+                <TableCell>
+                  {(() => {
+                    const remarksList = [];
+                    if (leave.managerRemarks) remarksList.push(`Manager: ${leave.managerRemarks}`);
+                    if (leave.remarks) remarksList.push(`Admin/HR: ${leave.remarks}`);
+
+                    const displayText = leave.managerRemarks || leave.remarks || '';
+
+                    if (!displayText) {
+                      return (
+                        <Typography
+                          variant='body2'
+                          sx={{
+                            color: '#9e9e9e',
+                            fontStyle: 'italic',
+                            fontSize: 13,
+                          }}
+                        >
+                          -
+                        </Typography>
+                      );
+                    }
+
+                    return (
+                      <Tooltip
+                        title={<div style={{ whiteSpace: 'pre-wrap' }}>{remarksList.join('\n')}</div>}
+                        arrow
+                      >
                         <Typography
                           variant='body2'
                           sx={{
                             fontSize: 13,
-                            color: '#424242',
-                            maxWidth: 250,
+                            maxWidth: { xs: 100, sm: 150, md: 200 },
                             whiteSpace: 'nowrap',
                             overflow: 'hidden',
                             textOverflow: 'ellipsis',
+                            cursor: 'help'
                           }}
                         >
-                          {leave.managerRemarks.length > 50
-                            ? `${leave.managerRemarks.substring(0, 50)}...`
-                            : leave.managerRemarks}
+                          {displayText}
                         </Typography>
                       </Tooltip>
-                    ) : (
-                      <Typography
-                        variant='body2'
-                        sx={{
-                          color: '#9e9e9e',
-                          fontStyle: 'italic',
-                          fontSize: 13,
-                        }}
-                      >
-                        No response
-                      </Typography>
-                    )}
-                  </TableCell>
-                )}
+                    );
+                  })()}
+                </TableCell>
                 <TableCell>
                   <Box
                     sx={{
                       display: 'flex',
                       flexDirection: 'column',
                       gap: 1,
+                      alignItems: 'flex-start',
                     }}
                   >
-                    {/* For admin/HR admin: Don't show remarks in Actions column, only show buttons */}
-                    {/* For non-admin users: Show rejection remarks */}
-                    {!isAdmin &&
-                      leave.status === 'rejected' &&
-                      leave.remarks && (
-                        <Tooltip title={leave.remarks} arrow>
-                          <Typography
-                            variant='body2'
-                            sx={{
-                              mt: 0.5,
-                              fontSize: 13,
-                              p: 0.5,
-                              borderRadius: 1,
-                              maxWidth: 250,
-                              whiteSpace: 'nowrap',
-                              overflow: 'hidden',
-                              textOverflow: 'ellipsis',
-                            }}
-                          >
-                            {leave.remarks.length > 50
-                              ? `${leave.remarks.substring(0, 50)}...`
-                              : leave.remarks}
-                          </Typography>
-                        </Tooltip>
-                      )}
-
-                    {/* Show manager response in Actions/Remarks column for managers */}
-                    {isManager &&
-                      viewMode === 'team' &&
-                      leave.managerRemarks && (
-                        <Tooltip title={leave.managerRemarks} arrow>
-                          <Typography
-                            variant='body2'
-                            sx={{
-                              mt: 0.5,
-                              fontSize: 13,
-                              color: theme.palette.text.secondary,
-                              maxWidth: 250,
-                              whiteSpace: 'nowrap',
-                              overflow: 'hidden',
-                              textOverflow: 'ellipsis',
-                            }}
-                          >
-                            {leave.managerRemarks.length > 50
-                              ? `${leave.managerRemarks.substring(0, 50)}...`
-                              : leave.managerRemarks}
-                          </Typography>
-                        </Tooltip>
-                      )}
+                    {/* Remarks moved to dedicated column */}
 
                     {/* Show action menu icon if there are any actions available */}
                     {(() => {
@@ -710,7 +672,7 @@ const LeaveHistory: React.FC<LeaveHistoryProps> = ({
                             sx={{
                               color: theme.palette.text.primary,
                               '&:hover': {
-                                backgroundColor: 'transparent', 
+                                backgroundColor: 'transparent',
                               },
                             }}
                           >
@@ -853,20 +815,20 @@ const LeaveHistory: React.FC<LeaveHistoryProps> = ({
                                 !isManager &&
                                 leave.status === 'pending' &&
                                 onWithdraw)) && (
-                              <MenuItem
-                                onClick={() => {
-                                  if (onWithdraw) {
-                                    onWithdraw(leave.id);
-                                  }
-                                  handleMenuClose();
-                                }}
-                              >
-                                <ListItemIcon>
-                                  <UndoIcon fontSize='small' />
-                                </ListItemIcon>
-                                <ListItemText>Withdraw</ListItemText>
-                              </MenuItem>
-                            )}
+                                <MenuItem
+                                  onClick={() => {
+                                    if (onWithdraw) {
+                                      onWithdraw(leave.id);
+                                    }
+                                    handleMenuClose();
+                                  }}
+                                >
+                                  <ListItemIcon>
+                                    <UndoIcon fontSize='small' />
+                                  </ListItemIcon>
+                                  <ListItemText>Withdraw</ListItemText>
+                                </MenuItem>
+                              )}
 
                             {/* Edit option for employees on pending leaves */}
                             {!isAdmin &&

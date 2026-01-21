@@ -16,6 +16,7 @@ import {
   CircularProgress,
   Stack,
   Pagination,
+  Button,
 } from '@mui/material';
 import {
   Add as AddIcon,
@@ -53,23 +54,23 @@ interface ApiAssetRequestExtended extends ApiAssetRequest {
   subcategory_id?: string | null;
   subcategory_name?: string;
   category?:
-    | string
-    | {
-        id?: string;
-        name?: string;
-        description?: string | null;
-        icon?: string | null;
-      };
+  | string
+  | {
+    id?: string;
+    name?: string;
+    description?: string | null;
+    icon?: string | null;
+  };
   subcategory?:
-    | string
-    | {
-        name?: string;
-        title?: string;
-        subcategory_name?: string;
-        subcategoryName?: string;
-        display_name?: string;
-        label?: string;
-      };
+  | string
+  | {
+    name?: string;
+    title?: string;
+    subcategory_name?: string;
+    subcategoryName?: string;
+    display_name?: string;
+    label?: string;
+  };
   subcategoryId?: string;
   subcategoryName?: string;
   rejection_reason?: string | null;
@@ -145,6 +146,9 @@ function TabPanel(props: TabPanelProps) {
 }
 
 const AssetRequests: React.FC = () => {
+  const [viewMode, setViewMode] = useState<'my_requests' | 'team_requests'>(
+    'my_requests'
+  );
   const [requests, setRequests] = useState<AssetRequest[]>([]);
   const [statusCounts, setStatusCounts] = useState<{
     total: number;
@@ -162,11 +166,15 @@ const AssetRequests: React.FC = () => {
   const [rawApiRequests, setRawApiRequests] = useState<
     ApiAssetRequestExtended[]
   >([]); // Store raw API requests for re-transformation
+  const [requestComments, setRequestComments] = useState<Record<string, string>>({});
   const [isRequestModalOpen, setIsRequestModalOpen] = useState(false);
   const [isCancelDialogOpen, setIsCancelDialogOpen] = useState(false);
   const [requestToCancel, setRequestToCancel] = useState<AssetRequest | null>(
     null
   );
+  const [isCommentModalOpen, setIsCommentModalOpen] = useState(false);
+  const [selectedRequestForComment, setSelectedRequestForComment] = useState<AssetRequest | null>(null);
+  const [commentText, setCommentText] = useState('');
   const [loading, setLoading] = useState(false);
   const [initialLoading, setInitialLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -381,7 +389,10 @@ const AssetRequests: React.FC = () => {
           employeeName:
             apiRequest.requestedByName ||
             (apiRequest.requestedByUser
-              ? apiRequest.requestedByUser.name
+              ? apiRequest.requestedByUser.name ||
+              // @ts-expect-error - handling backend response with first_name/last_name
+              `${apiRequest.requestedByUser.first_name || ''} ${apiRequest.requestedByUser.last_name || ''}`.trim() ||
+              apiRequest.requestedByUser.email
               : `User ${apiRequest.requested_by}`),
           category: {
             id: categoryId,
@@ -423,6 +434,8 @@ const AssetRequests: React.FC = () => {
     setCurrentUserId(userId);
   }, []);
 
+
+
   // Fetch user's asset requests and available categories from API
   const fetchRequests = React.useCallback(
     async (
@@ -444,49 +457,123 @@ const AssetRequests: React.FC = () => {
           setInitialLoading(true);
         }
 
-        const apiResponse = await assetApi.getAssetRequestById(currentUserId, {
-          page,
-          limit,
-        });
+        let apiResponse;
+        if (viewMode === 'team_requests') {
+          apiResponse = await assetApi.getManagerTeamAssetRequests({
+            page,
+            limit,
+          });
+        } else {
+          apiResponse = await assetApi.getAssetRequestById(currentUserId, {
+            page,
+            limit,
+          });
+        }
 
         // Store raw API requests for re-transformation when categories are loaded
-        const apiRequests = apiResponse.items || [];
+        let apiRequests = apiResponse.items || [];
+
+        // Filter out manager's own requests if in team mode
+        if (viewMode === 'team_requests' && currentUserId) {
+          apiRequests = apiRequests.filter(
+            (req: ApiAssetRequestExtended) => req.requested_by !== currentUserId
+          );
+        }
+
         setRawApiRequests(apiRequests);
 
         // Transform API requests to component format
         const transformedRequests = transformApiRequests(apiRequests);
         setRequests(transformedRequests);
 
-        const hasMorePages = (apiResponse.items || []).length === limit;
+        // Recalculate pagination and counts based on filtered requests for Team View
+        // (Since backend counts include the manager, we must adjust generic counts client-side)
+        if (viewMode === 'team_requests') {
+          const filteredTotal = apiRequests.length; // This is valid if total items < limit, or we accept page-level counts for now
 
-        if (apiResponse.total && apiResponse.totalPages) {
-          setPagination(prev => ({
-            ...prev,
-            total: apiResponse.total || 0,
-            totalPages: apiResponse.totalPages || 1,
-          }));
-        } else {
-          const estimatedTotal = hasMorePages
-            ? page * limit
-            : (page - 1) * limit + (apiResponse.items || []).length;
-          const estimatedTotalPages = hasMorePages ? page + 1 : page;
+          // If we loaded everything (total <= limit), use exact counts. 
+          // If paginated, this is a best-effort approximation logic or we'd need to fetch all pages.
+          // Given the requirement "only team ... data show in cards", we strictly use filtered data stats.
 
-          setPagination(prev => ({
-            ...prev,
-            total: estimatedTotal,
-            totalPages: estimatedTotalPages,
-          }));
-        }
+          const newCounts = {
+            total: 0,
+            pending: 0,
+            approved: 0,
+            rejected: 0,
+            cancelled: 0,
+          };
 
-        // Update counts from API response if available
-        if (apiResponse.counts) {
-          setStatusCounts({
-            total: apiResponse.counts.total || 0,
-            pending: apiResponse.counts.pending || 0,
-            approved: apiResponse.counts.approved || 0,
-            rejected: apiResponse.counts.rejected || 0,
-            cancelled: apiResponse.counts.cancelled || 0,
+          apiRequests.forEach((req: ApiAssetRequestExtended) => {
+            newCounts.total++;
+            const status = req.status ? req.status.toLowerCase() : '';
+            if (status === 'approved') newCounts.approved++;
+            else if (status === 'rejected') newCounts.rejected++;
+            else if (status === 'pending') newCounts.pending++;
+            else if (status === 'cancelled') newCounts.cancelled++;
           });
+
+          setStatusCounts(newCounts);
+
+          // Update pagination to reflect filtered count
+          if (apiResponse.total && apiResponse.total <= limit) {
+            // If all data was in one page, the filtered length is the true total
+            setPagination(prev => ({
+              ...prev,
+              total: filteredTotal,
+              totalPages: 1,
+            }));
+          } else {
+            // If server had more pages, we just subtract the removed items from this page from the server total?
+            // No, that's unsafe. For now, rely on server pagination structure but we know counts are imperfect if paged.
+            // However, for the cards to match the table, we use the client counts.
+
+            setPagination(prev => ({
+              ...prev,
+              total: apiResponse.total || 0, // Keep server total if multi-page (imperfect but safer)
+              totalPages: apiResponse.totalPages || 1,
+            }));
+          }
+
+        } else {
+          // My Requests - use server provided counts and pagination
+          if (apiResponse.total && apiResponse.total) {
+            setPagination(prev => ({
+              ...prev,
+              total: apiResponse.total || 0,
+              totalPages: apiResponse.totalPages || 1,
+            }));
+          } else {
+            // Fallback pagination logic
+            const hasMorePages = (apiResponse.items || []).length === limit;
+            const estimatedTotal = hasMorePages
+              ? page * limit
+              : (page - 1) * limit + (apiResponse.items || []).length;
+            const estimatedTotalPages = hasMorePages ? page + 1 : page;
+
+            setPagination(prev => ({
+              ...prev,
+              total: estimatedTotal,
+              totalPages: estimatedTotalPages,
+            }));
+          }
+
+          if (apiResponse.counts) {
+            setStatusCounts({
+              total: apiResponse.counts.total || 0,
+              pending: apiResponse.counts.pending || 0,
+              approved: apiResponse.counts.approved || 0,
+              rejected: apiResponse.counts.rejected || 0,
+              cancelled: apiResponse.counts.cancelled || 0,
+            });
+          } else {
+            setStatusCounts({
+              total: 0,
+              pending: 0,
+              approved: 0,
+              rejected: 0,
+              cancelled: 0
+            });
+          }
         }
       } catch (error) {
         showError(error);
@@ -498,8 +585,46 @@ const AssetRequests: React.FC = () => {
         }
       }
     },
-    [currentUserId, transformApiRequests, showError]
+    [currentUserId, transformApiRequests, showError, viewMode]
   );
+
+  // Fetch comments for team requests
+  React.useEffect(() => {
+    const fetchCommentsForRequests = async () => {
+      if (viewMode !== 'team_requests' || requests.length === 0) return;
+
+      const commentsMap: Record<string, string> = {};
+
+      // We only need to fetch comments for pending requests or requests where we want to distinctively show them
+      // For optimization, we can fetch only for visible requests.
+      // However, iterating all requests on current page is fine.
+
+      const promises = requests.map(async (request) => {
+        try {
+          const response = await assetApi.getAssetRequestComments(request.id);
+          if (Array.isArray(response) && response.length > 0) {
+            // Assuming we want the latest comment or just the first one. 
+            // The API returns an array. Let's take the last one or simply the first found if multiple.
+            // Based on the user request "show in Manager Remarks that comments putt by manager", 
+            // we'll take the most recent one if multiple, or just the first one.
+            // Sorting by created_at descending just in case.
+            const sorted = response.sort((a: { created_at: string }, b: { created_at: string }) =>
+              new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+            );
+            commentsMap[request.id] = sorted[0].comment;
+          }
+        } catch (error) {
+          // Ignore errors for individual comment fetches to not break the page
+          console.error(`Failed to fetch comments for request ${request.id}`, error);
+        }
+      });
+
+      await Promise.all(promises);
+      setRequestComments(prev => ({ ...prev, ...commentsMap }));
+    };
+
+    fetchCommentsForRequests();
+  }, [requests, viewMode]);
 
   // Re-transform requests when categories are loaded to update category names
   React.useEffect(() => {
@@ -510,15 +635,19 @@ const AssetRequests: React.FC = () => {
     }
   }, [categories, rawApiRequests, transformApiRequests]);
 
-  // Initial load: fetch paginated requests (counts come from API response)
+  // Handle view mode changes and initial load
   React.useEffect(() => {
     if (!currentUserId) return; // Don't fetch until we have user ID
-    if (fetchingRef.current) return; // Don't fetch if already fetching
 
-    // Only run initial load once
-    if (initialLoadRef.current) {
-      return;
-    }
+    // Reset data when switching views to prevent merging logic
+    setRequests([]);
+    setStatusCounts({
+      total: 0,
+      pending: 0,
+      approved: 0,
+      rejected: 0,
+      cancelled: 0,
+    });
 
     initialLoadRef.current = true;
 
@@ -528,10 +657,13 @@ const AssetRequests: React.FC = () => {
       limit: pagination.limit,
     };
 
-    // Fetch paginated requests (counts are included in API response)
+    // Fetch paginated requests
     fetchRequests(pagination.page, pagination.limit, true);
+    // We intentionally omit fetchingRef check here to ensure view switch always loads new data
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentUserId]); // Only run when currentUserId is available
+  }, [currentUserId, viewMode]); // Run when user ID or view mode changes
+
+
 
   // Handle page changes: fetch paginated requests (counts come from API response)
   React.useEffect(() => {
@@ -580,6 +712,10 @@ const AssetRequests: React.FC = () => {
 
   // Filter by tab
   const getFilteredRequestsByTab = (statusFilter?: string) => {
+    // If we are in team mode, the data is already filtered server-side (except for 'all' tab which might need client check if API returned mixed data)
+    // However, if we fetched with specific status, 'filteredRequests' will only contain that status.
+    // So simple equality check naturally works, or we can skip filter if we trust the API.
+    // For safety and MyRequests mode, we keep client side filtering.
     if (!statusFilter) return filteredRequests;
     return filteredRequests.filter(request => request.status === statusFilter);
   };
@@ -714,6 +850,43 @@ const AssetRequests: React.FC = () => {
     }
   };
 
+  const handleOpenCommentModal = (request: AssetRequest) => {
+    setSelectedRequestForComment(request);
+    setCommentText('');
+    setIsCommentModalOpen(true);
+  };
+
+  const handleSubmitComment = async () => {
+    if (!selectedRequestForComment || !commentText.trim()) return;
+
+    setLoading(true);
+    try {
+      await assetApi.addAssetRequestComment(
+        selectedRequestForComment.id,
+        commentText
+      );
+
+      showSuccess('Comment added successfully');
+      setIsCommentModalOpen(false);
+      setCommentText('');
+      setSelectedRequestForComment(null);
+
+      // Refresh requests to ensure fresh data
+      await fetchRequests(pagination.page, pagination.limit, false);
+
+      // Update local comment state immediately for better UX
+      setRequestComments(prev => ({
+        ...prev,
+        [selectedRequestForComment.id]: commentText
+      }));
+
+    } catch (error) {
+      showError(error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   // Use counts from API response
   const displayCounts = useMemo(() => {
     // Use counts from API response if available
@@ -759,6 +932,17 @@ const AssetRequests: React.FC = () => {
 
   const renderRequestRow = (request: AssetRequest) => (
     <TableRow key={request.id} hover>
+      {viewMode === 'team_requests' && (
+        <TableCell>
+          <Box sx={{ display: 'flex', alignItems: 'center' }}>
+            <Box>
+              <Typography variant='body2' fontWeight={500}>
+                {request.employeeName}
+              </Typography>
+            </Box>
+          </Box>
+        </TableCell>
+      )}
       <TableCell>
         <Box>
           <Box>
@@ -800,21 +984,45 @@ const AssetRequests: React.FC = () => {
             </Typography>
           )}
       </TableCell>
+      {viewMode === 'team_requests' && roleIsManager() && (
+        <TableCell align='center'>
+          {requestComments[request.id] && (
+            <Typography variant='body2' color='text.primary'>
+              {requestComments[request.id]}
+            </Typography>
+          )}
+        </TableCell>
+      )}
       <TableCell align='right'>
-        {request.status === 'pending' && (
-          <IconButton
-            onClick={() => handleCancelRequest(request)}
-            size='small'
-            color='error'
-            aria-label={`Cancel request for ${request.category?.name || 'asset'}`}
-          >
-            {roleIsManager() ? (
-              <Icon name='delete' size={18} />
-            ) : (
-              <DeleteIcon aria-hidden='true' />
-            )}
-          </IconButton>
-        )}
+        {viewMode === 'team_requests' &&
+          roleIsManager() &&
+          request.status === 'pending' &&
+          !requestComments[request.id] && (
+            <Button
+              onClick={() => handleOpenCommentModal(request)}
+              size='small'
+              variant='text'
+              color='primary'
+              sx={{ textTransform: 'none', whiteSpace: 'nowrap', mr: 1 }}
+            >
+              Add Remark
+            </Button>
+          )}
+        {request.status === 'pending' &&
+          request.employeeId === currentUserId && (
+            <IconButton
+              onClick={() => handleCancelRequest(request)}
+              size='small'
+              color='error'
+              aria-label={`Cancel request for ${request.category?.name || 'asset'}`}
+            >
+              {roleIsManager() ? (
+                <Icon name='delete' size={18} />
+              ) : (
+                <DeleteIcon aria-hidden='true' />
+              )}
+            </IconButton>
+          )}
         {request.status === 'approved' && request.assignedAssetName && (
           <IconButton
             size='small'
@@ -837,7 +1045,7 @@ const AssetRequests: React.FC = () => {
           flexDirection: { xs: 'column', sm: 'row' },
           justifyContent: 'space-between',
           alignItems: { xs: 'flex-start', sm: 'center' },
-          mb: 3,
+          mb: 2,
           gap: 2,
         }}
       >
@@ -846,25 +1054,59 @@ const AssetRequests: React.FC = () => {
           fontWeight={600}
           fontSize={{ xs: '32px', lg: '48px' }}
         >
-          My Asset Requests
+          Asset Requests
         </Typography>
         <Box
           sx={{ display: 'flex', gap: 1, width: { xs: '100%', sm: 'auto' } }}
         >
-          <AppButton
-            variant='contained'
-            variantType='primary'
-            startIcon={
-              roleIsManager() ? <Icon name='add' size={18} /> : <AddIcon />
-            }
-            onClick={handleOpenRequestModal}
-            text='Request Asset'
-            sx={{
-              width: { xs: '100%', sm: 'auto' },
-            }}
-          />
+          {(!roleIsManager() || viewMode === 'my_requests') && (
+            <AppButton
+              variant='contained'
+              variantType='primary'
+              startIcon={
+                roleIsManager() ? <Icon name='add' size={18} /> : <AddIcon />
+              }
+              onClick={handleOpenRequestModal}
+              text='Request Asset'
+              sx={{
+                width: { xs: '100%', sm: 'auto' },
+              }}
+            />
+          )}
         </Box>
       </Box>
+
+      {/* View Mode Toggles for Manager */}
+      {roleIsManager() && (
+        <Box
+          sx={{
+            display: 'flex',
+            justifyContent: 'flex-end',
+            mb: 3,
+            gap: 1,
+            flexWrap: 'wrap',
+          }}
+        >
+          <AppButton
+            variant={viewMode === 'my_requests' ? 'contained' : 'outlined'}
+            variantType='primary'
+            onClick={() => {
+              setViewMode('my_requests');
+              setPagination(prev => ({ ...prev, page: 1 }));
+            }}
+            text='My Asset Requests'
+          />
+          <AppButton
+            variant={viewMode === 'team_requests' ? 'contained' : 'outlined'}
+            variantType='primary'
+            onClick={() => {
+              setViewMode('team_requests');
+              setPagination(prev => ({ ...prev, page: 1 }));
+            }}
+            text='Team Asset Requests'
+          />
+        </Box>
+      )}
 
       {/* Statistics Cards */}
       <Box sx={{ mb: 3, display: 'flex', gap: 1, flexWrap: 'wrap' }}>
@@ -942,7 +1184,10 @@ const AssetRequests: React.FC = () => {
         <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
           <Tabs
             value={tabValue}
-            onChange={(e, newValue) => setTabValue(newValue)}
+            onChange={(e, newValue) => {
+              setTabValue(newValue);
+              // If in team mode, we might want to reset page to 1 immediately here (also handled in useEffect)
+            }}
           >
             <Tab label='All Requests' />
             <Tab label='Pending' />
@@ -955,12 +1200,18 @@ const AssetRequests: React.FC = () => {
           <AppTable>
             <TableHead>
               <TableRow>
+                {viewMode === 'team_requests' && (
+                  <TableCell>Employee</TableCell>
+                )}
                 <TableCell>Asset Category</TableCell>
                 <TableCell>Remarks</TableCell>
                 <TableCell>Status</TableCell>
                 <TableCell>Requested Date</TableCell>
                 <TableCell>Processed Date</TableCell>
                 <TableCell>Rejection Reason</TableCell>
+                {viewMode === 'team_requests' && roleIsManager() && (
+                  <TableCell align='center'>Manager Remarks</TableCell>
+                )}
                 <TableCell align='right'>Actions</TableCell>
               </TableRow>
             </TableHead>
@@ -984,6 +1235,9 @@ const AssetRequests: React.FC = () => {
           <AppTable>
             <TableHead>
               <TableRow>
+                {viewMode === 'team_requests' && (
+                  <TableCell>Employee</TableCell>
+                )}
                 <TableCell>Asset Category</TableCell>
                 <TableCell>Remarks</TableCell>
                 <TableCell>Status</TableCell>
@@ -1013,6 +1267,9 @@ const AssetRequests: React.FC = () => {
           <AppTable>
             <TableHead>
               <TableRow>
+                {viewMode === 'team_requests' && (
+                  <TableCell>Employee</TableCell>
+                )}
                 <TableCell>Asset Category</TableCell>
                 <TableCell>Remarks</TableCell>
                 <TableCell>Status</TableCell>
@@ -1042,6 +1299,9 @@ const AssetRequests: React.FC = () => {
           <AppTable>
             <TableHead>
               <TableRow>
+                {viewMode === 'team_requests' && (
+                  <TableCell>Employee</TableCell>
+                )}
                 <TableCell>Asset Category</TableCell>
                 <TableCell>Remarks</TableCell>
                 <TableCell>Status</TableCell>
@@ -1208,6 +1468,35 @@ const AssetRequests: React.FC = () => {
               />
             </Box>
           </Box>
+        </Box>
+      </AppFormModal>
+
+      {/* Add Comment Modal */}
+      <AppFormModal
+        open={isCommentModalOpen}
+        onClose={() => setIsCommentModalOpen(false)}
+        title='Add Manager Remarks'
+        onSubmit={handleSubmitComment}
+        submitLabel={loading ? 'Adding...' : 'Add Comment'}
+        cancelLabel='Cancel'
+        isSubmitting={loading}
+        maxWidth='sm'
+      >
+        <Box sx={{ pt: 2, pb: 1 }}>
+          <Typography variant='body2' color='text.secondary' paragraph>
+            Add remarks or comments for this request before taking action.
+          </Typography>
+          <TextField
+            fullWidth
+            label='Manager Remarks'
+            multiline
+            rows={4}
+            value={commentText}
+            onChange={e => setCommentText(e.target.value)}
+            placeholder='Enter your comments here...'
+            autoFocus
+            disabled={loading}
+          />
         </Box>
       </AppFormModal>
 
