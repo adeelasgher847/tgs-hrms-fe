@@ -401,6 +401,7 @@ const DASHBOARD_ALLOWLIST_ENTRIES: Record<NormalizedRole, readonly string[]> = {
     'Reports',
     'AttendanceCheck/TimesheetLayout',
     'teams',
+    'geofencing',
     'leaves',
     'UserProfile',
     'assets/requests',

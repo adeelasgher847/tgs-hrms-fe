@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useContext } from 'react';
 import {
   Box,
   Typography,
@@ -39,6 +39,9 @@ import icon from 'leaflet/dist/images/marker-icon.png';
 import iconShadow from 'leaflet/dist/images/marker-shadow.png';
 import type { Geofence } from '../../types/geofencing';
 import { geofencingApi } from '../../api/geofencingApi';
+import { teamApiService } from '../../api/teamApi';
+import { UserContext } from '../../context/UserContext';
+import { isManager, isHRAdmin, isAdmin } from '../../utils/roleUtils';
 import AppPageTitle from '../common/AppPageTitle';
 import AppButton from '../common/AppButton';
 import GeofenceFormModal from './GeofenceFormModal';
@@ -78,6 +81,8 @@ const GeofencingManagement = () => {
   const [deletingGeofence, setDeletingGeofence] = useState<Geofence | null>(
     null
   );
+  const [managerTeamIds, setManagerTeamIds] = useState<string[]>([]);
+  const userContext = useContext(UserContext);
   const [formModalOpen, setFormModalOpen] = useState(false);
   const [saving, setSaving] = useState(false);
   const [snackbar, setSnackbar] = useState<{
@@ -92,6 +97,15 @@ const GeofencingManagement = () => {
 
   useEffect(() => {
     fetchGeofences();
+    // load manager teams to determine permissions
+    (async () => {
+      try {
+        const teams = await teamApiService.getMyTeams();
+        setManagerTeamIds(teams.map(t => t.id));
+      } catch {
+        setManagerTeamIds([]);
+      }
+    })();
   }, []);
 
   const fetchGeofences = async () => {
@@ -141,11 +155,17 @@ const GeofencingManagement = () => {
   ) => {
     try {
       setSaving(true);
+      // Ensure team scoping: prefer editing geofence teamId, otherwise use manager's first team
+      const teamId =
+        editingGeofence?.teamId ??
+        (managerTeamIds.length > 0 ? managerTeamIds[0] : undefined);
+      const payload = { ...data, teamId } as any;
+
       if (editingGeofence) {
-        await geofencingApi.updateGeofence(editingGeofence.id, data);
+        await geofencingApi.updateGeofence(editingGeofence.id, payload);
         showSnackbar('Geofence updated successfully', 'success');
       } else {
-        await geofencingApi.createGeofence(data);
+        await geofencingApi.createGeofence(payload);
         showSnackbar('Geofence created successfully', 'success');
       }
       setFormModalOpen(false);
@@ -205,13 +225,29 @@ const GeofencingManagement = () => {
         mb={3}
       >
         <AppPageTitle>Geofencing Management</AppPageTitle>
-        <AppButton
-          onClick={handleCreate}
-          startIcon={<AddIcon />}
-          variant='contained'
-        >
-          Create Geofence
-        </AppButton>
+        {(() => {
+          // Show create only to managers (not admins/hr-admins) who have at least one team
+          const user = userContext?.user;
+          const role = user?.role;
+          if (
+            user &&
+            isManager(role) &&
+            !isAdmin(role) &&
+            !isHRAdmin(role) &&
+            managerTeamIds.length > 0
+          ) {
+            return (
+              <AppButton
+                onClick={handleCreate}
+                startIcon={<AddIcon />}
+                variant='contained'
+              >
+                Create Geofence
+              </AppButton>
+            );
+          }
+          return null;
+        })()}
       </Box>
 
       {/* Geofence List */}
@@ -282,24 +318,43 @@ const GeofencingManagement = () => {
                     />
                   </IconButton>
                 </Tooltip>
-                <Tooltip title='Edit'>
-                  <IconButton
-                    size='small'
-                    color='primary'
-                    onClick={() => handleEdit(geofence)}
-                  >
-                    <EditIcon />
-                  </IconButton>
-                </Tooltip>
-                <Tooltip title='Delete'>
-                  <IconButton
-                    size='small'
-                    color='error'
-                    onClick={() => handleDelete(geofence)}
-                  >
-                    <DeleteIcon />
-                  </IconButton>
-                </Tooltip>
+
+                {(() => {
+                  const user = userContext?.user;
+                  const role = user?.role;
+                  const isTeamManager =
+                    user &&
+                    isManager(role) &&
+                    !isAdmin(role) &&
+                    !isHRAdmin(role) &&
+                    geofence.teamId &&
+                    managerTeamIds.includes(geofence.teamId);
+                  if (isTeamManager) {
+                    return (
+                      <>
+                        <Tooltip title='Edit'>
+                          <IconButton
+                            size='small'
+                            color='primary'
+                            onClick={() => handleEdit(geofence)}
+                          >
+                            <EditIcon />
+                          </IconButton>
+                        </Tooltip>
+                        <Tooltip title='Delete'>
+                          <IconButton
+                            size='small'
+                            color='error'
+                            onClick={() => handleDelete(geofence)}
+                          >
+                            <DeleteIcon />
+                          </IconButton>
+                        </Tooltip>
+                      </>
+                    );
+                  }
+                  return null;
+                })()}
               </Box>
             </Paper>
           ))}
@@ -415,20 +470,21 @@ const GeofencingManagement = () => {
                     {viewingGeofence.center[1].toFixed(6)}
                   </Typography>
                 </Box>
-                {viewingGeofence.type === 'circle' && viewingGeofence.radius && (
-                  <Box sx={{ mb: 3 }}>
-                    <Typography
-                      variant='body2'
-                      color='text.secondary'
-                      gutterBottom
-                    >
-                      Radius
-                    </Typography>
-                    <Typography variant='body1'>
-                      {viewingGeofence.radius}m
-                    </Typography>
-                  </Box>
-                )}
+                {viewingGeofence.type === 'circle' &&
+                  viewingGeofence.radius && (
+                    <Box sx={{ mb: 3 }}>
+                      <Typography
+                        variant='body2'
+                        color='text.secondary'
+                        gutterBottom
+                      >
+                        Radius
+                      </Typography>
+                      <Typography variant='body1'>
+                        {viewingGeofence.radius}m
+                      </Typography>
+                    </Box>
+                  )}
               </Box>
 
               {/* Right side - Map */}

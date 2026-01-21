@@ -258,11 +258,37 @@ class AttendanceApiService {
     }
   }
 
-  // Create attendance record
+  // Create attendance record. Accept optional coordinates for check-in.
   async createAttendance(
-    type: 'check-in' | 'check-out'
+    payload:
+      | { type: 'check-in' | 'check-out' | string }
+      | { type: string; latitude?: number; longitude?: number }
   ): Promise<AttendanceEvent> {
-    const response = await axiosInstance.post(this.baseUrl, { type });
+    // Normalize type to backend expected format (prefer uppercase with underscore)
+    const asAny = payload as any;
+    let typeVal = asAny.type || '';
+    if (typeof typeVal === 'string') {
+      const lowered = typeVal.toLowerCase();
+      if (
+        lowered === 'check-in' ||
+        lowered === 'check_in' ||
+        lowered === 'check in'
+      )
+        typeVal = 'check-in';
+      else if (
+        lowered === 'check-out' ||
+        lowered === 'check_out' ||
+        lowered === 'check out'
+      )
+        typeVal = 'check-out';
+      else typeVal = lowered;
+    }
+
+    const body: any = { type: typeVal };
+    if (typeof asAny.latitude === 'number') body.latitude = asAny.latitude;
+    if (typeof asAny.longitude === 'number') body.longitude = asAny.longitude;
+
+    const response = await axiosInstance.post(this.baseUrl, body);
     return response.data;
   }
 

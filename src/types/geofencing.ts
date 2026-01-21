@@ -1,6 +1,7 @@
 export interface Geofence {
   id: string;
   tenantId: string;
+  teamId?: string;
   name: string;
   description?: string;
   type: 'circle' | 'polygon' | 'rectangle';

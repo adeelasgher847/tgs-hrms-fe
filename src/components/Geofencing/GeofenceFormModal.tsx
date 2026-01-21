@@ -317,6 +317,17 @@ const GeofenceFormModal: React.FC<GeofenceFormModalProps> = ({
     isActive: true,
   });
 
+  // Track initial snapshot to detect changes for enabling Update button
+  const initialSnapshotRef = useRef<{
+    name: string;
+    description: string;
+    isActive: boolean;
+    center?: [number, number] | null;
+    type?: 'circle' | 'polygon' | 'rectangle' | null;
+    radius?: number | null;
+    coordinates?: [number, number][] | null;
+  } | null>(null);
+
   type ShapeData = {
     type: 'circle' | 'polygon' | 'rectangle';
     center?: [number, number];
@@ -333,7 +344,70 @@ const GeofenceFormModal: React.FC<GeofenceFormModalProps> = ({
 
   const featureGroupRef = useRef<L.FeatureGroup | null>(null);
 
-  // Initialize form when geofence is provided or modal opens
+  // Compute dirty state: whether any meaningful value changed vs initial snapshot
+  const isDirty = (() => {
+    const init = initialSnapshotRef.current;
+    if (!geofence) {
+      // For create mode: consider dirty if any input present
+      if (formData.name.trim()) return true;
+      if (formData.description.trim()) return true;
+      if (selectedLocation) return true;
+      if (drawnShape) return true;
+      return false;
+    }
+
+    if (!init) return false;
+
+    if (formData.name.trim() !== (init.name || '')) return true;
+    if ((formData.description || '') !== (init.description || '')) return true;
+    if (formData.isActive !== !!init.isActive) return true;
+
+    // Compare center/coordinates/drawn shape
+    const coordsEqual = (
+      a?: [number, number] | null,
+      b?: [number, number] | null
+    ) => {
+      if (!a && !b) return true;
+      if (!a || !b) return false;
+      return Math.abs(a[0] - b[0]) < 1e-6 && Math.abs(a[1] - b[1]) < 1e-6;
+    };
+
+    // If a drawnShape exists now but didn't before (or vice versa)
+    if (Boolean(drawnShape) !== Boolean(init.type)) return true;
+
+    if (drawnShape && init.type) {
+      if (drawnShape.type !== init.type) return true;
+      if (
+        drawnShape.center &&
+        init.center &&
+        !coordsEqual(drawnShape.center, init.center)
+      )
+        return true;
+      if (drawnShape.radius !== (init.radius ?? undefined)) return true;
+      if (drawnShape.coordinates && init.coordinates) {
+        if (drawnShape.coordinates.length !== init.coordinates.length)
+          return true;
+        for (let i = 0; i < drawnShape.coordinates.length; i++) {
+          if (
+            !coordsEqual(
+              drawnShape.coordinates[i] as [number, number],
+              init.coordinates[i] as [number, number]
+            )
+          )
+            return true;
+        }
+      }
+    }
+
+    // If no drawn shape, compare selected/manual location to initial center
+    if (!drawnShape) {
+      if (!coordsEqual(selectedLocation ?? null, init.center ?? null))
+        return true;
+    }
+
+    return false;
+  })();
+
   useEffect(() => {
     if (open) {
       if (geofence) {
@@ -365,8 +439,17 @@ const GeofenceFormModal: React.FC<GeofenceFormModalProps> = ({
             coordinates: geofence.coordinates,
           });
         }
+        // Capture initial snapshot for dirty-check
+        initialSnapshotRef.current = {
+          name: geofence.name,
+          description: geofence.description || '',
+          isActive: geofence.isActive,
+          center: geofence.center,
+          type: geofence.type,
+          radius: geofence.radius ?? null,
+          coordinates: geofence.coordinates ?? null,
+        };
       } else {
-        // Reset for new geofence
         setFormData({
           name: '',
           description: '',
@@ -394,7 +477,6 @@ const GeofenceFormModal: React.FC<GeofenceFormModalProps> = ({
       return;
     }
 
-    // Prefer Google Places Autocomplete if loaded and key provided
     if (isGoogleLoaded && getPredictions) {
       try {
         const preds = await getPredictions(query);
@@ -410,11 +492,9 @@ const GeofenceFormModal: React.FC<GeofenceFormModalProps> = ({
           'Google Places predictions failed, falling back to Nominatim',
           err
         );
-        // fall through to OSM below
       }
     }
 
-    // Fallback: Nominatim (OpenStreetMap)
     try {
       const response = await fetch(
         `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=10&addressdetails=1&extratags=1`,
@@ -469,7 +549,6 @@ const GeofenceFormModal: React.FC<GeofenceFormModalProps> = ({
   };
 
   const handleSelectLocation = (result: LocationSearchResult) => {
-    // If we have a Google place_id and Google is available, fetch place details for accurate coords
     const useGoogle =
       isGoogleLoaded && result.place_id && result.place_id.length > 0;
     if (useGoogle && getPlaceDetails) {
@@ -770,21 +849,36 @@ const GeofenceFormModal: React.FC<GeofenceFormModalProps> = ({
       return;
     }
 
-    if (!drawnShape) {
-      return;
-    }
+    // Allow saving when either a drawn boundary exists, or a manual/selected location is provided
+    const hasLocation = !!drawnShape || !!selectedLocation;
+    if (!hasLocation) return;
 
-    const centerLocation =
-      drawnShape.center || drawnShape.coordinates?.[0] || mapCenter;
+    let type: 'circle' | 'polygon' | 'rectangle' = formData.type;
+    let centerLocation: [number, number] = mapCenter;
+    let radius: number | undefined = undefined;
+    let coordinates: [number, number][] | undefined = undefined;
+
+    if (drawnShape) {
+      type = drawnShape.type;
+      centerLocation =
+        drawnShape.center || drawnShape.coordinates?.[0] || mapCenter;
+      radius = drawnShape.radius;
+      coordinates = drawnShape.coordinates;
+    } else if (selectedLocation) {
+      centerLocation = selectedLocation;
+      // If editing and original geofence had a radius, keep type as circle; otherwise use selected type
+      radius = undefined;
+      coordinates = undefined;
+    }
 
     onSubmit({
       tenantId: geofence?.tenantId || 'tenant-1',
       name: formData.name,
       description: formData.description,
-      type: drawnShape.type,
+      type,
       center: centerLocation,
-      radius: drawnShape.radius,
-      coordinates: drawnShape.coordinates,
+      radius,
+      coordinates,
       isActive: formData.isActive,
     });
   };
@@ -1172,7 +1266,17 @@ const GeofenceFormModal: React.FC<GeofenceFormModalProps> = ({
         <AppButton
           onClick={handleSubmit}
           variant='contained'
-          disabled={!drawnShape || !formData.name.trim() || loading}
+          disabled={(() => {
+            // Name is always required
+            if (!formData.name.trim()) return true;
+            // If editing, require at least one change
+            if (geofence) {
+              return !isDirty || loading;
+            }
+            // Creating: need a location (drawn or selected)
+            const hasLocation = !!drawnShape || !!selectedLocation;
+            return !hasLocation || loading;
+          })()}
         >
           {loading ? (
             <CircularProgress size={20} color='inherit' />

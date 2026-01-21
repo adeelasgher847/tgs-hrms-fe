@@ -91,16 +91,65 @@ const AttendanceCheck = () => {
   const handleCheckIn = async () => {
     setLoading(true);
     setError(null);
+
+    // Request high-accuracy geolocation permission and position
+    if (!('geolocation' in navigator)) {
+      setError('Geolocation is not available on this device.');
+      setLoading(false);
+      return;
+    }
+
+    const getPosition = () =>
+      new Promise<GeolocationPosition>((resolve, reject) => {
+        navigator.geolocation.getCurrentPosition(resolve, reject, {
+          enableHighAccuracy: true,
+          timeout: 15000,
+          maximumAge: 0,
+        });
+      });
+
     try {
-      await attendanceApi.createAttendance('check-in');
+      const pos = await getPosition();
+      const lat = pos.coords.latitude;
+      const lon = pos.coords.longitude;
+
+      await attendanceApi.createAttendance({
+        type: 'CHECK_IN',
+        latitude: lat,
+        longitude: lon,
+      });
+
       // Optimistically reflect UI: clear checkout and lock check-in
       setPunchOutTime(null);
       setStatus('Checked In');
       await fetchToday();
       // Inform MyTimeCard that attendance has changed so it can refresh immediately
       setAttendanceRefreshToken(prev => prev + 1);
-    } catch {
-      setError('Check-in failed. Please try again.');
+    } catch (err: unknown) {
+      // Handle geolocation errors specially
+      if (err && typeof err === 'object' && 'code' in err) {
+        const ge = err as GeolocationPositionError;
+        if (ge.code === ge.PERMISSION_DENIED) {
+          setError(
+            'Location permission denied. Please allow location access and try again.'
+          );
+        } else if (ge.code === ge.POSITION_UNAVAILABLE) {
+          setError(
+            'Unable to determine your location. Please ensure GPS is enabled.'
+          );
+        } else if (ge.code === ge.TIMEOUT) {
+          setError('Location request timed out. Please try again.');
+        } else {
+          setError('Failed to get location. Please try again.');
+        }
+      } else if (err && typeof err === 'object' && 'response' in err) {
+        // Server-side error (e.g., outside geofence)
+        const resp = (err as any).response;
+        const msg = resp?.data?.message || 'Check-in failed. Please try again.';
+        setError(msg);
+      } else {
+        setError('Check-in failed. Please try again.');
+      }
     } finally {
       setLoading(false);
     }
@@ -109,15 +158,62 @@ const AttendanceCheck = () => {
   const handleCheckOut = async () => {
     setLoading(true);
     setError(null);
+
+    if (!('geolocation' in navigator)) {
+      setError('Geolocation is not available on this device.');
+      setLoading(false);
+      return;
+    }
+
+    const getPosition = () =>
+      new Promise<GeolocationPosition>((resolve, reject) => {
+        navigator.geolocation.getCurrentPosition(resolve, reject, {
+          enableHighAccuracy: true,
+          timeout: 15000,
+          maximumAge: 0,
+        });
+      });
+
     try {
-      await attendanceApi.createAttendance('check-out');
+      const pos = await getPosition();
+      const lat = pos.coords.latitude;
+      const lon = pos.coords.longitude;
+
+      await attendanceApi.createAttendance({
+        type: 'CHECK_OUT',
+        latitude: lat,
+        longitude: lon,
+      });
+
       // After checkout, both buttons become enabled again
       setStatus('Checked Out');
       await fetchToday();
       // Also notify MyTimeCard on checkout in case it needs to update state
       setAttendanceRefreshToken(prev => prev + 1);
-    } catch {
-      setError('Check-out failed. Please try again.');
+    } catch (err: unknown) {
+      if (err && typeof err === 'object' && 'code' in err) {
+        const ge = err as GeolocationPositionError;
+        if (ge.code === ge.PERMISSION_DENIED) {
+          setError(
+            'Location permission denied. Please allow location access and try again.'
+          );
+        } else if (ge.code === ge.POSITION_UNAVAILABLE) {
+          setError(
+            'Unable to determine your location. Please ensure GPS is enabled.'
+          );
+        } else if (ge.code === ge.TIMEOUT) {
+          setError('Location request timed out. Please try again.');
+        } else {
+          setError('Failed to get location. Please try again.');
+        }
+      } else if (err && typeof err === 'object' && 'response' in err) {
+        const resp = (err as any).response;
+        const msg =
+          resp?.data?.message || 'Check-out failed. Please try again.';
+        setError(msg);
+      } else {
+        setError('Check-out failed. Please try again.');
+      }
     } finally {
       setLoading(false);
     }
