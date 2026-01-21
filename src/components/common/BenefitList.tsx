@@ -10,11 +10,10 @@ import {
   Tooltip,
   IconButton,
   Pagination,
+  Button,
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import FileDownloadIcon from '@mui/icons-material/FileDownload';
-import BenefitFormModal from './BenefitFormModal';
-import type { BenefitFormValues } from './BenefitFormModal';
 import { Icons } from '../../assets/icons';
 import benefitsApi from '../../api/benefitApi';
 import { useErrorHandler } from '../../hooks/useErrorHandler';
@@ -51,6 +50,8 @@ const BenefitList: React.FC = () => {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [selectedBenefit, setSelectedBenefit] = useState<Benefit | null>(null);
   const [deleting, setDeleting] = useState(false);
+  const [debugOpen, setDebugOpen] = useState(false);
+  const [debugPayload, setDebugPayload] = useState<any>(null);
 
   const fetchBenefits = useCallback(async () => {
     setLoading(true);
@@ -145,10 +146,24 @@ const BenefitList: React.FC = () => {
         throw new Error('Delete failed');
       }
     } catch (error: unknown) {
-      showError(
-        (error as { response?: { data?: { message?: string } } }).response?.data
-          ?.message || 'Failed to delete benefit.'
-      );
+      // Log full error for debugging
+      // eslint-disable-next-line no-console
+      console.error('Delete benefit error', error);
+
+      const respData = (error as any)?.response?.data;
+      const serverMessage: string | undefined = respData?.message || respData?.error;
+      const correlationId: string | undefined = respData?.correlationId || (error as any)?.response?.headers?.['x-correlation-id'];
+
+      const displayMessage = serverMessage
+        ? `${serverMessage}${correlationId ? ` (ref: ${correlationId})` : ''}`
+        : 'Failed to delete benefit. Server error occurred.';
+
+      showError(displayMessage);
+
+      if (process.env.NODE_ENV !== 'production') {
+        setDebugPayload({ responseData: respData || null, raw: error });
+        setDebugOpen(true);
+      }
     } finally {
       setDeleting(false);
     }
@@ -496,6 +511,23 @@ const BenefitList: React.FC = () => {
         onClose={closeSnackbar}
       />
     </Box>
+          {/* Dev-only debug modal: shows full server response JSON when delete fails */}
+          <Dialog
+            open={debugOpen}
+            onClose={() => setDebugOpen(false)}
+            maxWidth='md'
+            fullWidth
+          >
+            <DialogTitle>Debug: Delete Failure - Server Response</DialogTitle>
+            <DialogContent>
+              <Box component='pre' sx={{ whiteSpace: 'pre-wrap', fontSize: 12 }}>
+                {JSON.stringify(debugPayload, null, 2)}
+              </Box>
+            </DialogContent>
+            <DialogActions>
+              <Button onClick={() => setDebugOpen(false)}>Close</Button>
+            </DialogActions>
+          </Dialog>
   );
 };
 

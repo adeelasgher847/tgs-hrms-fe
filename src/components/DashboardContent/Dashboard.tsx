@@ -1183,8 +1183,11 @@ const Dashboard: React.FC = () => {
                 >
                   <Box
                     sx={{
+                      // Use computed min width so small screens only scroll when
+                      // there are many departments (bars). If min width is smaller
+                      // than the viewport, no horizontal scroll will appear.
                       minWidth: {
-                        xs: '100%',
+                        xs: `${attendanceMinChartWidth}px`,
                         md: `${attendanceMinChartWidth}px`,
                       },
                       // Ensure a concrete pixel height on small screens so
