@@ -229,6 +229,13 @@ const AvailableEmployees: React.FC<AvailableEmployeesProps> = ({
     }
   }, [showTeamDialog, isEmployeePool]);
 
+  const isHREmployee = (employee: TeamMember) => {
+    const designation = (employee.designation?.title || '').toLowerCase();
+    const department = (employee.department?.name || '').toLowerCase();
+    const isHR = (text: string) => /\bhr\b/.test(text);
+    return isHR(designation) || isHR(department);
+  };
+
   const handleTeamDropdownChange = (teamIdValue: string) => {
     setSelectedTeamId(teamIdValue);
     const team = teams.find(t => t.id === teamIdValue);
@@ -498,8 +505,9 @@ const AvailableEmployees: React.FC<AvailableEmployeesProps> = ({
                       <IconButton
                         size='small'
                         onClick={() => handleAddToTeam(employee)}
-                        sx={{ color: 'primary.main' }}
-                        title={lang.addToTeam}
+                        disabled={isHREmployee(employee)}
+                        sx={{ color: isHREmployee(employee) ? 'action.disabled' : 'primary.main' }}
+                        title={isHREmployee(employee) ? 'HR cannot be added to a team' : lang.addToTeam}
                       >
                         <AddIcon />
                       </IconButton>

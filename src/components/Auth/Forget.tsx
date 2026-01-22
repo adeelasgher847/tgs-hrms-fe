@@ -1,14 +1,23 @@
 import { useState } from 'react';
 import { Link as RouterLink } from 'react-router-dom';
-
-import { Box, Typography, Button, Link, CircularProgress } from '@mui/material';
-import LockIcon from '@mui/icons-material/Lock';
+import {
+  Box,
+  Typography,
+  Button,
+  Link,
+  CircularProgress,
+  FormControl,
+  Select,
+  MenuItem,
+} from '@mui/material';
 import authApi from '../../api/authApi';
 import { validateEmailAddress } from '../../utils/validation';
 import { useErrorHandler } from '../../hooks/useErrorHandler';
 import ErrorSnackbar from '../common/ErrorSnackbar';
 import AppInputField from '../common/AppInputField';
 import { Icons } from '../../assets/icons';
+import AuthSidebar from '../common/AuthSidebar';
+import AppPageTitle from '../common/AppPageTitle';
 
 const Forget = () => {
   const [email, setEmail] = useState('');
@@ -16,6 +25,7 @@ const Forget = () => {
   const [loading, setLoading] = useState(false);
   const [emailSent, setEmailSent] = useState(false);
   const { snackbar, showError, closeSnackbar } = useErrorHandler();
+  const [lang, setLang] = useState<'en' | 'ar'>('en');
 
   const handleEmailChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
@@ -82,338 +92,303 @@ const Forget = () => {
     }
   };
 
-  // Email Sent Success Page
-  if (emailSent) {
-    return (
-      <Box
-        sx={{
-          minHeight: '100vh',
-          width: '100%',
-          maxWidth: '100vw',
-          overflowX: 'hidden',
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          justifyContent: 'center',
-          backgroundColor: 'var(--primary-dark-color)',
-          padding: { xs: 2, sm: 3 },
-          position: 'relative',
-          boxSizing: 'border-box',
-          gap: { sm: '16px', lg: '20px' },
-        }}
-      >
-        <Box
-          sx={{
-            width: '100%',
-            // maxWidth: { xs: '100%', sm: '400px', md: '420px' },
-            display: 'flex',
-            justifyContent: 'center',
-            alignItems: 'center',
-            mb: 6,
-          }}
-        >
-          <Box
-            component='img'
-            src={Icons.logoWhite}
-            alt='Workonnect.ai Logo'
-            sx={{
-              width: { xs: '100%' },
-              maxWidth: { xs: '100%', md: '520px' },
-              // height: 'auto',
-              // maxHeight: { xs: 40, sm: 48 },
-              objectFit: 'contain',
-            }}
-          />
-        </Box>
-
-        <Box
-          sx={{
-            backgroundColor: '#F8F8F8',
-            borderRadius: '20px',
-            py: { xs: 3, sm: 4, md: 5 },
-            px: { xs: 3, sm: 4, md: 8 },
-            width: { xs: '100%' },
-            maxWidth: { xs: '100%', sm: '400px', md: '520px' },
-            boxShadow: '0 4px 20px rgba(0, 0, 0, 0.1)',
-            boxSizing: 'border-box',
-          }}
-        >
-          <Box
-            sx={{
-              display: 'flex',
-              justifyContent: 'center',
-              alignItems: 'center',
-              mb: 3,
-            }}
-          >
-            <Box
-              component='img'
-              src={Icons.sent}
-              alt='Email Sent'
-              sx={{
-                width: { xs: '80px', sm: '80px' },
-                height: { xs: '80px', sm: '80px' },
-              }}
-            />
-          </Box>
-
-          <Typography
-            variant='h1'
-            sx={{
-              fontSize: { xs: '28px', sm: '32px' },
-              fontWeight: 700,
-              textAlign: 'center',
-              mb: 1,
-              color: '#2C2C2C',
-            }}
-          >
-            Email Sent
-          </Typography>
-
-          <Typography
-            sx={{
-              fontSize: { xs: '14px', sm: '16px' },
-              textAlign: 'center',
-              mb: 3,
-              color: '#888888',
-              fontWeight: 400,
-            }}
-          >
-            Check your inbox for a reset link!
-          </Typography>
-
-          <Box
-            sx={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: 0.5,
-            }}
-          >
-            <Link
-              component={RouterLink}
-              to='/'
-              sx={{
-                color: '#656565',
-                textDecoration: 'none',
-                fontSize: { xs: '14px', sm: '16px' },
-                fontWeight: 400,
-                display: 'flex',
-                alignItems: 'center',
-                gap: 1,
-                '&:hover': {
-                  textDecoration: 'underline',
-                },
-              }}
-            >
-              <Box
-                component='img'
-                src={Icons.back}
-                alt='Back'
-                sx={{
-                  width: { xs: '10px', sm: '12px' },
-                  height: { xs: '10px', sm: '12px' },
-                }}
-              />
-              Back to login
-            </Link>
-          </Box>
-        </Box>
-      </Box>
-    );
-  }
-
-  // Reset Password Form
   return (
     <Box
       sx={{
         minHeight: '100vh',
         width: '100%',
-        maxWidth: '100vw',
-        overflowX: 'hidden',
         display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
         justifyContent: 'center',
-        backgroundColor: 'var(--primary-dark-color)',
-        padding: { xs: 2, sm: 3 },
-        py: { xs: 4, sm: 5, md: 6 },
-        position: 'relative',
-        boxSizing: 'border-box',
-        gap: { sm: '16px', lg: '20px' },
+        backgroundColor: 'var(--white-100-color)',
+        overflowX: 'hidden',
       }}
     >
       <Box
         sx={{
           width: '100%',
-          // maxWidth: { xs: '100%', sm: '400px', md: '420px' },
           display: 'flex',
-          justifyContent: 'center',
-          alignItems: 'center',
-          mb: 6,
-        }}
-      >
-        <Box
-          component='img'
-          src={Icons.logoWhite}
-          alt='Workonnect.ai Logo'
-          sx={{
-            width: { xs: '100%' },
-            maxWidth: { xs: '100%', md: '520px' },
-            // height: 'auto',
-            // maxHeight: { xs: 40, sm: 48 },
-            objectFit: 'contain',
-          }}
-        />
-      </Box>
-
-      <Box
-        sx={{
-          backgroundColor: '#F8F8F8',
-          borderRadius: '20px',
-          py: { xs: 3, sm: 4, md: 5 },
-          px: { xs: 3, sm: 4, md: 8 },
-          width: { xs: '100%' },
-          maxWidth: { xs: '100%', sm: '400px', md: '520px' },
-          boxShadow: '0 4px 20px rgba(0, 0, 0, 0.1)',
+          flexDirection: { xs: 'column', lg: 'row' },
+          overflow: 'hidden',
           boxSizing: 'border-box',
         }}
       >
+        <AuthSidebar />
+
         <Box
           sx={{
+            flex: 1,
             display: 'flex',
-            justifyContent: 'center',
+            flexDirection: 'column',
             alignItems: 'center',
-            mb: 3,
+            justifyContent: 'center',
+            padding: { xs: '16px 12px', sm: '24px 16px', md: '48px' },
+            backgroundColor: { xs: '#3083DC', lg: 'var(--white-100-color)' },
+            overflowY: 'auto',
+            overflowX: 'hidden',
+            position: 'relative',
+            zIndex: 1,
+            marginLeft: { xs: 0, lg: '-20px' },
+            paddingLeft: { xs: '12px', sm: '16px', lg: 'calc(48px + 12px)' },
+            paddingRight: { xs: '12px', sm: '16px', lg: '48px' },
+            marginTop: { xs: 'auto', lg: 0 },
+            pt: { xs: '30px', lg: '48px' },
+            boxSizing: 'border-box',
+            minWidth: 0,
+            borderTopLeftRadius: { xs: 0, lg: '20px' },
+            borderBottomLeftRadius: { xs: 0, lg: '20px' },
           }}
         >
           <Box
             sx={{
-              width: { xs: 80, sm: 100 },
-              height: { xs: 80, sm: 100 },
-              borderRadius: '50%',
-              backgroundColor: '#E0ECFA',
-              display: 'flex',
-              alignItems: 'center',
+              display: { xs: 'flex', lg: 'none' },
+              width: '90%',
               justifyContent: 'center',
+              alignItems: 'center',
+              mb: { xs: 6, lg: 0 },
+              position: { xs: 'relative', lg: 'absolute' },
+              top: { xs: 10, lg: 32 },
+              left: { xs: 'auto', lg: '50%' },
+              transform: { xs: 'none', lg: 'translateX(-50%)' },
+              zIndex: 2,
             }}
           >
-            <LockIcon
+            <Box
+              component='img'
+              src={Icons.logoWhite}
+              alt='Logo'
               sx={{
-                fontSize: { xs: 40, sm: 50 },
-                color: 'var(--primary-dark-color)',
+                width: { xs: '100%', lg: 'auto' },
+                maxWidth: { xs: '100%', md: '520px', lg: 'none' },
+                maxHeight: { xs: 'auto', lg: 40 },
+                objectFit: 'contain',
               }}
             />
           </Box>
-        </Box>
-
-        <Typography
-          variant='h1'
-          sx={{
-            fontSize: { xs: '28px', sm: '32px' },
-            fontWeight: 700,
-            textAlign: 'center',
-            mb: 1,
-            color: '#2C2C2C',
-          }}
-        >
-          Reset Password
-        </Typography>
-
-        <Typography
-          sx={{
-            fontSize: { xs: '14px', sm: '16px' },
-            textAlign: 'center',
-            mb: 4,
-            color: '#888888',
-            fontWeight: 400,
-          }}
-        >
-          We'll email you a link to reset your password
-        </Typography>
-
-        <Box component='form' onSubmit={handleSubmit} sx={{ width: '100%' }}>
-          <Box sx={{ mb: 3 }}>
-            <AppInputField
-              name='email'
-              label='Email'
-              type='email'
-              required
-              fullWidth
-              value={email}
-              onChange={handleEmailChange}
-              disabled={loading}
-              error={Boolean(emailError)}
-              helperText={emailError}
-              placeholder='Waleed@xyz.com'
-            />
-          </Box>
-
-          <Button
-            type='submit'
-            variant='contained'
-            disabled={!email || Boolean(emailError) || loading}
-            fullWidth
-            sx={{
-              backgroundColor: 'var(--primary-dark-color)',
-              color: '#FFFFFF',
-              fontWeight: 700,
-              fontSize: { xs: '14px', sm: '16px' },
-              textTransform: 'none',
-              padding: { xs: '12px', sm: '14px' },
-              borderRadius: '12px',
-              mb: 3,
-              // '&:hover': {
-              //   backgroundColor: 'var(--primary-light-color)',
-              // },
-              '&:disabled': {
-                backgroundColor: 'var(--grey-color)',
-                color: '#FFFFFF',
-              },
-            }}
-          >
-            {loading ? (
-              <CircularProgress size={20} color='inherit' />
-            ) : (
-              'Send an email'
-            )}
-          </Button>
 
           <Box
             sx={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: 0.5,
+              width: '100%',
+              mx: 'auto',
+              backgroundColor: { xs: '#FFFFFF', lg: 'transparent' },
+              borderRadius: { xs: '30px', lg: 0 },
+              p: { xs: 2, sm: 3, md: 4 },
+              mt: { xs: 0, lg: 0 },
+              boxSizing: 'border-box',
+              minWidth: 0,
             }}
           >
-            <Link
-              component={RouterLink}
-              to='/'
-              sx={{
-                color: '#656565',
-                textDecoration: 'none',
-                fontSize: { xs: '14px', sm: '16px' },
-                fontWeight: 400,
-                display: 'flex',
-                alignItems: 'center',
-                gap: 1,
-                '&:hover': {
-                  textDecoration: 'underline',
-                },
-              }}
-            >
+            <Box sx={{ mb: 3, display: 'flex', justifyContent: 'flex-end' }}>
+              <FormControl size='small' sx={{ minWidth: 100 }}>
+                <Select
+                  value={lang}
+                  onChange={e => setLang(e.target.value as 'en' | 'ar')}
+                >
+                  <MenuItem value='en'>English</MenuItem>
+                  <MenuItem value='ar'>عربى</MenuItem>
+                </Select>
+              </FormControl>
+            </Box>
+
+            {emailSent ? (
               <Box
-                component='img'
-                src={Icons.back}
-                alt='Back'
                 sx={{
-                  width: { xs: '10px', sm: '12px' },
-                  height: { xs: '10px', sm: '12px' },
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  width: '100%',
                 }}
-              />
-              Back to login
-            </Link>
+              >
+                <Box
+                  sx={{
+                    display: 'flex',
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                    mb: 3,
+                  }}
+                >
+                  <Box
+                    component='img'
+                    src={Icons.sent}
+                    alt='Email Sent'
+                    sx={{
+                      width: { xs: '80px', sm: '80px' },
+                      height: { xs: '80px', sm: '80px' },
+                    }}
+                  />
+                </Box>
+
+                <Typography
+                  variant='h1'
+                  sx={{
+                    fontSize: { xs: '28px', sm: '32px' },
+                    fontWeight: 700,
+                    textAlign: 'center',
+                    mb: 1,
+                    color: '#2C2C2C',
+                  }}
+                >
+                  {lang === 'ar' ? 'تم إرسال البريد الإلكتروني' : 'Email Sent'}
+                </Typography>
+
+                <Typography
+                  sx={{
+                    fontSize: { xs: '14px', sm: '16px' },
+                    textAlign: 'center',
+                    mb: 3,
+                    color: '#888888',
+                    fontWeight: 400,
+                  }}
+                >
+                  {lang === 'ar'
+                    ? 'تحقق من بريدك الوارد للحصول على رابط إعادة التعيين!'
+                    : 'Check your inbox for a reset link!'}
+                </Typography>
+
+                <Box
+                  sx={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: 0.5,
+                  }}
+                >
+                  <Link
+                    component={RouterLink}
+                    to='/'
+                    sx={{
+                      color: '#656565',
+                      textDecoration: 'none',
+                      fontSize: { xs: '14px', sm: '16px' },
+                      fontWeight: 400,
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 1,
+                      '&:hover': {
+                        textDecoration: 'underline',
+                      },
+                    }}
+                  >
+                    {lang === 'ar' ? 'العودة لتسجيل الدخول' : 'Back to login'}
+                  </Link>
+                </Box>
+              </Box>
+            ) : (
+              <>
+                <AppPageTitle
+                  isRtl={lang === 'ar'}
+                  sx={{
+                    mb: 0,
+                    fontWeight: 700,
+                    color: { xs: '#001218', lg: 'inherit' },
+                  }}
+                >
+                  {lang === 'ar' ? 'إعادة تعيين كلمة المرور' : 'Reset Password'}
+                </AppPageTitle>
+
+                <Typography
+                  sx={{
+                    color: { xs: '#888888', lg: 'var(--dark-grey-color)' },
+                    mb: 3,
+                    fontSize: { xs: '14px', sm: '16px', lg: '24px' },
+                    fontWeight: 400,
+                  }}
+                >
+                  {lang === 'ar'
+                    ? 'سنرسل لك رابطًا لإعادة تعيين كلمة المرور'
+                    : "We'll email you a link to reset your password"}
+                </Typography>
+
+                <Box
+                  component='form'
+                  onSubmit={handleSubmit}
+                  sx={{
+                    width: '100%',
+                    maxWidth: '100%',
+                    boxSizing: 'border-box',
+                    overflowX: 'hidden',
+                  }}
+                >
+                  <Box sx={{ mb: 3 }}>
+                    <AppInputField
+                      name='email'
+                      label={lang === 'ar' ? 'البريد الإلكتروني' : 'Email'}
+                      type='email'
+                      required
+                      fullWidth
+                      value={email}
+                      onChange={handleEmailChange}
+                      disabled={loading}
+                      error={Boolean(emailError)}
+                      helperText={emailError}
+                      placeholder='Waleed@xyz.com'
+                    />
+                  </Box>
+
+                  <Box sx={{ display: 'flex', justifyContent: 'center', mb: 2 }}>
+                    <Button
+                      type='submit'
+                      variant='contained'
+                      disabled={!email || Boolean(emailError) || loading}
+                      sx={{
+                        backgroundColor: 'var(--primary-dark-color)',
+                        color: 'var(--white-color)',
+                        fontWeight: 600,
+                        borderRadius: '12px',
+                        fontSize: '16px',
+                        textTransform: 'none',
+                        padding: { xs: '8px 32px', lg: '8px 32px' },
+                        height: { xs: '40px', lg: 'auto' },
+                        gap: { xs: '4px', lg: 0 },
+                        width: { xs: '100%', lg: '200px' },
+                        '&:disabled': {
+                          backgroundColor: 'var(--grey-color)',
+                          color: '#FFFFFF',
+                        },
+                      }}
+                    >
+                      {loading ? (
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                          <CircularProgress size={16} color='inherit' />
+                          {lang === 'ar' ? 'جاري الإرسال...' : 'Sending...'}
+                        </Box>
+                      ) : lang === 'ar' ? (
+                        'إرسال بريد إلكتروني'
+                      ) : (
+                        'Send an email'
+                      )}
+                    </Button>
+                  </Box>
+
+                  <Box
+                    sx={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: 0.5,
+                    }}
+                  >
+                    <Link
+                      component={RouterLink}
+                      to='/'
+                      sx={{
+                        color: '#656565',
+                        textDecoration: 'none',
+                        fontSize: { xs: '14px', sm: '16px' },
+                        fontWeight: 400,
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 1,
+                        '&:hover': {
+                          textDecoration: 'underline',
+                        },
+                      }}
+                    >
+                      {lang === 'ar' ? 'العودة لتسجيل الدخول' : 'Back to login'}
+                    </Link>
+                  </Box>
+                </Box>
+              </>
+            )}
           </Box>
         </Box>
       </Box>
