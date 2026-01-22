@@ -235,9 +235,10 @@ const LeaveForm: React.FC<LeaveFormProps> = ({
         onSubmit={handleSubmit}
         sx={{
           backgroundColor: 'background.paper',
-          p: 4,
+          p: { xs: 3, sm: 4 },
           borderRadius: 2,
-          maxWidth: 600,
+          width: '100%',
+          maxWidth: 'min(760px, 100%)',
           mx: 'auto',
           display: 'flex',
           flexDirection: 'column',
@@ -396,18 +397,21 @@ const LeaveForm: React.FC<LeaveFormProps> = ({
           value={reason}
           onChange={e => setReason(e.target.value)}
           required
+          fullWidth
         />
 
-        <DocumentUpload
-          label='Supporting Documents (Optional)'
-          existingDocuments={mode === 'edit' ? existingDocuments : []}
-          newDocuments={documents}
-          onDocumentsChange={handleDocumentsChange}
-          onDocumentRemove={handleDocumentRemove}
-          onDocumentReplace={handleDocumentReplace}
-          multiple
-          accept='image/*'
-        />
+        <Box sx={{ width: '100%' }}>
+          <DocumentUpload
+            label='Supporting Documents (Optional)'
+            existingDocuments={mode === 'edit' ? existingDocuments : []}
+            newDocuments={documents}
+            onDocumentsChange={handleDocumentsChange}
+            onDocumentRemove={handleDocumentRemove}
+            onDocumentReplace={handleDocumentReplace}
+            multiple
+            accept='image/*'
+          />
+        </Box>
 
         <AppButton
           type='submit'
@@ -415,6 +419,7 @@ const LeaveForm: React.FC<LeaveFormProps> = ({
           variantType='primary'
           text={loading ? 'Saving...' : mode === 'edit' ? 'Update' : 'Apply'}
           disabled={loading}
+          sx={{ width: '100%' }}
         />
       </Box>
     </LocalizationProvider>

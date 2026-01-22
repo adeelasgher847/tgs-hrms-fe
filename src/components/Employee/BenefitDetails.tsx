@@ -516,7 +516,7 @@ const BenefitDetails: React.FC = () => {
           </Paper>
         ) : (
           <Paper sx={{ mt: 2, overflowX: 'auto', boxShadow: 'none' }}>
-            <Table>{tableContent}</Table>
+            <Table sx={{boxShadow: 'none'}}>{tableContent}</Table>
           </Paper>
         )}
 
