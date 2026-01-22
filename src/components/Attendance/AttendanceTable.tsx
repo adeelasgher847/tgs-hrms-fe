@@ -24,6 +24,9 @@ import { exportCSV } from '../../api/exportApi';
 import type {
   AttendanceEvent,
   AttendanceResponse,
+  UserShort,
+  TeamMember,
+  TeamAttendanceEntry,
 } from '../../api/attendanceApi';
 import {
   isManager as checkIsManager,
@@ -205,6 +208,7 @@ const AttendanceTable = () => {
           timestamp: e.timestamp,
           type: e.type as 'check-in' | 'check-out' | string,
           user: e.user as UserShort | undefined,
+          near_boundary: e.near_boundary,
         };
       })
       .filter(e => {
@@ -286,7 +290,7 @@ const AttendanceTable = () => {
         // Find the original event to get near_boundary
         const originalEvent = events.find(e => String(e.id) === event.id);
         const nearBoundary = originalEvent?.near_boundary ?? false;
-        
+
         if (event.type === 'check-in') {
           openSessions.push({
             checkIn: {
@@ -875,6 +879,12 @@ const AttendanceTable = () => {
       const effectiveEndDate = endDateOverride ?? endDate;
       let rows: AttendanceRecord[] = [];
 
+      // Determine if user can view all attendance based on current local flags
+      // We cannot rely on component state `canViewAllAttendance` here because
+      // state updates are async and might not have happened yet on initial load.
+      const canViewAllLocal =
+        isSystemAdminFlag || isAdminFlag || isNetworkAdminFlag || isHRAdminFlag;
+
       if (isSystemAdminFlag && effectiveView === 'all') {
         const systemData = await attendanceApi.getSystemAllAttendance(
           effectiveStartDate || undefined,
@@ -886,7 +896,7 @@ const AttendanceTable = () => {
           effectiveSelectedEmployee || null
         );
       } else {
-        if (canViewAllAttendance && effectiveView === 'all') {
+        if (canViewAllLocal && effectiveView === 'all') {
           const tenantIdForFetch = isSystemAdminFlag
             ? selectedTenant || undefined
             : adminTenantId || selectedTenant || undefined;
@@ -967,7 +977,7 @@ const AttendanceTable = () => {
         } else {
           const userIdForBuild = effectiveSelectedEmployee || currentUser.id;
           const isAllAttendanceView =
-            canViewAllAttendance &&
+            canViewAllLocal &&
             effectiveView === 'all' &&
             !effectiveSelectedEmployee;
 
@@ -981,7 +991,7 @@ const AttendanceTable = () => {
 
       setAttendanceData(rows);
       if (
-        canViewAllAttendance &&
+        canViewAllLocal &&
         effectiveView === 'all' &&
         !effectiveSelectedEmployee
       ) {
@@ -1249,8 +1259,25 @@ const AttendanceTable = () => {
   }, [mode]);
 
   useEffect(() => {
-    // use stable ref to call the latest fetchAttendance implementation
-    fetchAttendanceRef.current?.('my', undefined, '', '');
+    // Check if we should default to 'all' view for admins who have 'My Attendance' hidden
+    const storedUser = localStorage.getItem('user');
+    if (storedUser) {
+      const user = JSON.parse(storedUser);
+      if (
+        isSystemAdmin(user.role) ||
+        isAdmin(user.role) ||
+        isHRAdmin(user.role)
+      ) {
+        // If "My Attendance" is hidden, default to 'all'
+        setAdminView('all');
+        fetchAttendanceRef.current?.('all', undefined, '', '');
+      } else {
+        // Otherwise default to 'my' as usual
+        fetchAttendanceRef.current?.('my', undefined, '', '');
+      }
+    } else {
+      fetchAttendanceRef.current?.('my', undefined, '', '');
+    }
   }, []);
 
   // Load tenants when system admin views "All Attendance" - using same API as Employee List
@@ -1538,32 +1565,38 @@ const AttendanceTable = () => {
               >
                 {canViewAllAttendance && (
                   <>
-                    <AppButton
-                      variant={adminView === 'my' ? 'contained' : 'outlined'}
-                      variantType={adminView === 'my' ? 'primary' : 'secondary'}
-                      onClick={handleMyAttendance}
-                      sx={{
-                        width: { xs: '100%', sm: '200px' },
-                        minWidth: { xs: '100%', sm: '200px' },
-                        maxWidth: { sm: '200px' },
-                        boxSizing: 'border-box',
-                        flexShrink: 0,
-                        backgroundColor:
-                          adminView === 'my' ? 'primary.dark' : undefined,
-                        color: adminView === 'my' ? '#fff' : 'primary.dark',
-                        borderColor: 'primary.dark',
-                        '&:hover': {
+                    {!isSystemAdminUser && !isAdminUser && !isHRAdminUser && (
+                      <AppButton
+                        variant={adminView === 'my' ? 'contained' : 'outlined'}
+                        variantType={
+                          adminView === 'my' ? 'primary' : 'secondary'
+                        }
+                        onClick={handleMyAttendance}
+                        sx={{
+                          width: { xs: '100%', sm: '200px' },
+                          minWidth: { xs: '100%', sm: '200px' },
+                          maxWidth: { sm: '200px' },
+                          boxSizing: 'border-box',
+                          flexShrink: 0,
                           backgroundColor:
                             adminView === 'my' ? 'primary.dark' : undefined,
+                          color: adminView === 'my' ? '#fff' : 'primary.dark',
                           borderColor: 'primary.dark',
-                        },
-                      }}
-                    >
-                      My Attendance
-                    </AppButton>
+                          '&:hover': {
+                            backgroundColor:
+                              adminView === 'my' ? 'primary.dark' : undefined,
+                            borderColor: 'primary.dark',
+                          },
+                        }}
+                      >
+                        My Attendance
+                      </AppButton>
+                    )}
                     <AppButton
                       variant={adminView === 'all' ? 'contained' : 'outlined'}
-                      variantType={adminView === 'all' ? 'primary' : 'secondary'}
+                      variantType={
+                        adminView === 'all' ? 'primary' : 'secondary'
+                      }
                       onClick={handleAllAttendance}
                       sx={{
                         width: { xs: '100%', sm: '200px' },

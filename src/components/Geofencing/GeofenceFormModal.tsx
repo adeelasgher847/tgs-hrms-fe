@@ -365,8 +365,10 @@ const GeofenceFormModal: React.FC<GeofenceFormModalProps> = ({
     if (formData.name.trim() !== (init.name || '')) return true;
     if ((formData.description || '') !== (init.description || '')) return true;
     if (formData.isActive !== !!init.isActive) return true;
-    if (formData.threshold_enabled !== (init.threshold_enabled ?? false)) return true;
-    if (formData.threshold_distance !== (init.threshold_distance ?? 50)) return true;
+    if (formData.threshold_enabled !== (init.threshold_enabled ?? false))
+      return true;
+    if (formData.threshold_distance !== (init.threshold_distance ?? 50))
+      return true;
 
     // Compare center/coordinates/drawn shape
     const coordsEqual = (
@@ -420,7 +422,7 @@ const GeofenceFormModal: React.FC<GeofenceFormModalProps> = ({
       // Only get location when creating a new geofence
       if ('geolocation' in navigator) {
         navigator.geolocation.getCurrentPosition(
-          (position) => {
+          position => {
             const userLocation: [number, number] = [
               position.coords.latitude,
               position.coords.longitude,
@@ -428,7 +430,7 @@ const GeofenceFormModal: React.FC<GeofenceFormModalProps> = ({
             setMapCenter(userLocation);
             setMapZoom(15);
           },
-          (error) => {
+          error => {
             console.warn('Could not get user location:', error);
             // Keep default location
           },
@@ -921,7 +923,9 @@ const GeofenceFormModal: React.FC<GeofenceFormModalProps> = ({
       coordinates,
       isActive: formData.isActive,
       threshold_enabled: formData.threshold_enabled,
-      threshold_distance: formData.threshold_enabled ? formData.threshold_distance : undefined,
+      threshold_distance: formData.threshold_enabled
+        ? formData.threshold_distance
+        : undefined,
     });
   };
 
@@ -1083,54 +1087,37 @@ const GeofenceFormModal: React.FC<GeofenceFormModalProps> = ({
                 }
               />
 
-              {/* Coordinate Input */}
-              <Box>
-                <Typography variant='caption' color='text.secondary' mb={1}>
-                  Coordinates (Edit manually or drag marker)
-                </Typography>
-                <Box sx={{ display: 'flex', gap: 1 }}>
-                  <TextField
-                    label='Latitude'
-                    fullWidth
-                    size='small'
-                    type='number'
-                    value={manualCoordinates.latitude}
-                    onChange={e =>
-                      handleCoordinateChange('latitude', e.target.value)
-                    }
-                    inputProps={{
-                      step: '0.000001',
-                      min: -90,
-                      max: 90,
-                    }}
-                  />
-                  <TextField
-                    label='Longitude'
-                    fullWidth
-                    size='small'
-                    type='number'
-                    value={manualCoordinates.longitude}
-                    onChange={e =>
-                      handleCoordinateChange('longitude', e.target.value)
-                    }
-                    inputProps={{
-                      step: '0.000001',
-                      min: -180,
-                      max: 180,
-                    }}
-                  />
-                  <Button
-                    variant='outlined'
-                    onClick={handleApplyCoordinates}
-                    sx={{ minWidth: 80 }}
-                    disabled={
-                      !manualCoordinates.latitude ||
-                      !manualCoordinates.longitude
-                    }
-                  >
-                    Apply
-                  </Button>
-                </Box>
+              <Box sx={{ display: 'flex', gap: 1 }}>
+                <TextField
+                  label='Latitude'
+                  fullWidth
+                  size='small'
+                  type='number'
+                  value={manualCoordinates.latitude}
+                  onChange={e =>
+                    handleCoordinateChange('latitude', e.target.value)
+                  }
+                  inputProps={{
+                    step: '0.000001',
+                    min: -90,
+                    max: 90,
+                  }}
+                />
+                <TextField
+                  label='Longitude'
+                  fullWidth
+                  size='small'
+                  type='number'
+                  value={manualCoordinates.longitude}
+                  onChange={e =>
+                    handleCoordinateChange('longitude', e.target.value)
+                  }
+                  inputProps={{
+                    step: '0.000001',
+                    min: -180,
+                    max: 180,
+                  }}
+                />
               </Box>
 
               {/* Radius Input for Circle */}

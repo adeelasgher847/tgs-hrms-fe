@@ -1,4 +1,8 @@
 import axiosInstance from './axiosInstance';
+import { notificationsApi } from './notificationsApi';
+import systemEmployeeApiService from './systemEmployeeApi';
+import teamApi from './teamApi';
+import { getCurrentUser } from '../utils/auth';
 
 export interface CreateLeaveRequest {
   leaveTypeId: string;
@@ -96,7 +100,93 @@ class LeaveApiService {
         },
       }
     );
-    return response.data;
+    const res = response.data;
+
+    // Notify admin + reporting manager about new leave application (best-effort, non-blocking)
+    (async () => {
+      try {
+        // Determine employee id + name
+        const employeeId = (res as any).employeeId || (res as any).user?.id || getCurrentUser()?.id;
+        const employeeName =
+          `${(res as any).employee?.first_name || (res as any).user?.first_name || getCurrentUser()?.first_name || ''}`.trim() || 'Employee';
+
+        // 1) Notify reporting manager (try to resolve via system profile -> team)
+        let notifiedManager = false;
+        if (employeeId) {
+          try {
+            const profile = await systemEmployeeApiService.getSystemEmployeeById(String(employeeId));
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const teamId = (profile as any).team || (profile as any).team_id || (profile as any).teamId || undefined;
+            if (teamId) {
+              try {
+                const team = await teamApi.getTeamById(String(teamId));
+                const managerId = team?.manager_id ?? team?.manager?.id;
+                if (managerId) {
+                  const message = `${employeeName} has applied for leave`;
+                  const notif = await notificationsApi.sendNotification({
+                    user_ids: [String(managerId)],
+                    message,
+                    type: 'alert',
+                  });
+                  if (!notif.ok) {
+                    // eslint-disable-next-line no-console
+                    console.warn('Notification send failed for createLeave (team manager)', notif.message, notif.correlationId);
+                  }
+                  notifiedManager = true;
+                }
+              } catch (e) {
+                // ignore and continue to admin notify
+              }
+            }
+          } catch (e) {
+            // ignore and continue
+          }
+        }
+
+        // 2) Notify admin(s) (best-effort). Use search API to find admins.
+        try {
+          // eslint-disable-next-line @typescript-eslint/no-var-requires
+          const { searchApiService } = require('./searchApi');
+          const adminsResp = await searchApiService.searchAdmin({ limit: 10 });
+          const adminItems = adminsResp?.results?.employees ?? [];
+          const adminIds = adminItems.map((it: any) => it.id).filter(Boolean).slice(0, 5);
+          if (adminIds.length > 0) {
+            const message = `${employeeName} has applied for leave`;
+            const notif = await notificationsApi.sendNotification({
+              user_ids: adminIds,
+              message,
+              type: 'alert',
+            });
+            if (!notif.ok) {
+              // eslint-disable-next-line no-console
+              console.warn('Notification send failed for createLeave (admins)', notif.message, notif.correlationId);
+            }
+          }
+        } catch (e) {
+          // eslint-disable-next-line no-console
+          console.warn('Failed to fetch/notify admins for leave creation', e);
+        }
+      } catch (err) {
+        // Do not throw - notification failures should not block leave creation
+        // eslint-disable-next-line no-console
+        console.warn('Unexpected error while sending leave creation notification', err);
+      }
+        // Dispatch an in-app event to update local UI immediately
+        try {
+          const detail = {
+            title: 'Leave Applied',
+            message: `${employeeName} has applied for leave`,
+            employeeName,
+            data: res,
+          };
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          (window as any).dispatchEvent(new CustomEvent('hrms:notification', { detail }));
+        } catch (e) {
+          // ignore
+        }
+    })();
+
+    return res;
   }
 
   async getUserLeaves(
@@ -201,7 +291,48 @@ class LeaveApiService {
     const response = await axiosInstance.put<LeaveResponse>(
       `${this.baseUrl}/${id}/approve`
     );
-    return response.data;
+    const res = response.data;
+
+    // Try to send notification to the employee about approval (non-blocking)
+    (async () => {
+      try {
+        const recipient = (res as any).employeeId ?? (res as any).user?.id ?? (res as any).employee?.id;
+        const employeeName =
+          (res as any).employee?.first_name || (res as any).user?.first_name || getCurrentUser()?.first_name || 'Employee';
+        if (recipient) {
+          const message = `Your leave has been approved`;
+          const notif = await notificationsApi.sendNotification({
+            user_ids: [String(recipient)],
+            message,
+            type: 'alert',
+          });
+          if (!notif.ok) {
+            // Log for debugging: backend message + correlationId if available
+            // eslint-disable-next-line no-console
+            console.warn('Notification send failed for approveLeave', notif.message, notif.correlationId);
+          }
+          // Dispatch in-app event for immediate UI update
+          try {
+            const detail = {
+              title: 'Leave Approved',
+              message: `Your leave has been approved`,
+              employeeName,
+              data: res,
+            };
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            (window as any).dispatchEvent(new CustomEvent('hrms:notification', { detail }));
+          } catch (e) {
+            // ignore
+          }
+        }
+      } catch (e) {
+        // Do not block main flow on notification errors
+        // eslint-disable-next-line no-console
+        console.warn('Failed to send approval notification', e);
+      }
+    })();
+
+    return res;
   }
 
   async rejectLeave(id: string): Promise<LeaveResponse> {
@@ -209,7 +340,43 @@ class LeaveApiService {
     const response = await axiosInstance.put<LeaveResponse>(
       `${this.baseUrl}/${id}/reject`
     );
-    return response.data;
+    const res = response.data;
+
+    // Notify employee about rejection (non-blocking)
+    (async () => {
+      try {
+        const recipient = (res as any).employeeId ?? (res as any).user?.id ?? (res as any).employee?.id;
+        if (recipient) {
+          const message = `Your leave has been rejected`;
+          const notif = await notificationsApi.sendNotification({
+            user_ids: [String(recipient)],
+            message,
+            type: 'alert',
+          });
+          if (!notif.ok) {
+            // eslint-disable-next-line no-console
+            console.warn('Notification send failed for rejectLeave', notif.message, notif.correlationId);
+          }
+          // Dispatch in-app event for immediate UI update
+          try {
+            const detail = {
+              title: 'Leave Rejected',
+              message: `Your leave has been rejected`,
+              data: res,
+            };
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            (window as any).dispatchEvent(new CustomEvent('hrms:notification', { detail }));
+          } catch (e) {
+            // ignore
+          }
+        }
+      } catch (e) {
+        // eslint-disable-next-line no-console
+        console.warn('Failed to send rejection notification', e);
+      }
+    })();
+
+    return res;
   }
 
   async approveManagerLeave(
@@ -232,7 +399,42 @@ class LeaveApiService {
       `${this.baseUrl}/${id}/manager-remarks`,
       payload
     );
-    return response.data;
+    const res = response.data;
+
+    // Notify employee about manager's remarks update (non-blocking)
+    (async () => {
+      try {
+        const recipient = (res as any).employeeId ?? (res as any).user?.id ?? (res as any).employee?.id;
+        if (recipient) {
+          const message = `Your leave request (id: ${res.id}) has an update from manager.`;
+          const notif = await notificationsApi.sendNotification({
+            user_ids: [String(recipient)],
+            message,
+            type: 'alert',
+          });
+          if (!notif.ok) {
+            // eslint-disable-next-line no-console
+            console.warn('Notification send failed for approveManagerLeave', notif.message, notif.correlationId);
+          }
+          try {
+            const detail = {
+              title: 'Leave Update',
+              message,
+              data: res,
+            };
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            (window as any).dispatchEvent(new CustomEvent('hrms:notification', { detail }));
+          } catch (e) {
+            // ignore
+          }
+        }
+      } catch (e) {
+        // eslint-disable-next-line no-console
+        console.warn('Failed to send manager notification', e);
+      }
+    })();
+
+    return res;
   }
 
   async approveLeaveByManager(
@@ -249,7 +451,42 @@ class LeaveApiService {
       `${this.baseUrl}/${id}/approve-manager`,
       payload
     );
-    return response.data;
+    const res = response.data;
+
+    // Notify employee about manager approval (non-blocking)
+    (async () => {
+      try {
+        const recipient = (res as any).employeeId ?? (res as any).user?.id ?? (res as any).employee?.id;
+        if (recipient) {
+          const message = `Your leave request (id: ${res.id}) has been approved by your manager.`;
+          const notif = await notificationsApi.sendNotification({
+            user_ids: [String(recipient)],
+            message,
+            type: 'alert',
+          });
+          if (!notif.ok) {
+            // eslint-disable-next-line no-console
+            console.warn('Notification send failed for approveLeaveByManager', notif.message, notif.correlationId);
+          }
+          try {
+            const detail = {
+              title: 'Leave Approved',
+              message,
+              data: res,
+            };
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            (window as any).dispatchEvent(new CustomEvent('hrms:notification', { detail }));
+          } catch (e) {
+            // ignore
+          }
+        }
+      } catch (e) {
+        // eslint-disable-next-line no-console
+        console.warn('Failed to send manager approval notification', e);
+      }
+    })();
+
+    return res;
   }
 
   async rejectLeaveByManager(
@@ -271,7 +508,42 @@ class LeaveApiService {
       `${this.baseUrl}/${id}/reject-manager`,
       payload
     );
-    return response.data;
+    const res = response.data;
+
+    // Notify employee about manager rejection (non-blocking)
+    (async () => {
+      try {
+        const recipient = (res as any).employeeId ?? (res as any).user?.id ?? (res as any).employee?.id;
+        if (recipient) {
+          const message = `Your leave request (id: ${res.id}) has been rejected by your manager.`;
+          const notif = await notificationsApi.sendNotification({
+            user_ids: [String(recipient)],
+            message,
+            type: 'alert',
+          });
+          if (!notif.ok) {
+            // eslint-disable-next-line no-console
+            console.warn('Notification send failed for rejectLeaveByManager', notif.message, notif.correlationId);
+          }
+          try {
+            const detail = {
+              title: 'Leave Rejected',
+              message,
+              data: res,
+            };
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            (window as any).dispatchEvent(new CustomEvent('hrms:notification', { detail }));
+          } catch (e) {
+            // ignore
+          }
+        }
+      } catch (e) {
+        // eslint-disable-next-line no-console
+        console.warn('Failed to send manager rejection notification', e);
+      }
+    })();
+
+    return res;
   }
 
   async getLeaveTypes(
@@ -344,7 +616,88 @@ class LeaveApiService {
         },
       }
     );
-    return response.data;
+    const res = response.data;
+
+    // Notify the employee's manager about this created leave (non-blocking)
+    (async () => {
+      try {
+        const employeeId = data.employeeId || (res as any).employeeId || (res as any).user?.id;
+        if (employeeId) {
+          try {
+            const profile = await systemEmployeeApiService.getSystemEmployeeById(
+              String(employeeId)
+            );
+
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const teamId = (profile as any).team || (profile as any).team_id || (profile as any).teamId || undefined;
+            if (teamId) {
+              try {
+                const team = await teamApi.getTeamById(String(teamId));
+                const managerId = team?.manager_id ?? team?.manager?.id;
+                if (managerId) {
+                  const message = `A leave request was created for your team member (leave id: ${res.id}).`;
+                  const notif = await notificationsApi.sendNotification({
+                    user_ids: [String(managerId)],
+                    message,
+                    type: 'alert',
+                  });
+                  if (!notif.ok) {
+                    // eslint-disable-next-line no-console
+                    console.warn('Notification send failed for createLeaveForEmployee (team manager)', notif.message, notif.correlationId);
+                  }
+                  return;
+                }
+              } catch (e) {
+                // ignore and fallback
+              }
+            }
+          } catch (e) {
+            // ignore and fallback
+          }
+        }
+
+        // Fallback: notify available managers
+        try {
+          const managers = await teamApi.getAvailableManagers();
+          const managerIds = managers.map(m => m.id).filter(Boolean).slice(0, 5);
+          if (managerIds.length > 0) {
+            const message = `A new leave request (id: ${res.id}) was submitted. Please review.`;
+            const notif = await notificationsApi.sendNotification({
+              user_ids: managerIds,
+              message,
+              type: 'alert',
+            });
+            if (!notif.ok) {
+              // eslint-disable-next-line no-console
+              console.warn('Notification send failed for createLeaveForEmployee (available managers)', notif.message, notif.correlationId);
+            }
+          }
+        } catch (e) {
+          // eslint-disable-next-line no-console
+          console.warn('Failed to notify managers for leave creation (for-employee)', e);
+        }
+        } catch (err) {
+        // eslint-disable-next-line no-console
+        console.warn('Unexpected error while sending leave creation notification (for-employee)', err);
+      }
+
+      // Dispatch an in-app event to update local UI immediately
+      try {
+        const employeeName = (res as any).employee?.first_name || (res as any).user?.first_name || getCurrentUser()?.first_name || 'Employee';
+        const detail = {
+          title: 'Leave Applied',
+          message: `${employeeName} has applied for leave`,
+          employeeName,
+          data: res,
+        };
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (window as any).dispatchEvent(new CustomEvent('hrms:notification', { detail }));
+      } catch (e) {
+        // ignore
+      }
+    })();
+
+    return res;
   }
 
   async updateLeave(

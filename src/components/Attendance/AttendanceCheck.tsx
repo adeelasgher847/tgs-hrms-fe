@@ -89,6 +89,34 @@ const AttendanceCheck = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  const getRobustCurrentPosition = () =>
+    new Promise<GeolocationPosition>((resolve, reject) => {
+      // First attempt: High accuracy with increased timeout (20s) and allowed cache (5s)
+      navigator.geolocation.getCurrentPosition(
+        resolve,
+        error => {
+          // If high accuracy times out, try low accuracy as fallback
+          if (error.code === error.TIMEOUT) {
+            console.warn(
+              'High accuracy location timed out, falling back to low accuracy...'
+            );
+            navigator.geolocation.getCurrentPosition(resolve, reject, {
+              enableHighAccuracy: false,
+              timeout: 30000, // 30s timeout for fallback
+              maximumAge: 60000, // Accept up to 1 min old position for fallback
+            });
+          } else {
+            reject(error);
+          }
+        },
+        {
+          enableHighAccuracy: true,
+          timeout: 20000, // 20s
+          maximumAge: 5000, // 5s
+        }
+      );
+    });
+
   const handleCheckIn = async () => {
     setLoading(true);
     setError(null);
@@ -100,17 +128,8 @@ const AttendanceCheck = () => {
       return;
     }
 
-    const getPosition = () =>
-      new Promise<GeolocationPosition>((resolve, reject) => {
-        navigator.geolocation.getCurrentPosition(resolve, reject, {
-          enableHighAccuracy: true,
-          timeout: 15000,
-          maximumAge: 0,
-        });
-      });
-
     try {
-      const pos = await getPosition();
+      const pos = await getRobustCurrentPosition();
       const lat = pos.coords.latitude;
       const lon = pos.coords.longitude;
 
@@ -166,17 +185,8 @@ const AttendanceCheck = () => {
       return;
     }
 
-    const getPosition = () =>
-      new Promise<GeolocationPosition>((resolve, reject) => {
-        navigator.geolocation.getCurrentPosition(resolve, reject, {
-          enableHighAccuracy: true,
-          timeout: 15000,
-          maximumAge: 0,
-        });
-      });
-
     try {
-      const pos = await getPosition();
+      const pos = await getRobustCurrentPosition();
       const lat = pos.coords.latitude;
       const lon = pos.coords.longitude;
 
@@ -247,9 +257,9 @@ const AttendanceCheck = () => {
             sx={{ mt: 1 }}
           >
             {isAdminUser ||
-            isSystemAdminUser ||
-            isNetworkAdminUser ||
-            isHRAdminUser
+              isSystemAdminUser ||
+              isNetworkAdminUser ||
+              isHRAdminUser
               ? 'Admin - Track your daily attendance'
               : 'Track your daily attendance'}
           </Typography>

@@ -17,7 +17,11 @@ import {
   isSubMenuVisibleForRole,
 } from '../../utils/permissions';
 import { clearAuthData } from '../../utils/authValidation';
-import { getRoleName } from '../../utils/roleUtils';
+import {
+  getRoleName,
+  isSystemAdmin as isSystemAdminRole,
+} from '../../utils/roleUtils';
+import { isUser as isEmployeeUser } from '../../utils/auth';
 import { Icons } from '../../assets/icons';
 import {
   Apps,
@@ -218,7 +222,11 @@ const menuItems: MenuItem[] = [
     label: 'Teams',
     icon: Icons.teams,
     iconFill: Icons.teamsFill,
-    subItems: [{ label: 'Team Management', path: 'teams' }],
+    subItems: [
+      { label: 'Team Management', path: 'teams' },
+      { label: 'Manager Tasks', path: 'manager-tasks' },
+      { label: 'My Tasks', path: 'my-tasks' },
+    ],
   },
   {
     label: 'Assets',
@@ -236,11 +244,11 @@ const menuItems: MenuItem[] = [
     icon: Icons.attendance,
     iconFill: Icons.attendanceFill,
     subItems: [
+      { label: 'Geofencing', path: 'geofencing' },
       { label: 'Attendance', path: 'AttendanceCheck' },
       { label: 'Daily Attendance', path: 'AttendanceTable' },
       { label: 'Report', path: 'attendance-summary' },
       { label: 'Leave Request', path: 'leaves' },
-      { label: 'Geofencing', path: 'geofencing' },
     ],
   },
   {
@@ -338,6 +346,9 @@ export default function Sidebar({
   const navigate = useNavigate();
   const { user } = useUser();
   const role = user?.role;
+  const userRoleName = getRoleName(role).toLowerCase();
+  const isEmployee =
+    userRoleName === 'user' || userRoleName === 'employee' || isEmployeeUser();
 
   const handleLogout = () => {
     clearAuthData();
@@ -349,6 +360,8 @@ export default function Sidebar({
 
   const filteredMenuItems = useMemo(() => {
     const userRole = getRoleName(role);
+
+    const isSystemAdmin = isSystemAdminRole(role);
 
     const filtered = menuItems
       .filter(item => {
@@ -367,8 +380,39 @@ export default function Sidebar({
           return isSubVisible;
         }),
       }));
+    // If the signed-in user is a plain employee, show a simplified Teams menu
+    // labeled as "My Tasks" (this places quick access to their tasks)
+    if (isEmployee) {
+      return filtered.map(item => {
+        if (item.label === 'Teams') {
+          return {
+            ...item,
+            label: 'My Tasks',
+            subItems: [{ label: 'My Tasks', path: 'my-tasks' }],
+          } as MenuItem;
+        }
+        return item;
+      });
+    }
+
+    // For system admins, keep the menu structure but hide the visible label
+    // for the Manager Tasks subitem (show icon/navigation only).
+    if (isSystemAdmin) {
+      return filtered.map(item => {
+        if (item.label === 'Teams') {
+          return {
+            ...item,
+            subItems: (item.subItems || []).map(sub =>
+              sub.path === 'manager-tasks' ? { ...sub, label: '' } : sub
+            ),
+          } as MenuItem;
+        }
+        return item;
+      });
+    }
+
     return filtered;
-  }, [role]);
+  }, [role, isEmployee]);
 
   useEffect(() => {
     let currentPath = location.pathname.replace('/dashboard/', '');
@@ -724,54 +768,58 @@ export default function Sidebar({
                       id={`${item.label}-submenu`}
                     >
                       <List component='div' disablePadding role='menu'>
-                        {item.subItems?.map(sub => (
-                          <ListItemButton
-                            key={sub.path}
-                            component={NavLink}
-                            to={`/dashboard/${sub.path}`}
-                            onClick={() =>
-                              handleSubItemClick(item.label, sub.label)
-                            }
-                            sx={{
-                              pl: { xs: 7.5, lg: 8 },
-                              py: 1,
-                              fontSize: {
-                                xs: '14px',
-                                lg: 'var(--body-font-size)',
-                              },
-                              color:
-                                activeSubItem === sub.label
-                                  ? theme.palette.mode === 'dark'
-                                    ? 'var(--primary-light-color)'
-                                    : theme.palette.primary.main
-                                  : theme.palette.text.primary,
-                              // '&:hover': {
-                              //   backgroundColor: 'var(--white-100-color)',
-                              //   borderRadius: 'var(--border-radius-lg)',
-                              // },
-                            }}
-                            role='menuitem'
-                            aria-label={`Navigate to ${sub.label}`}
-                          >
-                            <ListItemText
-                              primary={sub.label}
-                              primaryTypographyProps={{
+                        {item.subItems
+                          ?.filter(
+                            sub => !!(sub.label && String(sub.label).trim())
+                          )
+                          .map(sub => (
+                            <ListItemButton
+                              key={sub.path}
+                              component={NavLink}
+                              to={`/dashboard/${sub.path}`}
+                              onClick={() =>
+                                handleSubItemClick(item.label, sub.label)
+                              }
+                              sx={{
+                                pl: { xs: 7.5, lg: 8 },
+                                py: 1,
                                 fontSize: {
                                   xs: '14px',
                                   lg: 'var(--body-font-size)',
                                 },
-                                fontWeight:
-                                  activeSubItem === sub.label ? 600 : 400,
                                 color:
                                   activeSubItem === sub.label
                                     ? theme.palette.mode === 'dark'
                                       ? 'var(--primary-light-color)'
                                       : theme.palette.primary.main
                                     : theme.palette.text.primary,
+                                // '&:hover': {
+                                //   backgroundColor: 'var(--white-100-color)',
+                                //   borderRadius: 'var(--border-radius-lg)',
+                                // },
                               }}
-                            />
-                          </ListItemButton>
-                        ))}
+                              role='menuitem'
+                              aria-label={`Navigate to ${sub.label}`}
+                            >
+                              <ListItemText
+                                primary={sub.label}
+                                primaryTypographyProps={{
+                                  fontSize: {
+                                    xs: '14px',
+                                    lg: 'var(--body-font-size)',
+                                  },
+                                  fontWeight:
+                                    activeSubItem === sub.label ? 600 : 400,
+                                  color:
+                                    activeSubItem === sub.label
+                                      ? theme.palette.mode === 'dark'
+                                        ? 'var(--primary-light-color)'
+                                        : theme.palette.primary.main
+                                      : theme.palette.text.primary,
+                                }}
+                              />
+                            </ListItemButton>
+                          ))}
                       </List>
                     </Collapse>
                   </>

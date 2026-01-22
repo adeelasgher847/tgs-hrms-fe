@@ -1,17 +1,38 @@
 import axiosInstance from './axiosInstance';
 
+export interface UserShort {
+  id: string;
+  first_name: string;
+  last_name: string;
+  email: string;
+}
+
 export interface AttendanceEvent {
   id: string;
   user_id: string;
   timestamp: string;
   type: 'check-in' | 'check-out' | string;
   near_boundary?: boolean;
-  user?: {
-    id: string;
-    first_name: string;
-    last_name: string;
-    email: string;
-  };
+  user?: UserShort;
+}
+
+export interface TeamAttendanceEntry {
+  date: string;
+  checkIn: string | null;
+  checkOut: string | null;
+  workedHours: number;
+}
+
+export interface TeamMember {
+  user_id: string;
+  first_name: string;
+  last_name: string;
+  email?: string;
+  profile_pic?: string;
+  attendance: TeamAttendanceEntry[];
+  user?: UserShort;
+  totalDaysWorked?: number;
+  totalHoursWorked?: number;
 }
 
 export interface AttendanceRecord {
