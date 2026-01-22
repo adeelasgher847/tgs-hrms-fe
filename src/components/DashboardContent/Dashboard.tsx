@@ -181,10 +181,6 @@ const Dashboard: React.FC = () => {
               width: '100%',
               borderRadius: '20px',
               backgroundColor: theme.palette.background.paper,
-              boxShadow:
-                theme.palette.mode === 'dark'
-                  ? '0 1px 3px rgba(0,0,0,0.3)'
-                  : '0 1px 3px rgba(0,0,0,0.1)',
             }}
           >
             <TenantGrowthChart />

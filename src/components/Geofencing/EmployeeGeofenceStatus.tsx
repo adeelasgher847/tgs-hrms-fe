@@ -2,11 +2,20 @@ import { useEffect, useState } from 'react';
 import {
   Box,
   Typography,
-  Paper,
   Alert,
   CircularProgress,
   Chip,
+  LinearProgress,
+  Card,
+  CardContent,
+  useTheme,
+  alpha,
 } from '@mui/material';
+import {
+  CheckCircle as CheckCircleIcon,
+  Warning as WarningIcon,
+  RadioButtonChecked as RadioButtonCheckedIcon,
+} from '@mui/icons-material';
 import {
   MapContainer,
   TileLayer,
@@ -15,6 +24,7 @@ import {
   Rectangle,
   Marker,
   Popup,
+  useMap,
 } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
@@ -22,9 +32,7 @@ import icon from 'leaflet/dist/images/marker-icon.png';
 import iconShadow from 'leaflet/dist/images/marker-shadow.png';
 import type { Geofence } from '../../types/geofencing';
 import { geofencingApi } from '../../api/geofencingApi';
-import AppButton from '../common/AppButton';
 
-// Fix for default marker icons in React-Leaflet
 const DefaultIcon = L.icon({
   iconUrl: icon,
   shadowUrl: iconShadow,
@@ -34,33 +42,62 @@ const DefaultIcon = L.icon({
 L.Marker.prototype.options.icon = DefaultIcon;
 
 type LatLngTuple = [number, number];
+const CHECK_IN_THRESHOLD = 20;
 
-interface NearestGeofenceInfo {
-  geofence: Geofence;
-  distanceMeters: number;
-  isInside: boolean;
+/* ---------------- Map Fit Helper ---------------- */
+
+function FitGeofence({ geofence }: { geofence: Geofence }) {
+  const map = useMap();
+
+  useEffect(() => {
+    if (!geofence) return;
+
+    if (geofence.type === 'circle' && geofence.radius) {
+      const threshold = geofence.threshold_enabled && geofence.threshold_distance
+        ? geofence.threshold_distance
+        : CHECK_IN_THRESHOLD;
+      const bounds = L.circle(geofence.center, {
+        radius: geofence.radius + threshold,
+      }).getBounds();
+      map.fitBounds(bounds, { padding: [40, 40] });
+    }
+
+    if (
+      (geofence.type === 'polygon' || geofence.type === 'rectangle') &&
+      geofence.coordinates
+    ) {
+      const bounds = L.latLngBounds(
+        geofence.coordinates as LatLngTuple[]
+      );
+      map.fitBounds(bounds, { padding: [40, 40] });
+    }
+  }, [geofence, map]);
+
+  return null;
 }
+
+/* ---------------- Utils ---------------- */
 
 function haversineDistanceMeters(a: LatLngTuple, b: LatLngTuple): number {
   const toRad = (v: number) => (v * Math.PI) / 180;
-  const R = 6371000; // meters
+  const R = 6371000;
   const dLat = toRad(b[0] - a[0]);
   const dLon = toRad(b[1] - a[1]);
   const lat1 = toRad(a[0]);
   const lat2 = toRad(b[0]);
 
-  const sinDLat = Math.sin(dLat / 2);
-  const sinDLon = Math.sin(dLon / 2);
-
   const h =
-    sinDLat * sinDLat +
-    Math.cos(lat1) * Math.cos(lat2) * sinDLon * sinDLon;
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos(lat1) * Math.cos(lat2) * Math.sin(dLon / 2) ** 2;
 
-  const c = 2 * Math.atan2(Math.sqrt(h), Math.sqrt(1 - h));
-  return R * c;
+  return 2 * R * Math.atan2(Math.sqrt(h), Math.sqrt(1 - h));
 }
 
-// Basic point-in-polygon using ray casting. Works for both polygon & rectangle coordinates.
+function formatDistance(m: number): string {
+  if (m < 1000) return `${Math.round(m)} m`;
+  return `${(m / 1000).toFixed(2)} km`;
+}
+
 function isPointInPolygon(point: LatLngTuple, polygon: LatLngTuple[]): boolean {
   let inside = false;
   const [x, y] = point;
@@ -80,364 +117,318 @@ function isPointInPolygon(point: LatLngTuple, polygon: LatLngTuple[]): boolean {
   return inside;
 }
 
-function formatDistance(meters: number): string {
-  if (meters < 0) meters = 0;
-  if (meters < 50) return `${Math.round(meters)} m`;
-  if (meters < 1000) return `${Math.round(meters)} m`;
-  const km = meters / 1000;
-  if (km < 10) return `${km.toFixed(2)} km`;
-  return `${km.toFixed(1)} km`;
-}
+/* ---------------- Component ---------------- */
 
 const EmployeeGeofenceStatus = () => {
-  const [loading, setLoading] = useState(false);
+  const theme = useTheme();
+
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [position, setPosition] = useState<LatLngTuple | null>(null);
-  const [nearest, setNearest] = useState<NearestGeofenceInfo | null>(null);
+  const [geofence, setGeofence] = useState<Geofence | null>(null);
+  const [distance, setDistance] = useState<number>(0);
 
-  const loadStatus = async () => {
-    setLoading(true);
-    setError(null);
-
-    if (!('geolocation' in navigator)) {
-      setError('Geolocation is not available on this device.');
-      setLoading(false);
-      return;
-    }
-
-    const getPosition = () =>
-      new Promise<GeolocationPosition>((resolve, reject) => {
-        navigator.geolocation.getCurrentPosition(resolve, reject, {
-          enableHighAccuracy: true,
-          timeout: 15000,
-          maximumAge: 0,
-        });
-      });
-
-    try {
-      const [pos, geofences] = await Promise.all([
-        getPosition(),
-        geofencingApi.getGeofences(),
-      ]);
-
-      const current: LatLngTuple = [
-        pos.coords.latitude,
-        pos.coords.longitude,
-      ];
-      setPosition(current);
-
-      const active = geofences.filter(g => g.isActive);
-      if (active.length === 0) {
-        setError('No active geofences configured for your tenant/team.');
-        setNearest(null);
-        return;
-      }
-
-      let best: NearestGeofenceInfo | null = null;
-
-      for (const g of active) {
-        let isInside = false;
-        let distance = 0;
-
-        if (g.type === 'circle' && g.radius) {
-          const distToCenter = haversineDistanceMeters(current, g.center);
-          isInside = distToCenter <= g.radius;
-          distance = isInside ? 0 : distToCenter - g.radius;
-        } else if (g.coordinates && g.coordinates.length >= 3) {
-          const coords = g.coordinates as LatLngTuple[];
-          isInside = isPointInPolygon(current, coords);
-          // As an approximation, use distance to geofence center when outside
-          distance = isInside
-            ? 0
-            : haversineDistanceMeters(current, g.center);
-        } else {
-          // Fallback: use distance to center only
-          distance = haversineDistanceMeters(current, g.center);
-        }
-
-        if (!best || distance < best.distanceMeters) {
-          best = { geofence: g, distanceMeters: distance, isInside };
-        }
-      }
-
-      setNearest(best);
-    } catch (err: unknown) {
-      if (err && typeof err === 'object' && 'code' in err) {
-        const ge = err as GeolocationPositionError;
-        if (ge.code === ge.PERMISSION_DENIED) {
-          setError(
-            'Location permission denied. Please allow location access to see geofence distance.'
-          );
-        } else if (ge.code === ge.POSITION_UNAVAILABLE) {
-          setError(
-            'Unable to determine your location. Please ensure GPS is enabled.'
-          );
-        } else if (ge.code === ge.TIMEOUT) {
-          setError('Location request timed out. Please try again.');
-        } else {
-          setError('Failed to get location. Please try again.');
-        }
-      } else {
-        setError('Failed to load geofence status. Please try again.');
-      }
-    } finally {
-      setLoading(false);
-    }
-  };
+  /* -------- Auto live tracking -------- */
 
   useEffect(() => {
-    loadStatus();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    let watchId: number | null = null;
+    let positionBuffer: GeolocationPosition[] = [];
+    const bufferSize = 3;
+    let updateTimeout: NodeJS.Timeout | null = null;
+
+    (async () => {
+      try {
+        const list = await geofencingApi.getGeofences();
+        const active = list.find(g => g.isActive);
+        if (!active) {
+          setError('No active geofence configured.');
+          setLoading(false);
+          return;
+        }
+
+        setGeofence(active);
+
+        const updateDistance = (current: LatLngTuple) => {
+          let dist = 0;
+          let isInside = false;
+
+          if (active.type === 'circle' && active.radius) {
+            const distToCenter = haversineDistanceMeters(current, active.center);
+            isInside = distToCenter <= active.radius;
+            dist = isInside ? 0 : distToCenter - active.radius;
+          } else if (active.coordinates && active.coordinates.length >= 3) {
+            const coords = active.coordinates as LatLngTuple[];
+            isInside = isPointInPolygon(current, coords);
+            dist = isInside ? 0 : haversineDistanceMeters(current, active.center);
+          } else {
+            dist = haversineDistanceMeters(current, active.center);
+          }
+
+          setDistance(dist);
+        };
+
+        const processPosition = () => {
+          if (positionBuffer.length === 0) return;
+
+          const avgLat =
+            positionBuffer.reduce((sum, p) => sum + p.coords.latitude, 0) /
+            positionBuffer.length;
+          const avgLon =
+            positionBuffer.reduce((sum, p) => sum + p.coords.longitude, 0) /
+            positionBuffer.length;
+
+          const current: LatLngTuple = [avgLat, avgLon];
+          setPosition(current);
+          updateDistance(current);
+          setLoading(false);
+          positionBuffer = [];
+        };
+
+        watchId = navigator.geolocation.watchPosition(
+          pos => {
+            positionBuffer.push(pos);
+            if (positionBuffer.length > bufferSize) {
+              positionBuffer.shift();
+            }
+
+            if (updateTimeout) {
+              clearTimeout(updateTimeout);
+            }
+            updateTimeout = setTimeout(processPosition, 2000);
+          },
+          (err) => {
+            console.warn('Geolocation watch error:', err);
+            if (err.code === err.TIMEOUT) {
+              setError('Location request timed out. Please ensure GPS is enabled and try again.');
+            } else if (err.code === err.PERMISSION_DENIED) {
+              setError('Location permission denied. Please allow location access.');
+            } else {
+              setError('Unable to access live location.');
+            }
+            setLoading(false);
+          },
+          {
+            enableHighAccuracy: true,
+            timeout: 30000, // Increased to 30 seconds
+            maximumAge: 10000, // Accept positions up to 10 seconds old
+          }
+        );
+      } catch {
+        setError('Failed to load geofence.');
+        setLoading(false);
+      }
+    })();
+
+    return () => {
+      if (watchId !== null) {
+        navigator.geolocation.clearWatch(watchId);
+      }
+      if (updateTimeout) {
+        clearTimeout(updateTimeout);
+      }
+    };
   }, []);
 
-  const hasData = position && nearest;
+  /* -------- Derived state -------- */
+
+  const threshold = geofence?.threshold_enabled && geofence.threshold_distance
+    ? geofence.threshold_distance
+    : CHECK_IN_THRESHOLD;
+
+  const isInside =
+    geofence?.type === 'circle' &&
+    geofence.radius !== undefined &&
+    distance <= geofence.radius;
+
+  const canCheckIn =
+    isInside || distance <= threshold;
+
+  const progress = Math.min(
+    100,
+    Math.max(
+      0,
+      ((threshold - distance) / threshold) * 100
+    )
+  );
+
+  /* ---------------- UI ---------------- */
 
   return (
-    <Paper
-      sx={{
-        p: 3,
-        borderRadius: 1,
-        mt: 2,
-        boxShadow: 'unset',
-      }}
-    >
-      <Box
-        display='flex'
-        flexDirection={{ xs: 'column', md: 'row' }}
-        justifyContent='space-between'
-        alignItems={{ xs: 'flex-start', md: 'center' }}
-        gap={2}
-        mb={2}
-      >
-        <Box>
-          <Typography variant='h6' fontWeight={600}>
-            Live Geofence Distance
-          </Typography>
-          <Typography variant='body2' color='text.secondary'>
-            See how far you are from the nearest active geofence in real time.
-          </Typography>
-        </Box>
-
-        <Box display='flex' gap={1} alignItems='center'>
-          {nearest && (
-            <Chip
-              label={nearest.isInside ? 'Inside Geofence' : 'Outside Geofence'}
-              color={nearest.isInside ? 'success' : 'warning'}
-              size='small'
-            />
-          )}
-          <AppButton
-            variant='outlined'
-            size='small'
-            onClick={loadStatus}
-            disabled={loading}
-          >
-            {loading ? 'Refreshing...' : 'Refresh Location'}
-          </AppButton>
-        </Box>
-      </Box>
-
-      {error && (
-        <Alert severity='warning' sx={{ mb: 2 }}>
-          {error}
-        </Alert>
-      )}
-
-      {loading && !hasData && (
-        <Box
-          display='flex'
-          justifyContent='center'
-          alignItems='center'
-          minHeight='220px'
-        >
-          <CircularProgress size={28} />
-        </Box>
-      )}
-
-      {!loading && !hasData && !error && (
-        <Typography variant='body2' color='text.secondary'>
-          Geofence information is not available.
+    <Card sx={{ mt: 2, borderRadius: 2 }}>
+      <CardContent sx={{ p: 3 }}>
+        <Typography variant="h5" fontWeight={700} mb={0.5}>
+          Live Geofence Tracking
         </Typography>
-      )}
+        <Typography variant="body2" color="text.secondary" mb={2}>
+          Live location tracking is active automatically
+        </Typography>
 
-      {hasData && nearest && position && (
-        <Box
-          sx={{
-            display: 'flex',
-            flexDirection: { xs: 'column', md: 'row' },
-            gap: 2,
-          }}
-        >
-          <Box sx={{ width: { xs: '100%', md: '35%' } }}>
-            <Typography variant='subtitle2' color='text.secondary' gutterBottom>
-              Nearest Geofence
-            </Typography>
-            <Typography variant='body1' fontWeight={600}>
-              {nearest.geofence.name}
-            </Typography>
-            {nearest.geofence.description && (
-              <Typography
-                variant='body2'
-                color='text.secondary'
-                sx={{ mt: 0.5 }}
-              >
-                {nearest.geofence.description}
-              </Typography>
-            )}
-            <Box sx={{ mt: 2 }}>
-              <Typography
-                variant='body2'
-                color='text.secondary'
-                gutterBottom
-              >
-                Distance to geofence
-              </Typography>
-              <Typography variant='h6' fontWeight={700}>
-                {nearest.isInside
-                  ? 'Inside geofence'
-                  : formatDistance(nearest.distanceMeters)}
-              </Typography>
-              {!nearest.isInside && (
-                <Typography
-                  variant='caption'
-                  color='text.secondary'
-                  display='block'
-                  sx={{ mt: 0.5 }}
-                >
-                  Distance is approximate for non-circular geofences.
-                </Typography>
-              )}
-            </Box>
-          </Box>
+        {error && (
+          <Alert severity="warning" sx={{ mb: 2 }}>
+            {error}
+          </Alert>
+        )}
 
+        {loading && (
           <Box
-            sx={{
-              width: { xs: '100%', md: '65%' },
-              height: 260,
-              borderRadius: 1,
-              overflow: 'hidden',
-              border: '1px solid',
-              borderColor: 'divider',
-              '& .leaflet-container': {
-                height: '100%',
-                width: '100%',
-              },
-            }}
+            display="flex"
+            justifyContent="center"
+            alignItems="center"
+            minHeight={300}
           >
-            <MapContainer
-              center={position}
-              zoom={16}
-              style={{ height: '100%', width: '100%' }}
-              scrollWheelZoom
-            >
-              <TileLayer
-                attribution='&copy; OpenStreetMap contributors'
-                url='https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png'
-              />
+            <CircularProgress />
+          </Box>
+        )}
 
-              {/* Employee position */}
-              <Marker position={position}>
-                <Popup>
-                  <Typography variant='subtitle2'>Your location</Typography>
-                  <Typography variant='caption'>
-                    {position[0].toFixed(6)}, {position[1].toFixed(6)}
+        {!loading && position && geofence && (
+          <Box
+            display="flex"
+            flexDirection={{ xs: 'column', lg: 'row' }}
+            gap={3}
+          >
+            {/* LEFT */}
+            <Box width={{ xs: '100%', lg: '40%' }} display="flex" flexDirection="column" gap={2}>
+              <Card
+                sx={{
+                  p: 2.5,
+                  borderRadius: 2,
+                  border: `2px solid ${
+                    canCheckIn
+                      ? theme.palette.success.main
+                      : theme.palette.warning.main
+                  }`,
+                  background: alpha(
+                    canCheckIn
+                      ? theme.palette.success.main
+                      : theme.palette.warning.main,
+                    0.08
+                  ),
+                }}
+              >
+                <Box display="flex" gap={1.5} alignItems="center">
+                  {canCheckIn ? (
+                    <CheckCircleIcon color="success" />
+                  ) : (
+                    <WarningIcon color="warning" />
+                  )}
+                  <Box>
+                    <Typography variant="caption">
+                      Check-in Status
+                    </Typography>
+                    <Typography variant="h6" fontWeight={700}>
+                      {canCheckIn
+                        ? 'You Can Check In'
+                        : 'Too Far to Check In'}
+                    </Typography>
+                  </Box>
+                </Box>
+
+                {!canCheckIn && (
+                  <Box mt={2}>
+                    <LinearProgress
+                      variant="determinate"
+                      value={progress}
+                      sx={{ height: 8, borderRadius: 4 }}
+                    />
+                  </Box>
+                )}
+              </Card>
+
+              <Card sx={{ p: 2.5 }}>
+                <Typography variant="caption">
+                  Distance to Geofence
+                </Typography>
+                <Box display="flex" gap={1} alignItems="center">
+                  <RadioButtonCheckedIcon
+                    color={canCheckIn ? 'success' : 'disabled'}
+                  />
+                  <Typography variant="h4" fontWeight={800}>
+                    {isInside ? 'Inside' : formatDistance(distance)}
                   </Typography>
-                </Popup>
-              </Marker>
+                </Box>
+              </Card>
+            </Box>
 
-              {/* Nearest geofence geometry */}
-              {nearest.geofence.type === 'circle' &&
-                nearest.geofence.radius && (
-                  <Circle
-                    center={nearest.geofence.center}
-                    radius={nearest.geofence.radius}
-                    pathOptions={{
-                      color: '#3083dc',
-                      fillColor: '#3083dc',
-                      fillOpacity: 0.25,
-                    }}
-                  >
-                    <Popup>
-                      <Typography variant='subtitle2'>
-                        {nearest.geofence.name}
-                      </Typography>
-                      {nearest.geofence.description && (
-                        <Typography variant='body2'>
-                          {nearest.geofence.description}
-                        </Typography>
-                      )}
-                      <Typography variant='caption'>
-                        Radius: {nearest.geofence.radius} m
-                      </Typography>
-                    </Popup>
-                  </Circle>
+            {/* MAP */}
+            <Box
+              width={{ xs: '100%', lg: '60%' }}
+              height={420}
+              borderRadius={2}
+              overflow="hidden"
+              border="1px solid"
+              borderColor="divider"
+            >
+              <MapContainer style={{ height: '100%' }} zoom={16}>
+                <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
+                <FitGeofence geofence={geofence} />
+
+                <Marker position={position}>
+                  <Popup>Your location</Popup>
+                </Marker>
+
+                {/* Circle geofence with threshold */}
+                {geofence.type === 'circle' && geofence.radius && (
+                  <>
+                    <Circle
+                      center={geofence.center}
+                      radius={geofence.radius + threshold}
+                      pathOptions={{
+                        color: canCheckIn ? '#4caf50' : '#ff9800',
+                        dashArray: '8 6',
+                        fillOpacity: 0.12,
+                      }}
+                    />
+                    <Circle
+                      center={geofence.center}
+                      radius={geofence.radius}
+                      pathOptions={{
+                        color: '#1976d2',
+                        fillOpacity: 0.3,
+                        weight: 3,
+                      }}
+                    />
+                  </>
                 )}
 
-              {nearest.geofence.type === 'rectangle' &&
-                nearest.geofence.coordinates &&
-                nearest.geofence.coordinates.length >= 4 && (
+                {geofence.type === 'polygon' && geofence.coordinates && (
+                  <Polygon
+                    positions={geofence.coordinates}
+                    pathOptions={{
+                      color: '#1976d2',
+                      fillOpacity: 0.3,
+                      weight: 3,
+                    }}
+                  />
+                )}
+
+                {geofence.type === 'rectangle' && geofence.coordinates && (
                   <Rectangle
                     bounds={
                       [
                         [
-                          nearest.geofence.coordinates[0][0],
-                          nearest.geofence.coordinates[0][1],
+                          geofence.coordinates[0][0],
+                          geofence.coordinates[0][1],
                         ],
                         [
-                          nearest.geofence.coordinates[2][0],
-                          nearest.geofence.coordinates[2][1],
+                          geofence.coordinates[2][0],
+                          geofence.coordinates[2][1],
                         ],
                       ] as [[number, number], [number, number]]
                     }
                     pathOptions={{
-                      color: '#3083dc',
-                      fillColor: '#3083dc',
-                      fillOpacity: 0.25,
+                      color: '#1976d2',
+                      fillOpacity: 0.3,
+                      weight: 3,
                     }}
-                  >
-                    <Popup>
-                      <Typography variant='subtitle2'>
-                        {nearest.geofence.name}
-                      </Typography>
-                      {nearest.geofence.description && (
-                        <Typography variant='body2'>
-                          {nearest.geofence.description}
-                        </Typography>
-                      )}
-                    </Popup>
-                  </Rectangle>
+                  />
                 )}
-
-              {nearest.geofence.type === 'polygon' &&
-                nearest.geofence.coordinates && (
-                  <Polygon
-                    positions={nearest.geofence.coordinates}
-                    pathOptions={{
-                      color: '#3083dc',
-                      fillColor: '#3083dc',
-                      fillOpacity: 0.25,
-                    }}
-                  >
-                    <Popup>
-                      <Typography variant='subtitle2'>
-                        {nearest.geofence.name}
-                      </Typography>
-                      {nearest.geofence.description && (
-                        <Typography variant='body2'>
-                          {nearest.geofence.description}
-                        </Typography>
-                      )}
-                    </Popup>
-                  </Polygon>
-                )}
-            </MapContainer>
+              </MapContainer>
+            </Box>
           </Box>
-        </Box>
-      )}
-    </Paper>
+        )}
+      </CardContent>
+    </Card>
   );
 };
 
 export default EmployeeGeofenceStatus;
-
-

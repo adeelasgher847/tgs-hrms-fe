@@ -9,6 +9,8 @@ export interface Geofence {
   radius?: number; // For circle type
   coordinates?: [number, number][]; // For polygon/rectangle type
   isActive: boolean;
+  threshold_enabled?: boolean;
+  threshold_distance?: number; // in meters
   createdAt: string;
   updatedAt: string;
 }

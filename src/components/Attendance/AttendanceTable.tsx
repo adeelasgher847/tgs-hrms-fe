@@ -10,6 +10,7 @@ import {
   CircularProgress,
   IconButton,
   Tooltip,
+  Chip,
 } from '@mui/material';
 import FileDownloadIcon from '@mui/icons-material/FileDownload';
 import DatePicker from 'react-multi-date-picker';
@@ -54,6 +55,7 @@ interface AttendanceRecord {
   checkIn?: string | null;
   checkOut?: string | null;
   workedHours?: number | null;
+  near_boundary?: boolean;
   user?: { first_name?: string; last_name?: string } | null;
 }
 
@@ -274,17 +276,23 @@ const AttendanceTable = () => {
         checkIn: {
           id: string;
           timestamp: string;
+          near_boundary?: boolean;
           user?: { first_name?: string; last_name?: string };
         };
-        checkOut: { id: string; timestamp: string } | null;
+        checkOut: { id: string; timestamp: string; near_boundary?: boolean } | null;
       }> = [];
 
       for (const event of userEventList) {
+        // Find the original event to get near_boundary
+        const originalEvent = events.find(e => String(e.id) === event.id);
+        const nearBoundary = originalEvent?.near_boundary ?? false;
+        
         if (event.type === 'check-in') {
           openSessions.push({
             checkIn: {
               id: event.id,
               timestamp: event.timestamp,
+              near_boundary: nearBoundary,
               user: event.user,
             },
             checkOut: null,
@@ -298,6 +306,7 @@ const AttendanceTable = () => {
             openSessions[lastOpenIndex].checkOut = {
               id: event.id,
               timestamp: event.timestamp,
+              near_boundary: nearBoundary,
             };
           }
         }
@@ -331,6 +340,7 @@ const AttendanceTable = () => {
           checkIn: toDisplayTime(session.checkIn.timestamp),
           checkOut: checkOutDisplay,
           workedHours,
+          near_boundary: session.checkIn.near_boundary || session.checkOut?.near_boundary || false,
           user: {
             first_name: session.checkIn.user?.first_name || 'N/A',
             last_name: session.checkIn.user?.last_name || '',
@@ -1846,6 +1856,7 @@ const AttendanceTable = () => {
                   <TableCell sx={{ fontWeight: 'bold' }}>Check In</TableCell>
                   <TableCell sx={{ fontWeight: 'bold' }}>Check Out</TableCell>
                   <TableCell sx={{ fontWeight: 'bold' }}>Worked Hours</TableCell>
+                  <TableCell sx={{ fontWeight: 'bold' }}>Status</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
@@ -1853,7 +1864,7 @@ const AttendanceTable = () => {
                   <TableRow>
                     <TableCell
                       colSpan={
-                        canViewAllAttendance && adminView === 'all' ? 5 : 4
+                        canViewAllAttendance && adminView === 'all' ? 6 : 5
                       }
                       align='center'
                     >
@@ -1876,13 +1887,23 @@ const AttendanceTable = () => {
                       <TableCell>{record.checkIn || '--'}</TableCell>
                       <TableCell>{record.checkOut || '--'}</TableCell>
                       <TableCell>{record.workedHours ?? '--'}</TableCell>
+                      <TableCell>
+                        {record.near_boundary && (
+                          <Chip
+                            label='Near Boundary'
+                            size='small'
+                            color='info'
+                            sx={{ fontSize: '0.7rem', height: 24 }}
+                          />
+                        )}
+                      </TableCell>
                     </TableRow>
                   ))
                 ) : (
                   <TableRow>
                     <TableCell
                       colSpan={
-                        canViewAllAttendance && adminView === 'all' ? 5 : 4
+                        canViewAllAttendance && adminView === 'all' ? 6 : 5
                       }
                       align='center'
                     >

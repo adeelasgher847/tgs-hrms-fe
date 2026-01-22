@@ -5,6 +5,7 @@ export interface AttendanceEvent {
   user_id: string;
   timestamp: string;
   type: 'check-in' | 'check-out' | string;
+  near_boundary?: boolean;
   user?: {
     id: string;
     first_name: string;

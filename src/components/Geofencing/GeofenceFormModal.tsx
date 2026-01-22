@@ -315,6 +315,8 @@ const GeofenceFormModal: React.FC<GeofenceFormModalProps> = ({
     description: '',
     type: 'circle' as 'circle' | 'polygon' | 'rectangle',
     isActive: true,
+    threshold_enabled: false,
+    threshold_distance: 50,
   });
 
   // Track initial snapshot to detect changes for enabling Update button
@@ -326,6 +328,8 @@ const GeofenceFormModal: React.FC<GeofenceFormModalProps> = ({
     type?: 'circle' | 'polygon' | 'rectangle' | null;
     radius?: number | null;
     coordinates?: [number, number][] | null;
+    threshold_enabled?: boolean;
+    threshold_distance?: number | null;
   } | null>(null);
 
   type ShapeData = {
@@ -361,6 +365,8 @@ const GeofenceFormModal: React.FC<GeofenceFormModalProps> = ({
     if (formData.name.trim() !== (init.name || '')) return true;
     if ((formData.description || '') !== (init.description || '')) return true;
     if (formData.isActive !== !!init.isActive) return true;
+    if (formData.threshold_enabled !== (init.threshold_enabled ?? false)) return true;
+    if (formData.threshold_distance !== (init.threshold_distance ?? 50)) return true;
 
     // Compare center/coordinates/drawn shape
     const coordsEqual = (
@@ -408,6 +414,34 @@ const GeofenceFormModal: React.FC<GeofenceFormModalProps> = ({
     return false;
   })();
 
+  // Get user's current location for default map center
+  useEffect(() => {
+    if (open && !geofence) {
+      // Only get location when creating a new geofence
+      if ('geolocation' in navigator) {
+        navigator.geolocation.getCurrentPosition(
+          (position) => {
+            const userLocation: [number, number] = [
+              position.coords.latitude,
+              position.coords.longitude,
+            ];
+            setMapCenter(userLocation);
+            setMapZoom(15);
+          },
+          (error) => {
+            console.warn('Could not get user location:', error);
+            // Keep default location
+          },
+          {
+            enableHighAccuracy: true,
+            timeout: 10000,
+            maximumAge: 60000,
+          }
+        );
+      }
+    }
+  }, [open, geofence]);
+
   useEffect(() => {
     if (open) {
       if (geofence) {
@@ -416,6 +450,8 @@ const GeofenceFormModal: React.FC<GeofenceFormModalProps> = ({
           description: geofence.description || '',
           type: geofence.type,
           isActive: geofence.isActive,
+          threshold_enabled: geofence.threshold_enabled ?? false,
+          threshold_distance: geofence.threshold_distance ?? 50,
         });
         setSelectedLocation(geofence.center);
         setSelectedLocationName(geofence.name);
@@ -448,6 +484,8 @@ const GeofenceFormModal: React.FC<GeofenceFormModalProps> = ({
           type: geofence.type,
           radius: geofence.radius ?? null,
           coordinates: geofence.coordinates ?? null,
+          threshold_enabled: geofence.threshold_enabled ?? false,
+          threshold_distance: geofence.threshold_distance ?? null,
         };
       } else {
         setFormData({
@@ -455,12 +493,14 @@ const GeofenceFormModal: React.FC<GeofenceFormModalProps> = ({
           description: '',
           type: 'circle',
           isActive: true,
+          threshold_enabled: false,
+          threshold_distance: 50,
         });
         setSelectedLocation(null);
         setSelectedLocationName('');
         setSearchQuery('');
         setDrawnShape(null);
-        setMapCenter([40.7128, -74.006]);
+        // Map center will be set by geolocation effect above
         setMapZoom(13);
         setManualCoordinates({
           latitude: '',
@@ -880,6 +920,8 @@ const GeofenceFormModal: React.FC<GeofenceFormModalProps> = ({
       radius,
       coordinates,
       isActive: formData.isActive,
+      threshold_enabled: formData.threshold_enabled,
+      threshold_distance: formData.threshold_enabled ? formData.threshold_distance : undefined,
     });
   };
 
@@ -1132,6 +1174,45 @@ const GeofenceFormModal: React.FC<GeofenceFormModalProps> = ({
                 }
                 label='Active'
               />
+
+              {/* Threshold Distance Toggle and Input */}
+              <FormControlLabel
+                control={
+                  <Switch
+                    checked={formData.threshold_enabled}
+                    onChange={e =>
+                      setFormData({
+                        ...formData,
+                        threshold_enabled: e.target.checked,
+                      })
+                    }
+                  />
+                }
+                label='Enable Threshold Distance'
+              />
+
+              {formData.threshold_enabled && (
+                <TextField
+                  label='Threshold Distance (meters)'
+                  fullWidth
+                  size='small'
+                  type='number'
+                  value={formData.threshold_distance}
+                  onChange={e => {
+                    const value = parseFloat(e.target.value);
+                    if (!isNaN(value) && value > 0) {
+                      setFormData({
+                        ...formData,
+                        threshold_distance: value,
+                      });
+                    }
+                  }}
+                  inputProps={{
+                    min: 1,
+                    step: 1,
+                  }}
+                />
+              )}
 
               {drawnShape && (
                 <Alert severity='success'>

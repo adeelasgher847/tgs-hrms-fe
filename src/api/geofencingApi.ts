@@ -16,6 +16,8 @@ export interface GeofenceResponse {
   coordinates?: [number, number][] | null;
   type?: 'circle' | 'polygon' | 'rectangle' | string | null;
   team_id?: string | null;
+  threshold_enabled?: boolean | null;
+  threshold_distance?: number | null;
 }
 
 export interface CreateGeofencePayload {
@@ -28,6 +30,8 @@ export interface CreateGeofencePayload {
   radius?: number | null;
   coordinates?: [number, number][] | null;
   team_id?: string;
+  threshold_enabled?: boolean;
+  threshold_distance?: number | null;
 }
 
 export interface UpdateGeofencePayload {
@@ -40,6 +44,8 @@ export interface UpdateGeofencePayload {
   radius?: number | null;
   coordinates?: [number, number][] | null;
   team_id?: string | null;
+  threshold_enabled?: boolean;
+  threshold_distance?: number | null;
 }
 
 class GeofencingApiService {
@@ -56,6 +62,8 @@ class GeofencingApiService {
       radius: item.radius ? Number(item.radius) : undefined,
       coordinates: item.coordinates ?? undefined,
       isActive: item.status === 'active',
+      threshold_enabled: item.threshold_enabled ?? false,
+      threshold_distance: item.threshold_distance ? Number(item.threshold_distance) : undefined,
       createdAt: item.created_at,
       updatedAt: item.updated_at,
     };
@@ -110,6 +118,11 @@ class GeofencingApiService {
     if (typeof asAny.teamId !== 'undefined') payload.team_id = asAny.teamId;
     if (typeof asAny.team_id !== 'undefined') payload.team_id = asAny.team_id;
 
+    if (typeof asAny.threshold_enabled !== 'undefined')
+      payload.threshold_enabled = asAny.threshold_enabled;
+    if (typeof asAny.threshold_distance !== 'undefined')
+      payload.threshold_distance = asAny.threshold_distance ?? null;
+
     const resp = await axiosInstance.post<GeofenceResponse>(
       '/geofences',
       payload
@@ -157,6 +170,11 @@ class GeofencingApiService {
     // teamId (frontend) -> team_id (backend)
     if (typeof asAny.teamId !== 'undefined') payload.team_id = asAny.teamId;
     if (typeof asAny.team_id !== 'undefined') payload.team_id = asAny.team_id;
+
+    if (typeof asAny.threshold_enabled !== 'undefined')
+      payload.threshold_enabled = asAny.threshold_enabled;
+    if (typeof asAny.threshold_distance !== 'undefined')
+      payload.threshold_distance = asAny.threshold_distance ?? null;
 
     const resp = await axiosInstance.patch<GeofenceResponse>(
       `/geofences/${id}`,

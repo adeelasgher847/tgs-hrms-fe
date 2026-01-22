@@ -302,6 +302,9 @@ const GeofencingManagement = () => {
                 <Typography variant='caption' color='text.secondary'>
                   Type: {geofence.type} | Created:{' '}
                   {new Date(geofence.createdAt).toLocaleDateString()}
+                  {geofence.threshold_enabled && geofence.threshold_distance && (
+                    <> | Threshold: {geofence.threshold_distance}m</>
+                  )}
                 </Typography>
               </Box>
               <Box display='flex' gap={1} mt={2} justifyContent='flex-end'>
@@ -485,6 +488,22 @@ const GeofencingManagement = () => {
                       </Typography>
                     </Box>
                   )}
+                {viewingGeofence.threshold_enabled && (
+                  <Box sx={{ mb: 3 }}>
+                    <Typography
+                      variant='body2'
+                      color='text.secondary'
+                      gutterBottom
+                    >
+                      Threshold Distance
+                    </Typography>
+                    <Typography variant='body1'>
+                      {viewingGeofence.threshold_distance
+                        ? `${viewingGeofence.threshold_distance}m`
+                        : 'Not set'}
+                    </Typography>
+                  </Box>
+                )}
               </Box>
 
               {/* Right side - Map */}
