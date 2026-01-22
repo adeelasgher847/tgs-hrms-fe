@@ -17,11 +17,9 @@ import {
   Delete as DeleteIcon,
   Edit as EditIcon,
   LocationOn as LocationIcon,
-  Visibility as VisibilityIcon,
-  VisibilityOff as VisibilityOffIcon,
-  Add as AddIcon,
-  Close as CloseIcon,
   Info as ViewIcon,
+  Close as CloseIcon,
+  Add as AddIcon,
 } from '@mui/icons-material';
 import {
   MapContainer,
@@ -46,7 +44,6 @@ import AppPageTitle from '../common/AppPageTitle';
 import AppButton from '../common/AppButton';
 import GeofenceFormModal from './GeofenceFormModal';
 import DeleteConfirmationDialog from '../common/DeleteConfirmationDialog';
-import { Icons } from '../../assets/icons';
 
 // Fix for default marker icons in React-Leaflet
 const DefaultIcon = L.icon({
@@ -73,9 +70,7 @@ function MapController({ center, zoom }: MapControllerProps) {
 const GeofencingManagement = () => {
   const [geofences, setGeofences] = useState<Geofence[]>([]);
   const [loading, setLoading] = useState(true);
-  const [visibleGeofences, setVisibleGeofences] = useState<Set<string>>(
-    new Set()
-  );
+
   const [editingGeofence, setEditingGeofence] = useState<Geofence | null>(null);
   const [viewingGeofence, setViewingGeofence] = useState<Geofence | null>(null);
   const [deletingGeofence, setDeletingGeofence] = useState<Geofence | null>(
@@ -95,6 +90,19 @@ const GeofencingManagement = () => {
     severity: 'success',
   });
 
+  const fetchGeofences = async () => {
+    try {
+      setLoading(true);
+      const data = await geofencingApi.getGeofences();
+      setGeofences(data);
+      setGeofences(data);
+    } catch {
+      showSnackbar('Failed to load geofences', 'error');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
     fetchGeofences();
     // load manager teams to determine permissions
@@ -106,20 +114,8 @@ const GeofencingManagement = () => {
         setManagerTeamIds([]);
       }
     })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-
-  const fetchGeofences = async () => {
-    try {
-      setLoading(true);
-      const data = await geofencingApi.getGeofences();
-      setGeofences(data);
-      setVisibleGeofences(new Set(data.map(g => g.id)));
-    } catch (error) {
-      showSnackbar('Failed to load geofences', 'error');
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const showSnackbar = (
     message: string,
@@ -159,6 +155,7 @@ const GeofencingManagement = () => {
       const teamId =
         editingGeofence?.teamId ??
         (managerTeamIds.length > 0 ? managerTeamIds[0] : undefined);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const payload = { ...data, teamId } as any;
 
       if (editingGeofence) {
@@ -170,8 +167,9 @@ const GeofencingManagement = () => {
       }
       setFormModalOpen(false);
       setEditingGeofence(null);
+      setEditingGeofence(null);
       fetchGeofences();
-    } catch (error) {
+    } catch {
       showSnackbar('Failed to save geofence', 'error');
     } finally {
       setSaving(false);
@@ -185,23 +183,14 @@ const GeofencingManagement = () => {
       await geofencingApi.deleteGeofence(deletingGeofence.id);
       showSnackbar('Geofence deleted successfully', 'success');
       setDeletingGeofence(null);
+      setDeletingGeofence(null);
       fetchGeofences();
-    } catch (error) {
+    } catch {
       showSnackbar('Failed to delete geofence', 'error');
     }
   };
 
-  const handleToggleVisibility = (id: string) => {
-    setVisibleGeofences(prev => {
-      const newSet = new Set(prev);
-      if (newSet.has(id)) {
-        newSet.delete(id);
-      } else {
-        newSet.add(id);
-      }
-      return newSet;
-    });
-  };
+
 
   if (loading) {
     return (
@@ -271,9 +260,8 @@ const GeofencingManagement = () => {
                 display: 'flex',
                 flexDirection: 'column',
                 height: '100%',
-                borderLeft: `4px solid ${
-                  geofence.isActive ? '#3083dc' : '#888'
-                }`,
+                borderLeft: `4px solid ${geofence.isActive ? '#3083dc' : '#888'
+                  }`,
               }}
             >
               <Box sx={{ flex: 1 }}>
@@ -314,11 +302,7 @@ const GeofencingManagement = () => {
                     color='info'
                     onClick={() => handleView(geofence)}
                   >
-                    <img
-                      src={Icons.password}
-                      alt='View'
-                      style={{ width: 20, height: 20, display: 'block' }}
-                    />
+                    <ViewIcon />
                   </IconButton>
                 </Tooltip>
 

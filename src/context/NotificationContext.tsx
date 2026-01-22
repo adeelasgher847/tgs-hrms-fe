@@ -179,6 +179,7 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
                 return s || undefined;
               };
 
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
               const cleanMessage = (m?: any) =>
                 String(m ?? '')
                   // remove UUIDs
@@ -337,26 +338,25 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
   const unreadCount = notifications.filter(n => !n.read).length;
 
   // Add a new notification
-  const addNotification = (
-    notification: Omit<Notification, 'id' | 'timestamp' | 'read'>
-  ) => {
-    const newNotification: Notification = {
-      ...notification,
-      id: `notif-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-      timestamp: new Date().toISOString(),
-      read: false,
-    };
-    setNotifications(prev => [newNotification, ...prev]);
-  };
+  const addNotification = React.useCallback(
+    (notification: Omit<Notification, 'id' | 'timestamp' | 'read'>) => {
+      const newNotification: Notification = {
+        ...notification,
+        id: `notif-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+        timestamp: new Date().toISOString(),
+        read: false,
+      };
+      setNotifications(prev => [newNotification, ...prev]);
+    },
+    []
+  );
 
   // Listen for in-app notification events dispatched by `notificationsApi`
   useEffect(() => {
     const handler = (e: Event) => {
       try {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const detail = (e as any).detail ?? {};
+        const detail = (e as CustomEvent).detail ?? {};
         const msg = detail.message ?? detail.data?.message ?? 'Notification';
-        const timestamp = new Date().toISOString();
 
         // Build a richer notification when possible
         const notification: Omit<Notification, 'id' | 'timestamp' | 'read'> = {
@@ -371,7 +371,7 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
         };
 
         addNotification(notification);
-      } catch (err) {
+      } catch {
         // ignore
       }
     };

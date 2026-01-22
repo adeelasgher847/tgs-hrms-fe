@@ -50,20 +50,22 @@ export interface UpdateGeofencePayload {
 
 class GeofencingApiService {
   // Map backend geofence to frontend Geofence type
-  private mapFromBackend(item: any): Geofence {
+  private mapFromBackend(item: GeofenceResponse): Geofence {
     return {
       id: item.id,
       tenantId: item.tenant_id,
       teamId: item.team_id ?? undefined,
       name: item.name,
-      description: item.description,
-      type: item.type ?? 'circle',
+      description: item.description ?? '',
+      type: (item.type as 'circle' | 'polygon' | 'rectangle') ?? 'circle',
       center: [parseFloat(item.latitude), parseFloat(item.longitude)],
       radius: item.radius ? Number(item.radius) : undefined,
       coordinates: item.coordinates ?? undefined,
       isActive: item.status === 'active',
       threshold_enabled: item.threshold_enabled ?? false,
-      threshold_distance: item.threshold_distance ? Number(item.threshold_distance) : undefined,
+      threshold_distance: item.threshold_distance
+        ? Number(item.threshold_distance)
+        : undefined,
       createdAt: item.created_at,
       updatedAt: item.updated_at,
     };
@@ -87,41 +89,49 @@ class GeofencingApiService {
       | Omit<Geofence, 'id' | 'createdAt' | 'updatedAt'>
   ): Promise<Geofence> {
     // Build a sanitized payload containing only backend-expected fields (snake_case)
-    const asAny = data as any;
-    const payload: any = {};
+    type InputData = Partial<CreateGeofencePayload> &
+      Partial<Geofence> & {
+        isActive?: boolean;
+        teamId?: string;
+        team_id?: string;
+      };
+    const input = data as InputData;
+    const payload: CreateGeofencePayload = {
+      name: input.name || '',
+      latitude: 0,
+      longitude: 0,
+    };
 
-    if (typeof asAny.name !== 'undefined') payload.name = asAny.name;
-    if (typeof asAny.description !== 'undefined')
-      payload.description = asAny.description;
+    if (typeof input.name !== 'undefined') payload.name = input.name;
+    if (typeof input.description !== 'undefined')
+      payload.description = input.description;
 
     // center (frontend) -> latitude/longitude (backend)
-    if (Array.isArray(asAny.center) && asAny.center.length >= 2) {
-      payload.latitude = asAny.center[0];
-      payload.longitude = asAny.center[1];
+    if (Array.isArray(input.center) && input.center.length >= 2) {
+      payload.latitude = input.center[0];
+      payload.longitude = input.center[1];
     }
 
-    if (typeof asAny.latitude !== 'undefined')
-      payload.latitude = asAny.latitude;
-    if (typeof asAny.longitude !== 'undefined')
-      payload.longitude = asAny.longitude;
+    if (typeof input.latitude !== 'undefined') payload.latitude = input.latitude;
+    if (typeof input.longitude !== 'undefined')
+      payload.longitude = input.longitude;
 
-    if (typeof asAny.isActive === 'boolean') {
-      payload.status = asAny.isActive ? 'active' : 'inactive';
+    if (typeof input.isActive === 'boolean') {
+      payload.status = input.isActive ? 'active' : 'inactive';
     }
 
-    if (typeof asAny.type !== 'undefined') payload.type = asAny.type;
-    if (typeof asAny.radius !== 'undefined')
-      payload.radius = asAny.radius ?? null;
-    if (typeof asAny.coordinates !== 'undefined')
-      payload.coordinates = asAny.coordinates;
+    if (typeof input.type !== 'undefined') payload.type = input.type;
+    if (typeof input.radius !== 'undefined') payload.radius = input.radius ?? null;
+    if (typeof input.coordinates !== 'undefined')
+      payload.coordinates = input.coordinates;
 
-    if (typeof asAny.teamId !== 'undefined') payload.team_id = asAny.teamId;
-    if (typeof asAny.team_id !== 'undefined') payload.team_id = asAny.team_id;
+    if (typeof input.teamId !== 'undefined') payload.team_id = input.teamId;
+    if (typeof input.team_id !== 'undefined') payload.team_id = input.team_id;
 
-    if (typeof asAny.threshold_enabled !== 'undefined')
-      payload.threshold_enabled = asAny.threshold_enabled;
-    if (typeof asAny.threshold_distance !== 'undefined')
-      payload.threshold_distance = asAny.threshold_distance ?? null;
+    if (typeof input.threshold_enabled !== 'undefined')
+      payload.threshold_enabled = input.threshold_enabled;
+    if (typeof input.threshold_distance !== 'undefined')
+      payload.threshold_distance = input.threshold_distance ?? null;
 
     const resp = await axiosInstance.post<GeofenceResponse>(
       '/geofences',
@@ -138,43 +148,47 @@ class GeofencingApiService {
     const payload: UpdateGeofencePayload = {};
 
     // Accept either backend-shaped payload or frontend Geofence-like partials.
-    const asAny = data as any;
+    type InputData = Partial<UpdateGeofencePayload> &
+      Partial<Geofence> & {
+        isActive?: boolean;
+        teamId?: string;
+        team_id?: string;
+      };
+    const input = data as InputData;
 
-    if (typeof asAny.name !== 'undefined') payload.name = asAny.name;
-    if (typeof asAny.description !== 'undefined')
-      payload.description = asAny.description;
+    if (typeof input.name !== 'undefined') payload.name = input.name;
+    if (typeof input.description !== 'undefined')
+      payload.description = input.description;
 
     // center (frontend) -> latitude/longitude (backend)
-    if (Array.isArray(asAny.center) && asAny.center.length >= 2) {
-      payload.latitude = asAny.center[0];
-      payload.longitude = asAny.center[1];
+    if (Array.isArray(input.center) && input.center.length >= 2) {
+      payload.latitude = input.center[0];
+      payload.longitude = input.center[1];
     }
 
     // direct latitude/longitude if provided
-    if (typeof asAny.latitude !== 'undefined')
-      payload.latitude = asAny.latitude;
-    if (typeof asAny.longitude !== 'undefined')
-      payload.longitude = asAny.longitude;
+    if (typeof input.latitude !== 'undefined') payload.latitude = input.latitude;
+    if (typeof input.longitude !== 'undefined')
+      payload.longitude = input.longitude;
 
-    if (typeof asAny.isActive === 'boolean') {
-      payload.status = asAny.isActive ? 'active' : 'inactive';
+    if (typeof input.isActive === 'boolean') {
+      payload.status = input.isActive ? 'active' : 'inactive';
     }
 
-    if (typeof asAny.type !== 'undefined') payload.type = asAny.type;
-    if (typeof asAny.radius !== 'undefined')
-      payload.radius = asAny.radius ?? null;
+    if (typeof input.type !== 'undefined') payload.type = input.type;
+    if (typeof input.radius !== 'undefined') payload.radius = input.radius ?? null;
 
-    if (typeof asAny.coordinates !== 'undefined')
-      payload.coordinates = asAny.coordinates;
+    if (typeof input.coordinates !== 'undefined')
+      payload.coordinates = input.coordinates;
 
     // teamId (frontend) -> team_id (backend)
-    if (typeof asAny.teamId !== 'undefined') payload.team_id = asAny.teamId;
-    if (typeof asAny.team_id !== 'undefined') payload.team_id = asAny.team_id;
+    if (typeof input.teamId !== 'undefined') payload.team_id = input.teamId;
+    if (typeof input.team_id !== 'undefined') payload.team_id = input.team_id;
 
-    if (typeof asAny.threshold_enabled !== 'undefined')
-      payload.threshold_enabled = asAny.threshold_enabled;
-    if (typeof asAny.threshold_distance !== 'undefined')
-      payload.threshold_distance = asAny.threshold_distance ?? null;
+    if (typeof input.threshold_enabled !== 'undefined')
+      payload.threshold_enabled = input.threshold_enabled;
+    if (typeof input.threshold_distance !== 'undefined')
+      payload.threshold_distance = input.threshold_distance ?? null;
 
     const resp = await axiosInstance.patch<GeofenceResponse>(
       `/geofences/${id}`,

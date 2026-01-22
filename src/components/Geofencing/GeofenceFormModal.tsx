@@ -18,16 +18,11 @@ import {
   ListItemText,
   Paper,
   CircularProgress,
-  Button,
-  ButtonGroup,
 } from '@mui/material';
 import {
   Close as CloseIcon,
   Search as SearchIcon,
   LocationOn as LocationIcon,
-  RadioButtonUnchecked as CircleIcon,
-  CropFree as RectangleIcon,
-  ShowChart as PolygonIcon,
 } from '@mui/icons-material';
 import {
   MapContainer,
@@ -38,7 +33,6 @@ import {
   useMap,
   Marker,
   Popup,
-  useMapEvents,
 } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import 'leaflet-draw/dist/leaflet.draw.css';
@@ -522,10 +516,16 @@ const GeofenceFormModal: React.FC<GeofenceFormModalProps> = ({
     if (isGoogleLoaded && getPredictions) {
       try {
         const preds = await getPredictions(query);
-        const mapped: LocationSearchResult[] = preds.map((p: any) => ({
-          display_name: p.description,
-          place_id: p.place_id,
-        }));
+        interface GooglePrediction {
+          description: string;
+          place_id: string;
+        }
+        const mapped: LocationSearchResult[] = preds.map(
+          (p: GooglePrediction) => ({
+            display_name: p.description,
+            place_id: p.place_id,
+          })
+        );
         setSearchResults(mapped);
         setShowSearchResults(true);
         return;
@@ -554,12 +554,16 @@ const GeofenceFormModal: React.FC<GeofenceFormModalProps> = ({
 
       const data: LocationSearchResult[] = await response.json();
       // Ensure place_id is a string for consistency
-      const normalized = data.map(d => ({
-        ...d,
-        place_id: String(
-          (d as any).place_id || (d as any).osm_id || d.display_name
-        ),
-      }));
+      const normalized = data.map(d => {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const raw = d as any;
+        return {
+          ...d,
+          place_id: String(
+            raw.place_id || raw.osm_id || d.display_name
+          ),
+        };
+      });
       setSearchResults(normalized);
       setShowSearchResults(true);
     } catch (error) {
@@ -595,6 +599,7 @@ const GeofenceFormModal: React.FC<GeofenceFormModalProps> = ({
       isGoogleLoaded && result.place_id && result.place_id.length > 0;
     if (useGoogle && getPlaceDetails) {
       getPlaceDetails(result.place_id)
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         .then((place: any) => {
           const loc = place?.geometry?.location;
           if (loc && typeof loc.lat === 'function') {
@@ -674,27 +679,7 @@ const GeofenceFormModal: React.FC<GeofenceFormModalProps> = ({
     }
   };
 
-  const handleApplyCoordinates = () => {
-    const lat = parseFloat(manualCoordinates.latitude);
-    const lng = parseFloat(manualCoordinates.longitude);
 
-    if (
-      !isNaN(lat) &&
-      !isNaN(lng) &&
-      lat >= -90 &&
-      lat <= 90 &&
-      lng >= -180 &&
-      lng <= 180
-    ) {
-      const newLocation: [number, number] = [lat, lng];
-      setSelectedLocation(newLocation);
-      setMapCenter(newLocation);
-      setMapZoom(15);
-      if (drawnShape?.center) {
-        setDrawnShape(prev => (prev ? { ...prev, center: newLocation } : null));
-      }
-    }
-  };
 
   const handleMarkerDrag = (e: L.DragEndEvent) => {
     const marker = e.target;
@@ -1036,9 +1021,9 @@ const GeofenceFormModal: React.FC<GeofenceFormModalProps> = ({
                                 result.display_name.length > 50
                                   ? result.display_name.substring(50)
                                   : result.display_name
-                                      .split(',')
-                                      .slice(2)
-                                      .join(',')
+                                    .split(',')
+                                    .slice(2)
+                                    .join(',')
                               }
                               primaryTypographyProps={{
                                 style: { fontWeight: 500 },

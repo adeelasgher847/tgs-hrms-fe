@@ -477,10 +477,6 @@ const Dashboard: React.FC = () => {
               p: { xs: 2, sm: 3 },
               borderRadius: '20px',
               backgroundColor: theme.palette.background.paper,
-              boxShadow:
-                theme.palette.mode === 'dark'
-                  ? '0 1px 3px rgba(0,0,0,0.3)'
-                  : '0 1px 3px rgba(0,0,0,0.1)',
             }}
           >
             <Box
@@ -811,11 +807,12 @@ const Dashboard: React.FC = () => {
                       alignItems: 'center',
                       justifyContent: 'space-between',
                       p: 0,
+
                       overflow: 'visible',
                       width: '100%',
                     }}
                   >
-                    <Box sx={{ flex: 1 }}>
+                    <Box sx={{ flex: 1, minWidth: 0 }}>
                       <Typography
                         variant='body2'
                         sx={{
@@ -827,24 +824,34 @@ const Dashboard: React.FC = () => {
                             sm: '0.875rem',
                             lg: '0.78rem',
                           },
+                          whiteSpace: 'nowrap',
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
                         }}
                       >
                         Salary Paid
                       </Typography>
-                      <Typography
-                        variant='h4'
-                        sx={{
-                          color: theme.palette.text.primary,
-                          fontWeight: 700,
-                          fontSize: {
-                            xs: '1.5rem',
-                            sm: '1.6rem',
-                            lg: '1.4rem',
-                          },
-                        }}
+                      <Tooltip
+                        title={`$${(displayedKpi.salaryPaid ?? 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
                       >
-                        {`$${(displayedKpi.salaryPaid ?? 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
-                      </Typography>
+                        <Typography
+                          variant='h4'
+                          sx={{
+                            color: theme.palette.text.primary,
+                            fontWeight: 700,
+                            fontSize: {
+                              xs: '1.4rem',
+                              sm: '1.5rem',
+                              lg: '1.3rem',
+                            },
+                            whiteSpace: 'nowrap',
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                          }}
+                        >
+                          {`$${(displayedKpi.salaryPaid ?? 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
+                        </Typography>
+                      </Tooltip>
                     </Box>
                     <Avatar
                       sx={{
@@ -853,8 +860,8 @@ const Dashboard: React.FC = () => {
                           theme.palette.primary.main
                         ),
                         width: { xs: 40, sm: 48, md: 48, lg: 44 },
-                        height: { xs: 40, sm: 48, md: 48, lg: 49 },
-                        ml: 0,
+                        height: { xs: 40, sm: 48, md: 48, lg: 44 },
+                        ml: 1,
                         flexShrink: 0,
                         '& svg': {
                           fontSize: {
@@ -1132,7 +1139,9 @@ const Dashboard: React.FC = () => {
                 </Typography>
                 <Box sx={{ width: '100%', height: { xs: 200, md: 320 } }}>
                   <ResponsiveContainer width='100%' height='100%'>
-                    <PieChart margin={{ top: 0, right: 0, bottom: 20, left: 0 }}>
+                    <PieChart
+                      margin={{ top: 0, right: 0, bottom: 20, left: 0 }}
+                    >
                       <Pie
                         data={salaryOverview}
                         dataKey='value'
@@ -1140,7 +1149,7 @@ const Dashboard: React.FC = () => {
                         innerRadius={60}
                         outerRadius={90}
                         paddingAngle={3}
-                        label={({ name, percent }) =>
+                        label={({ percent }) =>
                           `${(percent * 100).toFixed(0)}%`
                         }
                         labelLine={false}
@@ -1341,9 +1350,8 @@ const Dashboard: React.FC = () => {
 
           {/* Alerts moved to Navbar notifications (NotificationProvider + Navbar NotificationButton) */}
         </Box>
-      )
-      }
-    </Box >
+      )}
+    </Box>
   );
 };
 

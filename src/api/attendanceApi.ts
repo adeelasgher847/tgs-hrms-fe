@@ -287,8 +287,14 @@ class AttendanceApiService {
       | { type: string; latitude?: number; longitude?: number }
   ): Promise<AttendanceEvent> {
     // Normalize type to backend expected format (prefer uppercase with underscore)
-    const asAny = payload as any;
-    let typeVal = asAny.type || '';
+    // Normalize type to backend expected format (prefer uppercase with underscore)
+    // Use an intersection type to safely access properties that might exist
+    const input = payload as {
+      type: string;
+      latitude?: number;
+      longitude?: number;
+    };
+    let typeVal = input.type || '';
     if (typeof typeVal === 'string') {
       const lowered = typeVal.toLowerCase();
       if (
@@ -306,9 +312,11 @@ class AttendanceApiService {
       else typeVal = lowered;
     }
 
-    const body: any = { type: typeVal };
-    if (typeof asAny.latitude === 'number') body.latitude = asAny.latitude;
-    if (typeof asAny.longitude === 'number') body.longitude = asAny.longitude;
+    const body: { type: string; latitude?: number; longitude?: number } = {
+      type: typeVal,
+    };
+    if (typeof input.latitude === 'number') body.latitude = input.latitude;
+    if (typeof input.longitude === 'number') body.longitude = input.longitude;
 
     const response = await axiosInstance.post(this.baseUrl, body);
     return response.data;

@@ -164,7 +164,9 @@ const AttendanceCheck = () => {
         }
       } else if (err && typeof err === 'object' && 'response' in err) {
         // Server-side error (e.g., outside geofence)
-        const resp = (err as any).response;
+        const resp = (
+          err as { response?: { data?: { message?: string } } }
+        ).response;
         const msg = resp?.data?.message || 'Check-in failed. Please try again.';
         setError(msg);
       } else {
@@ -218,7 +220,9 @@ const AttendanceCheck = () => {
           setError('Failed to get location. Please try again.');
         }
       } else if (err && typeof err === 'object' && 'response' in err) {
-        const resp = (err as any).response;
+        const resp = (
+          err as { response?: { data?: { message?: string } } }
+        ).response;
         const msg =
           resp?.data?.message || 'Check-out failed. Please try again.';
         setError(msg);

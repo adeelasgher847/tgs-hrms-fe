@@ -22,8 +22,11 @@ export function useGooglePlaces() {
 
     if (existing) {
       if (
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         (window as any).google &&
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         (window as any).google.maps &&
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         (window as any).google.maps.places
       ) {
         setIsLoaded(true);
@@ -46,13 +49,17 @@ export function useGooglePlaces() {
 
   const getPredictions = (input: string): Promise<Prediction[]> => {
     return new Promise((resolve, reject) => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       if (!(window as any).google || !(window as any).google.maps) {
         reject(new Error('Google Maps script not loaded'));
         return;
       }
 
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const svc = new (window as any).google.maps.places.AutocompleteService();
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       svc.getPlacePredictions({ input }, (predictions: any[], status: any) => {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const okStatus = (window as any).google.maps.places.PlacesServiceStatus
           .OK;
         if (status !== okStatus) {
@@ -60,7 +67,8 @@ export function useGooglePlaces() {
           return;
         }
         resolve(
-          (predictions || []).map(p => ({
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          (predictions || []).map((p: any) => ({
             description: p.description,
             place_id: p.place_id,
           }))
@@ -69,18 +77,22 @@ export function useGooglePlaces() {
     });
   };
 
-  const getPlaceDetails = (placeId: string): Promise<any> => {
+  const getPlaceDetails = (placeId: string): Promise<unknown> => {
     return new Promise((resolve, reject) => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       if (!(window as any).google || !(window as any).google.maps) {
         reject(new Error('Google Maps script not loaded'));
         return;
       }
 
       const element = document.createElement('div');
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const ps = new (window as any).google.maps.places.PlacesService(element);
       ps.getDetails(
         { placeId, fields: ['geometry', 'formatted_address', 'name'] },
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         (place: any, status: any) => {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           const okStatus = (window as any).google.maps.places
             .PlacesServiceStatus.OK;
           if (status !== okStatus) {

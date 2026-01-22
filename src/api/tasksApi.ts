@@ -9,8 +9,8 @@ function mapApiTaskToTask(apiTask: Record<string, unknown>): Task {
   const assignedTo: string[] = Array.isArray(assignedToRaw)
     ? assignedToRaw
     : assignedToRaw
-    ? [assignedToRaw]
-    : [];
+      ? [assignedToRaw]
+      : [];
 
   // Resolve assignedToName from several possible places: assigned_to_name, assignedToName, or assignedEmployee.user
   const assignedToNameRaw = apiTask.assigned_to_name ?? apiTask.assignedToName ?? apiTask.assignedEmployee ?? undefined;
@@ -21,14 +21,16 @@ function mapApiTaskToTask(apiTask: Record<string, unknown>): Task {
     assignedToName = [assignedToNameRaw];
   } else if (assignedToNameRaw && typeof assignedToNameRaw === 'object') {
     // assignedEmployee may be an object with nested user
-    const user = assignedToNameRaw.user ?? assignedToNameRaw;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const obj = assignedToNameRaw as any;
+    const user = obj.user ?? obj;
     const name = [user?.first_name, user?.last_name].filter(Boolean).join(' ').trim();
     if (name) assignedToName = [name];
     else if (user?.name) assignedToName = [user.name];
   }
 
   // Normalize status: API may return lowercase 'pending' etc. Convert to Title Case used by frontend
-  const rawStatus: string | undefined = apiTask.status ?? apiTask.task_status ?? undefined;
+  const rawStatus = (apiTask.status ?? apiTask.task_status) as string | undefined;
   const normalizeStatus = (s?: string): TaskStatus => {
     if (!s) return 'Pending';
     const lower = String(s).toLowerCase();
@@ -39,9 +41,11 @@ function mapApiTaskToTask(apiTask: Record<string, unknown>): Task {
 
   // Creator name resolution
   const creatorRaw = apiTask.creator ?? apiTask.created_by_user ?? undefined;
-  let createdByName: string | undefined = apiTask.created_by_name ?? apiTask.createdByName ?? undefined;
+  let createdByName = (apiTask.created_by_name ?? apiTask.createdByName) as string | undefined;
   if (!createdByName && creatorRaw && typeof creatorRaw === 'object') {
-    const user = creatorRaw.user ?? creatorRaw;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const obj = creatorRaw as any;
+    const user = obj.user ?? obj;
     const name = [user?.first_name, user?.last_name].filter(Boolean).join(' ').trim();
     if (name) createdByName = name;
     else if (user?.name) createdByName = user.name;
@@ -59,7 +63,8 @@ function mapApiTaskToTask(apiTask: Record<string, unknown>): Task {
     createdAt: apiTask.created_at ?? apiTask.createdAt ?? new Date().toISOString(),
     deadline: apiTask.deadline ?? apiTask.deadline_at ?? apiTask.due_date ?? undefined,
     updatedAt: apiTask.updated_at ?? apiTask.updatedAt ?? new Date().toISOString(),
-    teamId: apiTask.team_id ?? apiTask.teamId ?? apiTask.team?.id ?? '',
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    teamId: ((apiTask.team_id ?? apiTask.teamId ?? (apiTask.team as any)?.id) as string) ?? '',
   } as Task;
 }
 
@@ -120,8 +125,12 @@ export async function createTask(payload: Record<string, unknown>): Promise<Task
           type: 'alert',
         });
         if (!notif.ok) {
-          // eslint-disable-next-line no-console
-          console.warn('Notification send failed for createTask', notif.message, notif.correlationId);
+          // Notification send failed
+          console.warn(
+            'Notification send failed for createTask',
+            notif.message,
+            notif.correlationId
+          );
         }
         // Dispatch rich in-app event for immediate UI update in other tabs
         try {
@@ -137,12 +146,11 @@ export async function createTask(payload: Record<string, unknown>): Promise<Task
               },
             })
           );
-        } catch (e) {
+        } catch {
           // ignore
         }
       }
     } catch (e) {
-      // eslint-disable-next-line no-console
       console.warn('Failed to send task assignment notification', e);
     }
   })();
@@ -199,9 +207,9 @@ export async function patchTaskStatus(taskId: string, status: string): Promise<T
       const assigned = Array.isArray(updatedTask.assignedTo) ? updatedTask.assignedTo[0] : updatedTask.assignedTo;
       if (assigned) {
         try {
-          // eslint-disable-next-line @typescript-eslint/no-var-requires
-          const systemEmployeeApi = require('./systemEmployeeApi').default;
-          const teamApiLocal = require('./teamApi').default;
+          // Dynamic import to avoid circular dependency
+          const systemEmployeeApi = (await import('./systemEmployeeApi')).default;
+          const teamApiLocal = (await import('./teamApi')).default;
           const profile = await systemEmployeeApi.getSystemEmployeeById(String(assigned));
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           const teamId = (profile as any).team || (profile as any).team_id || (profile as any).teamId || undefined;
@@ -240,8 +248,11 @@ export async function patchTaskStatus(taskId: string, status: string): Promise<T
         type: 'alert',
       });
       if (!notif.ok) {
-        // eslint-disable-next-line no-console
-        console.warn('Notification send failed for patchTaskStatus', notif.message, notif.correlationId);
+        console.warn(
+          'Notification send failed for patchTaskStatus',
+          notif.message,
+          notif.correlationId
+        );
       }
       // Dispatch in-app event with status details
       try {
@@ -259,11 +270,10 @@ export async function patchTaskStatus(taskId: string, status: string): Promise<T
             },
           })
         );
-      } catch (e) {
+      } catch {
         // ignore
       }
     } catch (e) {
-      // eslint-disable-next-line no-console
       console.warn('Failed to send task status notification', e);
     }
   })();

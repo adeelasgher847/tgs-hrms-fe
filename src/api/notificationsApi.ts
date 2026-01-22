@@ -74,8 +74,11 @@ class NotificationsApi {
       result.message = resp.data?.message ?? undefined;
 
       // Try common places for correlation id: response header or body
-      const headerCorr = resp.headers?.['x-correlation-id'] || resp.headers?.['x-request-id'];
-      result.correlationId = headerCorr ?? (resp.data && (resp.data as any).correlationId) ?? null;
+      const headerCorr =
+        resp.headers?.['x-correlation-id'] || resp.headers?.['x-request-id'];
+      const dataCorr = (resp.data as SendNotificationRawResponse)
+        ?.correlationId;
+      result.correlationId = headerCorr ?? dataCorr ?? null;
 
       // Dispatch an in-app event so the UI can show the notification immediately
       try {
@@ -86,8 +89,10 @@ class NotificationsApi {
           type: payload.type ?? 'alert',
         };
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        (window as any).dispatchEvent(new CustomEvent('hrms:notification', { detail: eventDetail }));
-      } catch (e) {
+        (window as any).dispatchEvent(
+          new CustomEvent('hrms:notification', { detail: eventDetail })
+        );
+      } catch {
         // ignore
       }
 

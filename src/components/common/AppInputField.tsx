@@ -137,23 +137,23 @@ const AppInputField = React.forwardRef<HTMLDivElement, AppInputFieldProps>(
               // If caller provided InputProps, keep them and merge
               isDateInput
                 ? {
-                    ...rest.InputProps,
-                    endAdornment:
-                      rest.InputProps && rest.InputProps.endAdornment ? (
-                        rest.InputProps.endAdornment
-                      ) : (
-                        <InputAdornment position='end'>
-                          <IconButton
-                            size='small'
-                            onClick={handleAdornmentClick}
-                            aria-label='open date picker'
-                            sx={{ color: theme.palette.text.secondary }}
-                          >
-                            <CalendarTodayIcon fontSize='small' />
-                          </IconButton>
-                        </InputAdornment>
-                      ),
-                  }
+                  ...rest.InputProps,
+                  endAdornment:
+                    rest.InputProps && rest.InputProps.endAdornment ? (
+                      rest.InputProps.endAdornment
+                    ) : (
+                      <InputAdornment position='end'>
+                        <IconButton
+                          size='small'
+                          onClick={handleAdornmentClick}
+                          aria-label='open date picker'
+                          sx={{ color: theme.palette.text.secondary }}
+                        >
+                          <CalendarTodayIcon fontSize='small' />
+                        </IconButton>
+                      </InputAdornment>
+                    ),
+                }
                 : rest.InputProps
             }
             inputRef={inputRef}
@@ -174,7 +174,9 @@ const AppInputField = React.forwardRef<HTMLDivElement, AppInputFieldProps>(
               // If caller expects the native event, they can wrap it accordingly.
               if (typeof rest.onChange === 'function') {
                 try {
-                  (rest.onChange as unknown as (v: any) => void)(out);
+                  (
+                    rest.onChange as unknown as (v: string | number) => void
+                  )(out);
                 } catch {
                   // fallback: call with native event
                   (
@@ -235,14 +237,14 @@ const AppInputField = React.forwardRef<HTMLDivElement, AppInputFieldProps>(
               },
               '& .MuiInputAdornment-root': isPhoneInput
                 ? {
-                    width: '100%',
-                    margin: 0,
-                  }
+                  width: '100%',
+                  margin: 0,
+                }
                 : {},
               '& .MuiInputAdornment-positionStart': isPhoneInput
                 ? {
-                    marginRight: 0,
-                  }
+                  marginRight: 0,
+                }
                 : {},
               ...sx,
             }}

@@ -4,7 +4,6 @@ import {
   Typography,
   Alert,
   CircularProgress,
-  Chip,
   LinearProgress,
   Card,
   CardContent,
@@ -292,11 +291,10 @@ const EmployeeGeofenceStatus = () => {
                 sx={{
                   p: 2.5,
                   borderRadius: 2,
-                  border: `2px solid ${
-                    canCheckIn
+                  border: `2px solid ${canCheckIn
                       ? theme.palette.success.main
                       : theme.palette.warning.main
-                  }`,
+                    }`,
                   background: alpha(
                     canCheckIn
                       ? theme.palette.success.main

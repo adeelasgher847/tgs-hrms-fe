@@ -1,6 +1,5 @@
 import React from 'react';
-import { useUser } from '../../hooks/useUser';
-import { isManager } from '../../utils/roleUtils';
+
 import {
   Box,
   Typography,
@@ -32,8 +31,7 @@ function formatDateLocal(isoDate?: string) {
 // AppCard not needed here
 
 export default function NotificationPanel() {
-  const { user } = useUser();
-  const role = user?.role;
+
   const {
     notifications,
     unreadCount,
