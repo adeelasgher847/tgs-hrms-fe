@@ -894,7 +894,7 @@ const Dashboard: React.FC = () => {
                       width: '100%',
                     }}
                   >
-                    <Box sx={{ flex: 1 }}>
+                    <Box sx={{ flex: 1, minWidth: 0 }}>
                       <Typography
                         variant='body2'
                         sx={{
@@ -906,24 +906,34 @@ const Dashboard: React.FC = () => {
                             sm: '0.875rem',
                             lg: '0.78rem',
                           },
+                          whiteSpace: 'nowrap',
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
                         }}
                       >
                         Salary Unpaid
                       </Typography>
-                      <Typography
-                        variant='h4'
-                        sx={{
-                          color: theme.palette.text.primary,
-                          fontWeight: 700,
-                          fontSize: {
-                            xs: '1.5rem',
-                            sm: '1.6rem',
-                            lg: '1.4rem',
-                          },
-                        }}
+                      <Tooltip
+                        title={`$${(displayedKpi.salaryUnpaid ?? 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
                       >
-                        {`$${(displayedKpi.salaryUnpaid ?? 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
-                      </Typography>
+                        <Typography
+                          variant='h4'
+                          sx={{
+                            color: theme.palette.text.primary,
+                            fontWeight: 700,
+                            fontSize: {
+                              xs: '1.4rem',
+                              sm: '1.5rem',
+                              lg: '1.3rem',
+                            },
+                            whiteSpace: 'nowrap',
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                          }}
+                        >
+                          {`$${(displayedKpi.salaryUnpaid ?? 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
+                        </Typography>
+                      </Tooltip>
                     </Box>
                     <Avatar
                       sx={{
@@ -933,7 +943,7 @@ const Dashboard: React.FC = () => {
                         ),
                         width: { xs: 40, sm: 48, md: 48, lg: 44 },
                         height: { xs: 40, sm: 48, md: 48, lg: 44 },
-                        ml: 0,
+                        ml: 1,
                         flexShrink: 0,
                         '& svg': {
                           fontSize: {
@@ -1122,17 +1132,18 @@ const Dashboard: React.FC = () => {
                 </Typography>
                 <Box sx={{ width: '100%', height: { xs: 200, md: 320 } }}>
                   <ResponsiveContainer width='100%' height='100%'>
-                    <PieChart>
+                    <PieChart margin={{ top: 0, right: 0, bottom: 20, left: 0 }}>
                       <Pie
                         data={salaryOverview}
                         dataKey='value'
                         nameKey='name'
-                        // innerRadius={professionalView ? 70 : 50}
-                        // outerRadius={professionalView ? 110 : 80}
+                        innerRadius={60}
+                        outerRadius={90}
                         paddingAngle={3}
                         label={({ name, percent }) =>
-                          `${name} ${(percent * 100).toFixed(0)}%`
+                          `${(percent * 100).toFixed(0)}%`
                         }
+                        labelLine={false}
                       >
                         {salaryOverview.map((entry, index) => (
                           <Cell
@@ -1145,7 +1156,11 @@ const Dashboard: React.FC = () => {
                           />
                         ))}
                       </Pie>
-                      <Legend />
+                      <Legend
+                        verticalAlign='bottom'
+                        height={36}
+                        iconType='circle'
+                      />
                     </PieChart>
                   </ResponsiveContainer>
                 </Box>
@@ -1217,7 +1232,9 @@ const Dashboard: React.FC = () => {
                     width: '100%',
                     flex: 1,
                     minHeight: { xs: 360, md: 420 },
+                    minHeight: { xs: 360, md: 420 },
                     overflowX: 'auto',
+                    overflowY: 'hidden',
                   }}
                 >
                   <Box
@@ -1324,8 +1341,9 @@ const Dashboard: React.FC = () => {
 
           {/* Alerts moved to Navbar notifications (NotificationProvider + Navbar NotificationButton) */}
         </Box>
-      )}
-    </Box>
+      )
+      }
+    </Box >
   );
 };
 

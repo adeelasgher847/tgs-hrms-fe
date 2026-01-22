@@ -192,6 +192,8 @@ export default function GenderPercentageChart() {
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
+          flexWrap: 'wrap',
+          gap: 2,
           mb: 3,
         }}
       >

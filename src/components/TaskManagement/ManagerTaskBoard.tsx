@@ -22,7 +22,7 @@ import AppDropdown from '../common/AppDropdown';
 import AppButton from '../common/AppButton';
 import AppFormModal, { type FormField } from '../common/AppFormModal';
 import AppInputField from '../common/AppInputField';
-import NotificationPanel from './NotificationPanel';
+// Notification panel removed from Task Board header per UX request
 import ErrorSnackbar from '../common/ErrorSnackbar';
 import AppPageTitle from '../common/AppPageTitle';
 import { useErrorHandler } from '../../hooks/useErrorHandler';
@@ -562,7 +562,6 @@ export default function ManagerTaskBoard() {
         mb={2}
       >
         <Box /> {/* Placeholder Box for alignment */}
-        <NotificationPanel />
       </Box>
 
       {/* Page Title */}
@@ -1174,7 +1173,7 @@ export default function ManagerTaskBoard() {
                       {t.description}
                     </Typography>
                     {t.deadline && (
-                      <Typography variant='caption' color='text.secondary' >
+                      <Typography variant='caption' color='text.secondary'>
                         Deadline: {formatDate(t.deadline)}
                       </Typography>
                     )}
