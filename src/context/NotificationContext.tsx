@@ -120,10 +120,37 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
           text: string,
           ts?: string
         ) => {
+          // Remove UUIDs, numeric ids and id tokens from text to avoid showing raw ids
+          const cleanText = String(text ?? '')
+            // remove UUIDs
+            .replace(
+              /\b[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\b/gi,
+              ''
+            )
+            // remove tokens like 'leave request id 1234', 'request id=123', 'id:123'
+            .replace(
+              /\b(?:leave\s*request\s*id|request\s*id|id)[:=]?\s*#?\d+\b/gi,
+              ''
+            )
+            // remove hash-number tokens like #12345
+            .replace(/#\d+\b/g, '')
+            // remove hex-like id tokens (legacy)
+            .replace(/id[:=]?\s*[0-9a-f-]+/gi, '')
+            // collapse extra whitespace
+            .replace(/\s{2,}/g, ' ')
+            .trim();
+
+          // Skip alert notifications entirely (user requested to hide alerts)
+          const titleLower = String(title ?? '').toLowerCase();
+          const textLower = String(cleanText ?? '').toLowerCase();
+          if (titleLower.includes('alert') || textLower.includes('alert')) {
+            return;
+          }
+
           items.push({
             id,
             title,
-            text,
+            text: cleanText,
             timestamp: ts ?? data.timestamp ?? new Date().toISOString(),
             read: false,
           });
@@ -137,17 +164,67 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
               Array.isArray(resp.notifications) &&
               resp.notifications.length > 0
             ) {
-              const items: Notification[] = resp.notifications.map(n => ({
-                id: n.id,
-                title: n.type
-                  ? `${n.type}`
-                  : (n.message?.slice?.(0, 80) ?? 'Notification'),
-                text: n.message ?? '',
-                timestamp:
-                  n.created_at ?? n.updated_at ?? new Date().toISOString(),
-                read: n.status === 'read',
-                raw: n,
-              }));
+              const formatTypeLabel = (t?: string) => {
+                if (!t) return undefined;
+                // drop suffix after colon (backend may append :id)
+                let s = String(t).split(':')[0];
+                s = s
+                  .replace(/[_-]+/g, ' ')
+                  .replace(/\s{2,}/g, ' ')
+                  .trim();
+                s = s
+                  .split(' ')
+                  .map(w => (w ? w.charAt(0).toUpperCase() + w.slice(1) : ''))
+                  .join(' ');
+                return s || undefined;
+              };
+
+              const cleanMessage = (m?: any) =>
+                String(m ?? '')
+                  // remove UUIDs
+                  .replace(
+                    /\b[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\b/gi,
+                    ''
+                  )
+                  // remove tokens like 'leave request id 1234', 'request id=123', 'id:123'
+                  .replace(
+                    /\b(?:leave\s*request\s*id|request\s*id|id)[:=]?\s*#?\d+\b/gi,
+                    ''
+                  )
+                  // remove hash-number tokens like #12345
+                  .replace(/#\d+\b/g, '')
+                  // remove hex-like id tokens (legacy)
+                  .replace(/id[:=]?\s*[0-9a-f-]+/gi, '')
+                  .replace(/\s{2,}/g, ' ')
+                  .trim();
+
+              const items: Notification[] = resp.notifications
+                .map(n => ({
+                  id: n.id,
+                  raw: n,
+                  type: n.type,
+                  _title: formatTypeLabel(n.type) ?? undefined,
+                  _message: cleanMessage(n.message) ?? '',
+                  timestamp:
+                    n.created_at ?? n.updated_at ?? new Date().toISOString(),
+                  read: n.status === 'read',
+                }))
+                .filter(x => {
+                  const t = String(x.type ?? '').toLowerCase();
+                  const m = String(x._message ?? '').toLowerCase();
+                  // exclude explicit 'alert' types or messages containing 'alert'
+                  if (t === 'alert' || m.includes('alert')) return false;
+                  return true;
+                })
+                .map(x => ({
+                  id: x.id,
+                  title:
+                    x._title ?? x._message?.slice?.(0, 80) ?? 'Notification',
+                  text: x._message,
+                  timestamp: x.timestamp,
+                  read: x.read,
+                  raw: x.raw,
+                }));
 
               setNotifications(prev => {
                 const existingIds = new Set(prev.map(p => p.id));
