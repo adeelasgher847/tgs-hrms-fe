@@ -195,7 +195,7 @@ const Dashboard: React.FC = () => {
   }, []);
 
   // Horizontal-scroll helpers for Attendance chart (px per bar)
-  const attendanceBarSize = 28; 
+  const attendanceBarSize = 28;
   const [selectedDept, setSelectedDept] = useState<string | number>('');
 
   const departmentOptions = [
@@ -759,7 +759,11 @@ const Dashboard: React.FC = () => {
                           color: theme.palette.text.secondary,
                           mb: 0.5,
                           fontWeight: 500,
-                          fontSize: { xs: '0.8rem', sm: '0.875rem' },
+                          fontSize: {
+                            xs: '0.8rem',
+                            sm: '0.875rem',
+                            lg: '0.78rem',
+                          },
                         }}
                       >
                         Total Employees
@@ -769,7 +773,7 @@ const Dashboard: React.FC = () => {
                         sx={{
                           color: theme.palette.text.primary,
                           fontWeight: 700,
-                          fontSize: { xs: '1.5rem', sm: '2rem' },
+                          fontSize: { xs: '1.5rem', sm: '2rem', lg: '1.6rem' },
                         }}
                       >
                         {displayedKpi.totalEmployees}
@@ -822,7 +826,11 @@ const Dashboard: React.FC = () => {
                           color: theme.palette.text.secondary,
                           mb: 0.5,
                           fontWeight: 500,
-                          fontSize: { xs: '0.8rem', sm: '0.875rem' },
+                          fontSize: {
+                            xs: '0.8rem',
+                            sm: '0.875rem',
+                            lg: '0.78rem',
+                          },
                         }}
                       >
                         Salary Paid
@@ -832,7 +840,11 @@ const Dashboard: React.FC = () => {
                         sx={{
                           color: theme.palette.text.primary,
                           fontWeight: 700,
-                          fontSize: { xs: '1.5rem', sm: '1.6rem' },
+                          fontSize: {
+                            xs: '1.5rem',
+                            sm: '1.6rem',
+                            lg: '1.4rem',
+                          },
                         }}
                       >
                         {`$${(displayedKpi.salaryPaid ?? 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
@@ -844,11 +856,18 @@ const Dashboard: React.FC = () => {
                         color: theme.palette.getContrastText(
                           theme.palette.primary.main
                         ),
-                        width: { xs: 40, sm: 48 },
-                        height: { xs: 40, sm: 48 },
+                        width: { xs: 40, sm: 48, md: 48, lg: 44 },
+                        height: { xs: 40, sm: 48, md: 48, lg: 49 },
                         ml: 0,
                         flexShrink: 0,
-                        '& svg': { fontSize: { xs: '1rem', sm: '1.2rem' } },
+                        '& svg': {
+                          fontSize: {
+                            xs: '1rem',
+                            sm: '1.2rem',
+                            md: '1.1rem',
+                            lg: '1.05rem',
+                          },
+                        },
                       }}
                     >
                       <AttachMoneyIcon />
@@ -886,7 +905,11 @@ const Dashboard: React.FC = () => {
                           color: theme.palette.text.secondary,
                           mb: 0.5,
                           fontWeight: 500,
-                          fontSize: { xs: '0.8rem', sm: '0.875rem' },
+                          fontSize: {
+                            xs: '0.8rem',
+                            sm: '0.875rem',
+                            lg: '0.78rem',
+                          },
                         }}
                       >
                         Salary Unpaid
@@ -896,7 +919,11 @@ const Dashboard: React.FC = () => {
                         sx={{
                           color: theme.palette.text.primary,
                           fontWeight: 700,
-                          fontSize: { xs: '1.5rem', sm: '1.6rem' },
+                          fontSize: {
+                            xs: '1.5rem',
+                            sm: '1.6rem',
+                            lg: '1.4rem',
+                          },
                         }}
                       >
                         {`$${(displayedKpi.salaryUnpaid ?? 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
@@ -908,11 +935,18 @@ const Dashboard: React.FC = () => {
                         color: theme.palette.getContrastText(
                           theme.palette.error.main
                         ),
-                        width: { xs: 40, sm: 48 },
-                        height: { xs: 40, sm: 48 },
+                        width: { xs: 40, sm: 48, md: 48, lg: 44 },
+                        height: { xs: 40, sm: 48, md: 48, lg: 44 },
                         ml: 0,
                         flexShrink: 0,
-                        '& svg': { fontSize: { xs: '1rem', sm: '1.2rem' } },
+                        '& svg': {
+                          fontSize: {
+                            xs: '1rem',
+                            sm: '1.2rem',
+                            md: '1.1rem',
+                            lg: '1.05rem',
+                          },
+                        },
                       }}
                     >
                       <MoneyOffIcon />
@@ -949,7 +983,11 @@ const Dashboard: React.FC = () => {
                           color: theme.palette.text.secondary,
                           mb: 0.5,
                           fontWeight: 500,
-                          fontSize: { xs: '0.8rem', sm: '0.875rem' },
+                          fontSize: {
+                            xs: '0.8rem',
+                            sm: '0.875rem',
+                            lg: '0.78rem',
+                          },
                         }}
                       >
                         Present Today
@@ -959,7 +997,7 @@ const Dashboard: React.FC = () => {
                         sx={{
                           color: theme.palette.text.primary,
                           fontWeight: 700,
-                          fontSize: { xs: '1.5rem', sm: '2rem' },
+                          fontSize: { xs: '1.5rem', sm: '2rem', lg: '1.6rem' },
                         }}
                       >
                         {displayedKpi.presentToday ?? 0}
@@ -1012,7 +1050,11 @@ const Dashboard: React.FC = () => {
                           color: theme.palette.text.secondary,
                           mb: 0.5,
                           fontWeight: 500,
-                          fontSize: { xs: '0.8rem', sm: '0.875rem' },
+                          fontSize: {
+                            xs: '0.8rem',
+                            sm: '0.875rem',
+                            lg: '0.78rem',
+                          },
                         }}
                       >
                         On Leave
@@ -1022,7 +1064,7 @@ const Dashboard: React.FC = () => {
                         sx={{
                           color: theme.palette.text.primary,
                           fontWeight: 700,
-                          fontSize: { xs: '1.5rem', sm: '2rem' },
+                          fontSize: { xs: '1.5rem', sm: '2rem', lg: '1.6rem' },
                         }}
                       >
                         {displayedKpi.onLeave ?? 0}
