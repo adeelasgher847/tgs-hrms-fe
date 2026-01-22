@@ -1,4 +1,5 @@
 import axiosInstance from './axiosInstance';
+import { notificationsApi } from './notificationsApi';
 import type { Task, TaskStatus } from '../Data/taskMockData';
 
 // The backend uses snake_case keys; our frontend uses camelCase Task interface.
@@ -104,7 +105,49 @@ export async function createTask(payload: Record<string, unknown>): Promise<Task
   // authenticated request (token) and will reject tenant_id in the payload.
 
   const res = await axiosInstance.post('/tasks', sanitized);
-  return mapApiTaskToTask(res.data);
+  const task = mapApiTaskToTask(res.data);
+
+  // Send notification to assigned user (non-blocking). If multiple assigned users, notify all.
+  (async () => {
+    try {
+      const assigned = Array.isArray(task.assignedTo) ? task.assignedTo : [task.assignedTo];
+      const userIds = assigned.filter(Boolean).map(String);
+      if (userIds.length > 0) {
+        const message = `A new task has been assigned to you`;
+        const notif = await notificationsApi.sendNotification({
+          user_ids: userIds,
+          message,
+          type: 'alert',
+        });
+        if (!notif.ok) {
+          // eslint-disable-next-line no-console
+          console.warn('Notification send failed for createTask', notif.message, notif.correlationId);
+        }
+        // Dispatch rich in-app event for immediate UI update in other tabs
+        try {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          (window as any).dispatchEvent(
+            new CustomEvent('hrms:notification', {
+              detail: {
+                title: 'Task Assigned',
+                message,
+                taskTitle: task.title,
+                employeeName: undefined,
+                data: { task },
+              },
+            })
+          );
+        } catch (e) {
+          // ignore
+        }
+      }
+    } catch (e) {
+      // eslint-disable-next-line no-console
+      console.warn('Failed to send task assignment notification', e);
+    }
+  })();
+
+  return task;
 }
 
 // Update an existing task
@@ -137,7 +180,95 @@ export async function deleteTask(taskId: string): Promise<{ ok: boolean; message
 // Patch task status (backend provides a dedicated endpoint)
 export async function patchTaskStatus(taskId: string, status: string): Promise<Task> {
   const res = await axiosInstance.patch(`/tasks/${taskId}/status`, { status });
-  return mapApiTaskToTask(res.data);
+  const updatedTask = mapApiTaskToTask(res.data);
+
+  // Notify task creator and (best-effort) the manager about status update
+  (async () => {
+    try {
+      const { getCurrentUser } = await import('../utils/auth');
+      const storedUser = getCurrentUser();
+      const employeeName = storedUser
+        ? `${storedUser.first_name ?? ''} ${storedUser.last_name ?? ''}`.trim() || 'Employee'
+        : 'Employee';
+
+      const recipients: string[] = [];
+      // Creator
+      if (updatedTask.createdBy) recipients.push(String(updatedTask.createdBy));
+
+      // Try to resolve assigned user's manager (best-effort)
+      const assigned = Array.isArray(updatedTask.assignedTo) ? updatedTask.assignedTo[0] : updatedTask.assignedTo;
+      if (assigned) {
+        try {
+          // eslint-disable-next-line @typescript-eslint/no-var-requires
+          const systemEmployeeApi = require('./systemEmployeeApi').default;
+          const teamApiLocal = require('./teamApi').default;
+          const profile = await systemEmployeeApi.getSystemEmployeeById(String(assigned));
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const teamId = (profile as any).team || (profile as any).team_id || (profile as any).teamId || undefined;
+          if (teamId) {
+            try {
+              const team = await teamApiLocal.getTeamById(String(teamId));
+              const managerId = team?.manager_id ?? team?.manager?.id;
+              if (managerId) recipients.push(String(managerId));
+            } catch {
+              // ignore
+            }
+          }
+        } catch {
+          // ignore
+        }
+      }
+
+      // Unique recipients excluding current actor
+      const uniqueRecipients = Array.from(new Set(recipients)).filter(r => r && (!storedUser || r !== storedUser.id));
+      if (uniqueRecipients.length === 0) return;
+
+      // Determine message based on status
+      let message = '';
+      const normalized = String(status).toLowerCase();
+      if (normalized.includes('complete')) {
+        message = `${employeeName} has completed the task`;
+      } else if (normalized.includes('progress') || normalized.includes('in progress')) {
+        message = `${employeeName} has started the task`;
+      } else {
+        message = `${employeeName} updated task status to ${status}`;
+      }
+
+      const notif = await notificationsApi.sendNotification({
+        user_ids: uniqueRecipients,
+        message,
+        type: 'alert',
+      });
+      if (!notif.ok) {
+        // eslint-disable-next-line no-console
+        console.warn('Notification send failed for patchTaskStatus', notif.message, notif.correlationId);
+      }
+      // Dispatch in-app event with status details
+      try {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (window as any).dispatchEvent(
+          new CustomEvent('hrms:notification', {
+            detail: {
+              title: 'Task Status Updated',
+              message,
+              taskTitle: updatedTask.title,
+              employeeName,
+              oldStatus: undefined,
+              newStatus: updatedTask.status,
+              data: { task: updatedTask },
+            },
+          })
+        );
+      } catch (e) {
+        // ignore
+      }
+    } catch (e) {
+      // eslint-disable-next-line no-console
+      console.warn('Failed to send task status notification', e);
+    }
+  })();
+
+  return updatedTask;
 }
 
 // Example helper to convert a frontend Task to backend payload (snake_case)

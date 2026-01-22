@@ -47,9 +47,7 @@ export default function NotificationPanel() {
     null
   );
 
-  // Only render notifications for managers. Hooks above must run
-  // unconditionally to preserve hook order across renders.
-  if (!isManager(role)) return null;
+  // Render notifications for all users (managers will still see task-style items)
 
   const handleClick = (event: React.MouseEvent<HTMLButtonElement>) => {
     setAnchorEl(event.currentTarget);
@@ -175,7 +173,9 @@ export default function NotificationPanel() {
                             variant='body2'
                             fontWeight={notification.read ? 400 : 600}
                           >
-                            {notification.employeeName} updated task status
+                            {notification.taskTitle
+                              ? `${notification.employeeName ?? 'Someone'} updated task status`
+                              : notification.title}
                           </Typography>
                           <IconButton
                             size='small'
@@ -190,38 +190,51 @@ export default function NotificationPanel() {
                       }
                       secondary={
                         <Box mt={1}>
-                          <Typography
-                            variant='body2'
-                            color='text.secondary'
-                            sx={{ mb: 1 }}
-                          >
-                            <strong>{notification.taskTitle}</strong>
-                          </Typography>
-                          <Box
-                            display='flex'
-                            alignItems='center'
-                            gap={1}
-                            mb={1}
-                          >
-                            <Chip
-                              label={notification.oldStatus}
-                              size='small'
-                              sx={{ fontSize: '0.7rem', height: 20 }}
-                            />
-                            <Typography variant='caption'>→</Typography>
-                            <Chip
-                              label={notification.newStatus}
-                              size='small'
-                              color={
-                                notification.newStatus === 'Completed'
-                                  ? 'success'
-                                  : notification.newStatus === 'In Progress'
-                                    ? 'warning'
-                                    : 'default'
-                              }
-                              sx={{ fontSize: '0.7rem', height: 20 }}
-                            />
-                          </Box>
+                          {notification.taskTitle ? (
+                            <>
+                              <Typography
+                                variant='body2'
+                                color='text.secondary'
+                                sx={{ mb: 1 }}
+                              >
+                                <strong>{notification.taskTitle}</strong>
+                              </Typography>
+                              <Box
+                                display='flex'
+                                alignItems='center'
+                                gap={1}
+                                mb={1}
+                              >
+                                <Chip
+                                  label={notification.oldStatus}
+                                  size='small'
+                                  sx={{ fontSize: '0.7rem', height: 20 }}
+                                />
+                                <Typography variant='caption'>→</Typography>
+                                <Chip
+                                  label={notification.newStatus}
+                                  size='small'
+                                  color={
+                                    notification.newStatus === 'Completed'
+                                      ? 'success'
+                                      : notification.newStatus === 'In Progress'
+                                        ? 'warning'
+                                        : 'default'
+                                  }
+                                  sx={{ fontSize: '0.7rem', height: 20 }}
+                                />
+                              </Box>
+                            </>
+                          ) : (
+                            <Typography
+                              variant='body2'
+                              color='text.secondary'
+                              sx={{ mb: 1 }}
+                            >
+                              {notification.text}
+                            </Typography>
+                          )}
+
                           <Typography variant='caption' color='text.secondary'>
                             {formatDateLocal(notification.timestamp)}
                           </Typography>

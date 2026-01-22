@@ -338,3 +338,5 @@ class TeamApiService {
 }
 
 export const teamApiService = new TeamApiService();
+
+export default teamApiService;

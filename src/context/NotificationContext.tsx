@@ -1,6 +1,7 @@
 /* eslint-disable react-refresh/only-export-components */
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import axiosInstance from '../api/axiosInstance';
+import notificationsApi from '../api/notificationsApi';
 
 // Local Notification type for the UI notifications used by the Navbar
 export interface Notification {
@@ -9,6 +10,13 @@ export interface Notification {
   text: string;
   timestamp: string;
   read: boolean;
+  // Optional extra fields used by some UIs (task panel etc.)
+  employeeName?: string;
+  taskTitle?: string;
+  oldStatus?: string;
+  newStatus?: string;
+  // keep raw payload for debugging or future use
+  raw?: unknown;
 }
 
 // API shapes for dashboard alerts
@@ -120,7 +128,47 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
             read: false,
           });
         };
+        // First, load notifications for the current user via notifications API
+        const fetchUserNotifications = async () => {
+          try {
+            const resp = await notificationsApi.getNotifications({ limit: 50 });
+            if (
+              resp.ok &&
+              Array.isArray(resp.notifications) &&
+              resp.notifications.length > 0
+            ) {
+              const items: Notification[] = resp.notifications.map(n => ({
+                id: n.id,
+                title: n.type
+                  ? `${n.type}`
+                  : (n.message?.slice?.(0, 80) ?? 'Notification'),
+                text: n.message ?? '',
+                timestamp:
+                  n.created_at ?? n.updated_at ?? new Date().toISOString(),
+                read: n.status === 'read',
+                raw: n,
+              }));
 
+              setNotifications(prev => {
+                const existingIds = new Set(prev.map(p => p.id));
+                const newItems = items.filter(i => !existingIds.has(i.id));
+                const merged = [...newItems, ...prev];
+                merged.sort(
+                  (a, b) =>
+                    new Date(b.timestamp).getTime() -
+                    new Date(a.timestamp).getTime()
+                );
+                return merged.slice(0, 200);
+              });
+            }
+          } catch (err) {
+            console.warn('Failed to load user notifications', err);
+          }
+        };
+
+        fetchUserNotifications();
+
+        // then fetch dashboard alerts as before
         if (Array.isArray((data as AlertsResponse).pending_approvals)) {
           (data as AlertsResponse).pending_approvals!.forEach(
             (p: PendingApproval) => {
@@ -173,7 +221,20 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
             (a, b) =>
               new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
           );
-          setNotifications(items);
+
+          // Merge with existing notifications, deduplicate by id
+          setNotifications(prev => {
+            const existingIds = new Set(prev.map(n => n.id));
+            const newItems = items.filter(i => !existingIds.has(i.id));
+            const merged = [...newItems, ...prev];
+            // Keep most recent first and limit to reasonable size
+            merged.sort(
+              (a, b) =>
+                new Date(b.timestamp).getTime() -
+                new Date(a.timestamp).getTime()
+            );
+            return merged.slice(0, 200);
+          });
         }
       } catch (err) {
         // On failure, keep any stored notifications
@@ -183,8 +244,15 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
 
     fetchAlerts();
 
+    // Poll for alerts periodically to surface cross-session notifications
+    const POLL_INTERVAL = 15000; // 15s
+    const interval = setInterval(() => {
+      fetchAlerts();
+    }, POLL_INTERVAL);
+
     return () => {
       mounted = false;
+      clearInterval(interval);
     };
   }, []);
 
@@ -204,6 +272,40 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
     setNotifications(prev => [newNotification, ...prev]);
   };
 
+  // Listen for in-app notification events dispatched by `notificationsApi`
+  useEffect(() => {
+    const handler = (e: Event) => {
+      try {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const detail = (e as any).detail ?? {};
+        const msg = detail.message ?? detail.data?.message ?? 'Notification';
+        const timestamp = new Date().toISOString();
+
+        // Build a richer notification when possible
+        const notification: Omit<Notification, 'id' | 'timestamp' | 'read'> = {
+          title: detail.title ?? 'Notification',
+          text: String(msg),
+          employeeName:
+            detail.employeeName ?? detail.data?.employeeName ?? undefined,
+          taskTitle: detail.taskTitle ?? detail.data?.taskTitle ?? undefined,
+          oldStatus: detail.oldStatus ?? detail.data?.oldStatus ?? undefined,
+          newStatus: detail.newStatus ?? detail.data?.newStatus ?? undefined,
+          raw: detail,
+        };
+
+        addNotification(notification);
+      } catch (err) {
+        // ignore
+      }
+    };
+
+    // Listen on window for CustomEvent('hrms:notification')
+    window.addEventListener('hrms:notification', handler as EventListener);
+    return () => {
+      window.removeEventListener('hrms:notification', handler as EventListener);
+    };
+  }, [addNotification]);
+
   // Mark a specific notification as read
   const markAsRead = (notificationId: string) => {
     setNotifications(prev =>
@@ -211,11 +313,44 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
         notif.id === notificationId ? { ...notif, read: true } : notif
       )
     );
+
+    // Fire-and-forget: notify backend
+    (async () => {
+      try {
+        const resp =
+          await notificationsApi.markNotificationRead(notificationId);
+        if (!resp.ok) {
+          console.warn(
+            'Failed to mark notification read on server',
+            resp.message,
+            resp.status
+          );
+        }
+      } catch (err) {
+        console.warn('Error marking notification read', err);
+      }
+    })();
   };
 
   // Mark all notifications as read
   const markAllAsRead = () => {
     setNotifications(prev => prev.map(notif => ({ ...notif, read: true })));
+
+    // Fire-and-forget: notify backend to mark all as read
+    (async () => {
+      try {
+        const resp = await notificationsApi.markAllNotificationsRead();
+        if (!resp.ok) {
+          console.warn(
+            'Failed to mark all notifications read on server',
+            resp.message,
+            resp.status
+          );
+        }
+      } catch (err) {
+        console.warn('Error marking all notifications read', err);
+      }
+    })();
   };
 
   // Clear a specific notification
