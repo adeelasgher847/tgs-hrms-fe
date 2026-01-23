@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Box, Typography, Paper, Alert, useTheme } from '@mui/material';
+import { Box, Typography, Paper, useTheme } from '@mui/material';
 import LoginIcon from '@mui/icons-material/Login';
 import LogoutIcon from '@mui/icons-material/Logout';
 import attendanceApi from '../../api/attendanceApi';

@@ -18,7 +18,6 @@ import {
   ListItemText,
   Paper,
   CircularProgress,
-  MenuItem,
 } from '@mui/material';
 import {
   Close as CloseIcon,
