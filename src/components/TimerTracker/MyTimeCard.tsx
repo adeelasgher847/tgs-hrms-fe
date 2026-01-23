@@ -263,10 +263,10 @@ const MyTimerCard: React.FC<MyTimerCardProps> = ({
       const msg =
         (err && typeof err === 'object' && 'response' in err
           ? (err as { response: { data?: { message?: string } } }).response.data
-              ?.message
+            ?.message
           : null) ||
         (err as Error)?.message ||
-        'Failed to clock in. Please make sure you checked in.';
+        String(err);
       showError(msg);
 
       // Force refresh to keep UI consistent (in case server changed)
@@ -296,10 +296,10 @@ const MyTimerCard: React.FC<MyTimerCardProps> = ({
       const msg =
         (err && typeof err === 'object' && 'response' in err
           ? (err as { response: { data?: { message?: string } } }).response.data
-              ?.message
+            ?.message
           : null) ||
         (err as Error)?.message ||
-        'Failed to clock out.';
+        String(err);
       showError(msg);
 
       // If there was an error, force refresh to restore the session state
@@ -542,17 +542,16 @@ const MyTimerCard: React.FC<MyTimerCardProps> = ({
             sx={{ fontSize: '1rem' }}
           >
             {currentSession && !currentSession.end_time
-              ? `Clocked In: Today at ${
-                  currentSession.start_time
-                    ? new Date(currentSession.start_time).toLocaleTimeString(
-                        [],
-                        {
-                          hour: '2-digit',
-                          minute: '2-digit',
-                        }
-                      )
-                    : 'N/A'
-                }`
+              ? `Clocked In: Today at ${currentSession.start_time
+                ? new Date(currentSession.start_time).toLocaleTimeString(
+                  [],
+                  {
+                    hour: '2-digit',
+                    minute: '2-digit',
+                  }
+                )
+                : 'N/A'
+              }`
               : hasCheckedIn
                 ? 'Ready to start tracking time'
                 : 'Please check in first'}

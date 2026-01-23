@@ -216,8 +216,8 @@ const BenefitReport: React.FC = () => {
           if (selectedDesignation) params.designation = selectedDesignation;
           if (selectedTenant) params.tenant_id = selectedTenant;
 
-          const response: EmployeeWithBenefits[] =
-            await employeeBenefitApi.getFilteredEmployeeBenefits(params);
+          const response =
+            await employeeBenefitApi.getFilteredEmployeeBenefits(params) as EmployeeWithBenefits[];
           flattened = (response || []).flatMap(emp =>
             (emp.benefits || []).map(b => ({
               tenantId: emp.tenantId ?? emp.tenant_id,
@@ -381,7 +381,7 @@ const BenefitReport: React.FC = () => {
           {
             title: 'Most Common Benefit Type',
             value: summary.mostCommonBenefitType,
-            icon: <CardGiftcardIcon color='secondary' />,
+            icon: <CardGiftcardIcon color='primary' />,
           },
           {
             title: 'Employees Covered',

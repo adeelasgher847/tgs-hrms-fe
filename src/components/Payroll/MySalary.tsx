@@ -287,7 +287,6 @@ const MySalary: React.FC = () => {
             gridTemplateColumns: {
               xs: '1fr',
               sm: 'repeat(2, minmax(0, 1fr))',
-              md: 'repeat(4, minmax(0, 1fr))',
             },
           }}
         >
@@ -587,7 +586,7 @@ const MySalary: React.FC = () => {
       <AppFormModal
         open={dialogOpen}
         onClose={() => setDialogOpen(false)}
-        onSubmit={() => {}}
+        onSubmit={() => { }}
         title='Payslip Details'
         cancelLabel='Close'
         showSubmitButton={false}

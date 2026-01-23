@@ -863,12 +863,12 @@ const PayrollRecords: React.FC = () => {
               recordEmployees.length === 0
                 ? [{ value: '', label: 'No employees for this period' }]
                 : [
-                    { value: '', label: 'All employees' },
-                    ...recordEmployees.map(emp => ({
-                      value: emp.id,
-                      label: emp.name,
-                    })),
-                  ]
+                  { value: '', label: 'All employees' },
+                  ...recordEmployees.map(emp => ({
+                    value: emp.id,
+                    label: emp.name,
+                  })),
+                ]
             }
             label='Employee'
             showLabel={false}
@@ -1063,7 +1063,7 @@ const PayrollRecords: React.FC = () => {
       <AppFormModal
         open={detailsOpen && !!selectedRecord}
         onClose={closeDetails}
-        onSubmit={() => {}}
+        onSubmit={() => { }}
         title='Payroll Breakdown'
         cancelLabel='Close'
         showSubmitButton={false}
@@ -1110,7 +1110,7 @@ const PayrollRecords: React.FC = () => {
                 gridTemplateColumns: {
                   xs: '1fr',
                   sm: 'repeat(2, minmax(0, 1fr))',
-                  md: 'repeat(4, minmax(0, 1fr))',
+                  // md: 'repeat(4, minmax(0, 1fr))',
                 },
               }}
             >
@@ -1221,7 +1221,7 @@ const PayrollRecords: React.FC = () => {
                       <TableCell align='right'>
                         {formatCurrency(
                           selectedRecord.deductionsBreakdown.leaveDeductions ||
-                            0
+                          0
                         )}
                       </TableCell>
                       <TableCell align='right'>—</TableCell>
@@ -1474,21 +1474,21 @@ const PayrollRecords: React.FC = () => {
             options={
               employeesForGenerateDialog.length === 0
                 ? [
-                    {
-                      value: '',
-                      label:
-                        employees.length === 0
-                          ? 'No employees with salary configuration'
-                          : 'All employees are already processed',
-                    },
-                  ]
+                  {
+                    value: '',
+                    label:
+                      employees.length === 0
+                        ? 'No employees with salary configuration'
+                        : 'All employees are already processed',
+                  },
+                ]
                 : [
-                    { value: '', label: 'All employees' },
-                    ...employeesForGenerateDialog.map(emp => ({
-                      value: emp.id,
-                      label: emp.name,
-                    })),
-                  ]
+                  { value: '', label: 'All employees' },
+                  ...employeesForGenerateDialog.map(emp => ({
+                    value: emp.id,
+                    label: emp.name,
+                  })),
+                ]
             }
             placeholder={
               employeesForGenerateDialog.length === 0

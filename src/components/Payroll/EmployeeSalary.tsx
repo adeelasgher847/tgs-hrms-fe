@@ -505,19 +505,19 @@ const EmployeeSalaryPage: React.FC = () => {
       // Calculate baseSalary from basePayComponents
       const calculatedBaseSalary =
         (typeof basePayComponents.basic === 'string' &&
-        basePayComponents.basic === ''
+          basePayComponents.basic === ''
           ? 0
           : basePayComponents.basic || 0) +
         (typeof basePayComponents.houseRent === 'string' &&
-        basePayComponents.houseRent === ''
+          basePayComponents.houseRent === ''
           ? 0
           : basePayComponents.houseRent || 0) +
         (typeof basePayComponents.medical === 'string' &&
-        basePayComponents.medical === ''
+          basePayComponents.medical === ''
           ? 0
           : basePayComponents.medical || 0) +
         (typeof basePayComponents.transport === 'string' &&
-        basePayComponents.transport === ''
+          basePayComponents.transport === ''
           ? 0
           : basePayComponents.transport || 0);
 
@@ -618,7 +618,7 @@ const EmployeeSalaryPage: React.FC = () => {
     // Check if at least basic component has a value
     const basicValue =
       typeof basePayComponents.basic === 'string' &&
-      basePayComponents.basic === ''
+        basePayComponents.basic === ''
         ? 0
         : basePayComponents.basic || 0;
     if (basicValue <= 0) {
@@ -627,19 +627,19 @@ const EmployeeSalaryPage: React.FC = () => {
     // Calculate total base salary
     const totalBaseSalary =
       (typeof basePayComponents.basic === 'string' &&
-      basePayComponents.basic === ''
+        basePayComponents.basic === ''
         ? 0
         : basePayComponents.basic || 0) +
       (typeof basePayComponents.houseRent === 'string' &&
-      basePayComponents.houseRent === ''
+        basePayComponents.houseRent === ''
         ? 0
         : basePayComponents.houseRent || 0) +
       (typeof basePayComponents.medical === 'string' &&
-      basePayComponents.medical === ''
+        basePayComponents.medical === ''
         ? 0
         : basePayComponents.medical || 0) +
       (typeof basePayComponents.transport === 'string' &&
-      basePayComponents.transport === ''
+        basePayComponents.transport === ''
         ? 0
         : basePayComponents.transport || 0);
     if (totalBaseSalary <= 0) {
@@ -713,19 +713,19 @@ const EmployeeSalaryPage: React.FC = () => {
     // Calculate total from basePayComponents
     const totalBaseSalary =
       (typeof basePayComponents.basic === 'string' &&
-      basePayComponents.basic === ''
+        basePayComponents.basic === ''
         ? 0
         : basePayComponents.basic || 0) +
       (typeof basePayComponents.houseRent === 'string' &&
-      basePayComponents.houseRent === ''
+        basePayComponents.houseRent === ''
         ? 0
         : basePayComponents.houseRent || 0) +
       (typeof basePayComponents.medical === 'string' &&
-      basePayComponents.medical === ''
+        basePayComponents.medical === ''
         ? 0
         : basePayComponents.medical || 0) +
       (typeof basePayComponents.transport === 'string' &&
-      basePayComponents.transport === ''
+        basePayComponents.transport === ''
         ? 0
         : basePayComponents.transport || 0);
     if (currentBaseSalary !== totalBaseSalary) return true;
@@ -890,7 +890,7 @@ const EmployeeSalaryPage: React.FC = () => {
                   gridTemplateColumns: {
                     xs: '1fr',
                     sm: 'repeat(2, 1fr)',
-                    md: 'repeat(3, 1fr)',
+                    md: 'repeat(2, 1fr)',
                   },
                   gap: 2,
                 }}
@@ -972,7 +972,7 @@ const EmployeeSalaryPage: React.FC = () => {
                   gridTemplateColumns: {
                     xs: '1fr',
                     sm: 'repeat(2, 1fr)',
-                    md: 'repeat(3, 1fr)',
+                    md: 'repeat(2, 1fr)',
                   },
                   gap: 2,
                 }}
@@ -1362,7 +1362,7 @@ const EmployeeSalaryPage: React.FC = () => {
       <AppFormModal
         open={viewModalOpen}
         onClose={() => setViewModalOpen(false)}
-        onSubmit={() => {}}
+        onSubmit={() => { }}
         title={
           selectedEmployee
             ? `${selectedEmployee.employee.user.first_name} ${selectedEmployee.employee.user.last_name} - Salary Structure`
@@ -1753,9 +1753,9 @@ const EmployeeSalaryPage: React.FC = () => {
                     [
                       payrollConfig.deductions?.taxPercentage && 'Tax',
                       payrollConfig.deductions?.insurancePercentage &&
-                        'Insurance',
+                      'Insurance',
                       payrollConfig.deductions?.providentFundPercentage &&
-                        'Provident Fund',
+                      'Provident Fund',
                     ].filter(Boolean).length
                   }
                 </Typography>

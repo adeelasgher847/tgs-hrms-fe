@@ -371,10 +371,9 @@ const LeaveRequestPage = () => {
       } else {
         // Admin approval/rejection
         if (actionType === 'approved') {
-          await leaveApi.approveLeave(selectedId);
+          await leaveApi.approveLeave(selectedId, reason);
         } else {
-          // Admin/HR admin rejectLeave API no longer accepts remarks parameter
-          await leaveApi.rejectLeave(selectedId);
+          await leaveApi.rejectLeave(selectedId, reason);
         }
       }
 
@@ -386,9 +385,11 @@ const LeaveRequestPage = () => {
               ...l,
               status: actionType === 'approved' ? 'approved' : 'rejected',
             };
-            // Only set remarks for manager actions (admin/HR admin rejections don't have remarks)
+            // Set remarks based on who performed the action
             if (isManagerAction && reason) {
               updated.managerRemarks = reason;
+            } else if (!isManagerAction && reason) {
+              updated.remarks = reason;
             }
             return updated;
           }
@@ -655,7 +656,7 @@ const LeaveRequestPage = () => {
 
       <Box sx={{ py: 3 }}>
         {activeTab === 'apply' &&
-        ['employee', 'manager', 'admin', 'hr-admin'].includes(role) ? (
+          ['employee', 'manager', 'admin', 'hr-admin'].includes(role) ? (
           <LeaveForm
             onSubmit={async formData => {
               try {
@@ -828,9 +829,9 @@ const LeaveRequestPage = () => {
         }}
         onConfirm={reason => handleConfirm(reason)}
         action={actionType || 'approved'}
-        allowComments={isManagerAction}
-        commentLabel={isManagerAction ? 'Remarks (Optional)' : undefined}
-        showRemarksField={isManagerAction}
+        allowComments={true}
+        commentLabel="Remarks (Optional)"
+        showRemarksField={true}
       />
 
       {/* Manager response dialog - shows manager remarks or response */}

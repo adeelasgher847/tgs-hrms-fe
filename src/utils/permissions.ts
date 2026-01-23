@@ -32,7 +32,7 @@ export const getDefaultDashboardRoute = (role?: string): string => {
     case 'network-admin':
       return '/dashboard';
     case 'hr-admin':
-      return '/dashboard/AttendanceCheck';
+      return '/dashboard/AttendanceTable';
     case 'admin':
       return '/dashboard';
     case 'manager':

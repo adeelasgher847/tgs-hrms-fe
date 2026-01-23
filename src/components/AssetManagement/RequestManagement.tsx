@@ -52,6 +52,8 @@ import AppCard from '../common/AppCard';
 import AppSearch from '../common/AppSearch';
 import AppFormModal, { type FormField } from '../common/AppFormModal';
 import { PAGINATION } from '../../constants/appConstants';
+import { useUser } from '../../hooks/useUser';
+import { isAdmin, isHRAdmin } from '../../utils/roleUtils';
 
 // Extended interface for API asset request response that may include additional fields
 interface ApiAssetRequestExtended extends Omit<ApiAssetRequest, 'category_id'> {
@@ -64,12 +66,12 @@ interface ApiAssetRequestExtended extends Omit<ApiAssetRequest, 'category_id'> {
     icon?: string | null;
   };
   subcategory?:
-    | {
-        id?: string;
-        name?: string;
-      }
-    | string
-    | null;
+  | {
+    id?: string;
+    name?: string;
+  }
+  | string
+  | null;
   subcategory_name?: string;
   subcategoryName?: string;
   requestedByName?: string;
@@ -148,7 +150,10 @@ function TabPanel(props: TabPanelProps) {
 }
 
 const RequestManagement: React.FC = () => {
+  const { user } = useUser();
+  const canViewManagerRemarks = isAdmin(user?.role) || isHRAdmin(user?.role);
   const [requests, setRequests] = useState<AssetRequest[]>([]);
+  const [requestComments, setRequestComments] = useState<Record<string, string>>({});
   const [assets, setAssets] = useState<Asset[]>([]);
   const [isProcessModalOpen, setIsProcessModalOpen] = useState(false);
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
@@ -401,20 +406,20 @@ const RequestManagement: React.FC = () => {
             name: apiAsset.name as string,
             category: matchingCategory
               ? {
-                  id: matchingCategory.id,
-                  name: matchingCategory.name,
-                  nameAr: matchingCategory.nameAr,
-                  description: matchingCategory.description,
-                  color: matchingCategory.color,
-                  subcategories: matchingCategory.subcategories,
-                }
+                id: matchingCategory.id,
+                name: matchingCategory.name,
+                nameAr: matchingCategory.nameAr,
+                description: matchingCategory.description,
+                color: matchingCategory.color,
+                subcategories: matchingCategory.subcategories,
+              }
               : {
-                  id: categoryId,
-                  name: categoryName,
-                  nameAr: categoryName,
-                  description: '',
-                  color: 'var(--primary-dark-color)',
-                },
+                id: categoryId,
+                name: categoryName,
+                nameAr: categoryName,
+                description: '',
+                color: 'var(--primary-dark-color)',
+              },
             status: apiAsset.status as AssetStatus,
             assignedTo: apiAsset.assigned_to as string | undefined,
             assignedToName: undefined,
@@ -729,20 +734,20 @@ const RequestManagement: React.FC = () => {
               name: apiAsset.name as string,
               category: matchingCategory
                 ? {
-                    id: matchingCategory.id,
-                    name: matchingCategory.name,
-                    nameAr: matchingCategory.nameAr,
-                    description: matchingCategory.description,
-                    color: matchingCategory.color,
-                    subcategories: matchingCategory.subcategories,
-                  }
+                  id: matchingCategory.id,
+                  name: matchingCategory.name,
+                  nameAr: matchingCategory.nameAr,
+                  description: matchingCategory.description,
+                  color: matchingCategory.color,
+                  subcategories: matchingCategory.subcategories,
+                }
                 : {
-                    id: categoryId,
-                    name: categoryName,
-                    nameAr: categoryName,
-                    description: '',
-                    color: 'var(--primary-dark-color)',
-                  },
+                  id: categoryId,
+                  name: categoryName,
+                  nameAr: categoryName,
+                  description: '',
+                  color: 'var(--primary-dark-color)',
+                },
               status: apiAsset.status as AssetStatus,
               assignedTo: apiAsset.assigned_to as string | undefined,
               assignedToName: undefined,
@@ -1041,14 +1046,14 @@ const RequestManagement: React.FC = () => {
             prevRequests.map(request =>
               request.id === selectedRequest.id
                 ? {
-                    ...request,
-                    status: 'approved' as const,
-                    assignedAssetId: data.assignedAssetId as string,
-                    assignedAssetName: selectedAsset.name,
-                    processedDate: new Date().toISOString().split('T')[0],
-                    processedBy: 'current-user', // You might want to get this from auth context
-                    processedByName: 'Current User', // You might want to get this from auth context
-                  }
+                  ...request,
+                  status: 'approved' as const,
+                  assignedAssetId: data.assignedAssetId as string,
+                  assignedAssetName: selectedAsset.name,
+                  processedDate: new Date().toISOString().split('T')[0],
+                  processedBy: 'current-user', // You might want to get this from auth context
+                  processedByName: 'Current User', // You might want to get this from auth context
+                }
                 : request
             )
           );
@@ -1095,13 +1100,13 @@ const RequestManagement: React.FC = () => {
             prevRequests.map(request =>
               request.id === selectedRequest.id
                 ? {
-                    ...request,
-                    status: 'rejected' as const,
-                    rejectionReason: data.rejectionReason as string,
-                    processedDate: new Date().toISOString().split('T')[0],
-                    processedBy: 'current-user', // You might want to get this from auth context
-                    processedByName: 'Current User', // You might want to get this from auth context
-                  }
+                  ...request,
+                  status: 'rejected' as const,
+                  rejectionReason: data.rejectionReason as string,
+                  processedDate: new Date().toISOString().split('T')[0],
+                  processedBy: 'current-user', // You might want to get this from auth context
+                  processedByName: 'Current User', // You might want to get this from auth context
+                }
                 : request
             )
           );
@@ -1215,21 +1220,21 @@ const RequestManagement: React.FC = () => {
             name: apiAsset.name as string,
             category: matchingCategory
               ? {
-                  id: matchingCategory.id,
-                  name: matchingCategory.name,
-                  nameAr: matchingCategory.nameAr,
-                  description: matchingCategory.description,
-                  color: matchingCategory.color,
-                  subcategories: matchingCategory.subcategories,
-                }
+                id: matchingCategory.id,
+                name: matchingCategory.name,
+                nameAr: matchingCategory.nameAr,
+                description: matchingCategory.description,
+                color: matchingCategory.color,
+                subcategories: matchingCategory.subcategories,
+              }
               : {
-                  id: categoryId,
-                  name: categoryName,
-                  nameAr: categoryName,
-                  description: '',
-                  color: 'var(--primary-dark-color)',
-                  subcategories: [],
-                },
+                id: categoryId,
+                name: categoryName,
+                nameAr: categoryName,
+                description: '',
+                color: 'var(--primary-dark-color)',
+                subcategories: [],
+              },
             status: apiAsset.status as AssetStatus,
             assignedTo: (apiAsset.assigned_to as string) || undefined,
             assignedToName: (apiAsset.assigned_to_name as string) || undefined,
@@ -1280,7 +1285,7 @@ const RequestManagement: React.FC = () => {
           let matchingCategory = assetCategories.find(
             cat =>
               cat.name.toLowerCase() ===
-                apiRequest.asset_category!.toLowerCase() ||
+              apiRequest.asset_category!.toLowerCase() ||
               cat.subcategories?.some(
                 sub =>
                   sub.toLowerCase() === apiRequest.asset_category!.toLowerCase()
@@ -1313,23 +1318,23 @@ const RequestManagement: React.FC = () => {
               `User ${apiRequest.requested_by}`,
             category: matchingCategory
               ? {
-                  id: matchingCategory.id,
-                  name: matchingCategory.name,
-                  nameAr: matchingCategory.nameAr,
-                  description: matchingCategory.description,
-                  color: matchingCategory.color,
-                  subcategories: matchingCategory.subcategories,
-                  // Add the specific item requested
-                  requestedItem: subcategoryName || apiRequest.asset_category,
-                }
+                id: matchingCategory.id,
+                name: matchingCategory.name,
+                nameAr: matchingCategory.nameAr,
+                description: matchingCategory.description,
+                color: matchingCategory.color,
+                subcategories: matchingCategory.subcategories,
+                // Add the specific item requested
+                requestedItem: subcategoryName || apiRequest.asset_category,
+              }
               : {
-                  id: apiRequest.asset_category || 'unknown',
-                  name: mainCategoryName || 'Unknown Category',
-                  nameAr: apiRequest.asset_category || 'Unknown Category',
-                  description: '',
-                  color: 'var(--primary-dark-color)',
-                  requestedItem: subcategoryName || apiRequest.asset_category,
-                },
+                id: apiRequest.asset_category || 'unknown',
+                name: mainCategoryName || 'Unknown Category',
+                nameAr: apiRequest.asset_category || 'Unknown Category',
+                description: '',
+                color: 'var(--primary-dark-color)',
+                requestedItem: subcategoryName || apiRequest.asset_category,
+              },
             remarks: apiRequest.remarks,
             status: normalizeRequestStatus(apiRequest.status),
             requestedDate: apiRequest.requested_date,
@@ -1399,7 +1404,7 @@ const RequestManagement: React.FC = () => {
         name: 'headingEmployeeInfo',
         label: '',
         value: '',
-        onChange: () => {},
+        onChange: () => { },
         component: (
           <Box sx={{ mb: 1 }}>
             <Typography
@@ -1416,7 +1421,7 @@ const RequestManagement: React.FC = () => {
         name: 'employeeInfo',
         label: 'Employee',
         value: selectedRequest.employeeName || '',
-        onChange: () => {},
+        onChange: () => { },
         component: (
           <Box>
             <Typography variant='body1' fontWeight={600}>
@@ -1427,15 +1432,15 @@ const RequestManagement: React.FC = () => {
             </Typography>
             {(selectedRequest.subcategoryName ||
               selectedRequest.category.requestedItem) && (
-              <Typography
-                variant='caption'
-                color='text.secondary'
-                sx={{ display: 'block', mt: 0.5 }}
-              >
-                {selectedRequest.subcategoryName ||
-                  selectedRequest.category.requestedItem}
-              </Typography>
-            )}
+                <Typography
+                  variant='caption'
+                  color='text.secondary'
+                  sx={{ display: 'block', mt: 0.5 }}
+                >
+                  {selectedRequest.subcategoryName ||
+                    selectedRequest.category.requestedItem}
+                </Typography>
+              )}
           </Box>
         ),
       },
@@ -1443,7 +1448,7 @@ const RequestManagement: React.FC = () => {
         name: 'headingRequestInfo',
         label: '',
         value: '',
-        onChange: () => {},
+        onChange: () => { },
         component: (
           <Box sx={{ mt: 1 }}>
             <Typography
@@ -1460,7 +1465,7 @@ const RequestManagement: React.FC = () => {
         name: 'status',
         label: 'Status',
         value: selectedRequest.status || '',
-        onChange: () => {},
+        onChange: () => { },
         component: (
           <StatusChip status={selectedRequest.status} type='request' />
         ),
@@ -1469,7 +1474,7 @@ const RequestManagement: React.FC = () => {
         name: 'requestedDate',
         label: 'Requested Date',
         value: selectedRequest.requestedDate || '',
-        onChange: () => {},
+        onChange: () => { },
         component: (
           <Typography>{formatDate(selectedRequest.requestedDate)}</Typography>
         ),
@@ -1478,7 +1483,7 @@ const RequestManagement: React.FC = () => {
         name: 'headingEmployeeRemarks',
         label: '',
         value: '',
-        onChange: () => {},
+        onChange: () => { },
         component: (
           <Box sx={{ mt: 1 }}>
             <Typography
@@ -1495,7 +1500,7 @@ const RequestManagement: React.FC = () => {
         name: 'remarks',
         label: 'Remarks',
         value: selectedRequest.remarks || '',
-        onChange: () => {},
+        onChange: () => { },
         component: selectedRequest.remarks ? (
           <Typography variant='body2'>{selectedRequest.remarks}</Typography>
         ) : (
@@ -1508,7 +1513,7 @@ const RequestManagement: React.FC = () => {
         name: 'headingProcessing',
         label: '',
         value: '',
-        onChange: () => {},
+        onChange: () => { },
         component: (
           <Box sx={{ mt: 1 }}>
             <Typography
@@ -1525,7 +1530,7 @@ const RequestManagement: React.FC = () => {
         name: 'processing',
         label: 'Processing Information',
         value: selectedRequest.processedDate || '',
-        onChange: () => {},
+        onChange: () => { },
         component: (
           <Box>
             {selectedRequest.processedDate && (
@@ -1568,7 +1573,7 @@ const RequestManagement: React.FC = () => {
         name: 'action',
         label: 'Action',
         value: '',
-        onChange: () => {},
+        onChange: () => { },
         component: (
           <Controller
             name='action'
@@ -1602,7 +1607,7 @@ const RequestManagement: React.FC = () => {
         name: 'assignedAssetId',
         label: 'Assign Asset',
         value: '',
-        onChange: () => {},
+        onChange: () => { },
         component: (
           <Controller
             name='assignedAssetId'
@@ -1640,7 +1645,7 @@ const RequestManagement: React.FC = () => {
         name: 'rejectionReason',
         label: 'Rejection Reason (Optional)',
         value: '',
-        onChange: () => {},
+        onChange: () => { },
         component: (
           <Controller
             name='rejectionReason'
@@ -1665,7 +1670,7 @@ const RequestManagement: React.FC = () => {
         name: 'remarksInfo',
         label: 'Employee Remarks',
         value: '',
-        onChange: () => {},
+        onChange: () => { },
         component: selectedRequest?.remarks ? (
           <Alert severity='info'>
             <Typography variant='body2'>
@@ -1676,6 +1681,34 @@ const RequestManagement: React.FC = () => {
       },
     ];
   }, [control, errors, loading, availableAssets, selectedRequest]);
+
+  // Fetch comments for requests
+  React.useEffect(() => {
+    const fetchCommentsForRequests = async () => {
+      if (requests.length === 0) return;
+
+      const commentsMap: Record<string, string> = {};
+
+      const promises = requests.map(async (request) => {
+        try {
+          const response = await assetApi.getAssetRequestComments(request.id);
+          if (Array.isArray(response) && response.length > 0) {
+            const sorted = response.sort((a: { created_at: string }, b: { created_at: string }) =>
+              new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+            );
+            commentsMap[request.id] = sorted[0].comment;
+          }
+        } catch (error) {
+          console.error(`Failed to fetch comments for request ${request.id}`, error);
+        }
+      });
+
+      await Promise.all(promises);
+      setRequestComments(prev => ({ ...prev, ...commentsMap }));
+    };
+
+    fetchCommentsForRequests();
+  }, [requests]);
 
   if (initialLoading) {
     return (
@@ -1754,11 +1787,20 @@ const RequestManagement: React.FC = () => {
             </Typography>
           )}
       </TableCell>
+      {canViewManagerRemarks && (
+        <TableCell align='center'>
+          {requestComments[request.id] && (
+            <Typography variant='body2' color='text.primary'>
+              {requestComments[request.id]}
+            </Typography>
+          )}
+        </TableCell>
+      )}
       <TableCell align='right'>
         <IconButton
           onClick={e => handleMenuClick(e, request.id)}
           size='small'
-          sx={{color: theme.palette.text.primary}}
+          sx={{ color: theme.palette.text.primary }}
           aria-label={`Actions menu for request ${request.id}`}
           aria-haspopup='true'
           aria-expanded={Boolean(anchorEl) && selectedRequestId === request.id}
@@ -1796,7 +1838,7 @@ const RequestManagement: React.FC = () => {
           )}
         </Menu>
       </TableCell>
-    </TableRow>
+    </TableRow >
   );
 
   return (
@@ -1916,13 +1958,14 @@ const RequestManagement: React.FC = () => {
                 <TableCell>Requested Date</TableCell>
                 <TableCell>Remarks</TableCell>
                 <TableCell>Rejection Reason</TableCell>
+                {canViewManagerRemarks && <TableCell align='center'>Manager Remarks</TableCell>}
                 <TableCell align='right'>Actions</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
               {getFilteredRequestsByTab().length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={6} align='center' sx={{ py: 4 }}>
+                  <TableCell colSpan={canViewManagerRemarks ? 7 : 6} align='center' sx={{ py: 4 }}>
                     <Typography variant='body2' color='text.secondary'>
                       No records found
                     </Typography>
@@ -1944,13 +1987,14 @@ const RequestManagement: React.FC = () => {
                 <TableCell>Requested Date</TableCell>
                 <TableCell>Remarks</TableCell>
                 <TableCell>Rejection Reason</TableCell>
+                {canViewManagerRemarks && <TableCell align='center'>Manager Remarks</TableCell>}
                 <TableCell align='right'>Actions</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
               {getFilteredRequestsByTab('pending').length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={6} align='center' sx={{ py: 4 }}>
+                  <TableCell colSpan={canViewManagerRemarks ? 7 : 6} align='center' sx={{ py: 4 }}>
                     <Typography variant='body2' color='text.secondary'>
                       No records found
                     </Typography>
@@ -1972,13 +2016,14 @@ const RequestManagement: React.FC = () => {
                 <TableCell>Requested Date</TableCell>
                 <TableCell>Remarks</TableCell>
                 <TableCell>Rejection Reason</TableCell>
+                {canViewManagerRemarks && <TableCell align='center'>Manager Remarks</TableCell>}
                 <TableCell align='right'>Actions</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
               {getFilteredRequestsByTab('approved').length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={6} align='center' sx={{ py: 4 }}>
+                  <TableCell colSpan={canViewManagerRemarks ? 7 : 6} align='center' sx={{ py: 4 }}>
                     <Typography variant='body2' color='text.secondary'>
                       No records found
                     </Typography>
@@ -2000,13 +2045,14 @@ const RequestManagement: React.FC = () => {
                 <TableCell>Requested Date</TableCell>
                 <TableCell>Remarks</TableCell>
                 <TableCell>Rejection Reason</TableCell>
+                {canViewManagerRemarks && <TableCell align='center'>Manager Remarks</TableCell>}
                 <TableCell align='right'>Actions</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
               {getFilteredRequestsByTab('rejected').length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={6} align='center' sx={{ py: 4 }}>
+                  <TableCell colSpan={canViewManagerRemarks ? 7 : 6} align='center' sx={{ py: 4 }}>
                     <Typography variant='body2' color='text.secondary'>
                       No records found
                     </Typography>

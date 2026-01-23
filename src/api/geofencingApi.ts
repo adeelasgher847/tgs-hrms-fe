@@ -12,12 +12,12 @@ export interface GeofenceResponse {
   status: 'active' | 'inactive' | string;
   created_at: string;
   updated_at: string;
-  radius?: number | null;
+  radius?: number | string | null;
   coordinates?: [number, number][] | null;
   type?: 'circle' | 'polygon' | 'rectangle' | string | null;
   team_id?: string | null;
   threshold_enabled?: boolean | null;
-  threshold_distance?: number | null;
+  threshold_distance?: number | string | null;
 }
 
 export interface CreateGeofencePayload {
@@ -59,11 +59,11 @@ class GeofencingApiService {
       description: item.description ?? '',
       type: (item.type as 'circle' | 'polygon' | 'rectangle') ?? 'circle',
       center: [parseFloat(item.latitude), parseFloat(item.longitude)],
-      radius: item.radius ? Number(item.radius) : undefined,
+      radius: item.radius !== null && item.radius !== undefined ? Number(item.radius) : undefined,
       coordinates: item.coordinates ?? undefined,
       isActive: item.status === 'active',
       threshold_enabled: item.threshold_enabled ?? false,
-      threshold_distance: item.threshold_distance
+      threshold_distance: item.threshold_distance !== null && item.threshold_distance !== undefined
         ? Number(item.threshold_distance)
         : undefined,
       createdAt: item.created_at,

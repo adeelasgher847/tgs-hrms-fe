@@ -16,7 +16,7 @@ import {
 import { Icons } from '../../assets/icons';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import DeleteConfirmationDialog from '../common/DeleteConfirmationDialog';
-import {} from /* useNavigate */ 'react-router-dom';
+import { } from /* useNavigate */ 'react-router-dom';
 import AppCard from '../common/AppCard';
 import AppDropdown from '../common/AppDropdown';
 import AppButton from '../common/AppButton';
@@ -193,7 +193,7 @@ export default function ManagerTaskBoard() {
       } catch (err) {
         console.error('Failed to fetch tasks:', err);
         // show error snackbar
-        (showError ?? (() => {}))(err as unknown, {
+        (showError ?? (() => { }))(err as unknown, {
           operation: 'fetch',
           resource: 'employee',
         });
@@ -256,11 +256,11 @@ export default function ManagerTaskBoard() {
     ? teams
     : isManager
       ? teams.filter(t => {
-          const mgrId = String(t.managerId ?? '');
-          if (currentUserIdentifiers.includes(mgrId)) return true;
-          const memberIds = (t.memberIds || []).map(String);
-          return memberIds.some(id => currentUserIdentifiers.includes(id));
-        })
+        const mgrId = String(t.managerId ?? '');
+        if (currentUserIdentifiers.includes(mgrId)) return true;
+        const memberIds = (t.memberIds || []).map(String);
+        return memberIds.some(id => currentUserIdentifiers.includes(id));
+      })
       : [];
 
   const visibleTeamIds = visibleTeams.map(t => t.id);
@@ -652,7 +652,7 @@ export default function ManagerTaskBoard() {
           display: 'grid',
           gridTemplateColumns: {
             xs: '1fr',
-            sm: 'repeat(3, 1fr)',
+            sm: 'repeat(2, 1fr)',
           },
           gap: 2,
           mb: 3,
@@ -937,39 +937,39 @@ export default function ManagerTaskBoard() {
           // Assign To will be conditionally rendered by AppFormModal only if teamId selected
           ...(formData.teamId
             ? [
-                {
-                  name: 'assignedTo',
-                  label: 'Assign To',
-                  component: (
-                    <AppDropdown
-                      multiple
-                      options={getAvailableMembers(formData.teamId).map(m => ({
-                        value: m.id,
-                        label: m.name,
-                      }))}
-                      value={formData.assignedTo}
-                      onChange={(
-                        e: SelectChangeEvent<string | number | string[]>
-                      ) =>
-                        setFormData({
-                          ...formData,
-                          assignedTo: (e.target.value as string[]) || [],
-                        })
-                      }
-                      placeholder='Assign To'
-                      containerSx={{ width: '100%' }}
-                      showLabel={false}
-                      label={''}
-                    />
-                  ),
-                  value: formData.assignedTo.join(','),
-                  onChange: (v: string | number) =>
-                    setFormData({
-                      ...formData,
-                      assignedTo: String(v).split(',').filter(Boolean),
-                    }),
-                } as unknown as FormField,
-              ]
+              {
+                name: 'assignedTo',
+                label: 'Assign To',
+                component: (
+                  <AppDropdown
+                    multiple
+                    options={getAvailableMembers(formData.teamId).map(m => ({
+                      value: m.id,
+                      label: m.name,
+                    }))}
+                    value={formData.assignedTo}
+                    onChange={(
+                      e: SelectChangeEvent<string | number | string[]>
+                    ) =>
+                      setFormData({
+                        ...formData,
+                        assignedTo: (e.target.value as string[]) || [],
+                      })
+                    }
+                    placeholder='Assign To'
+                    containerSx={{ width: '100%' }}
+                    showLabel={false}
+                    label={''}
+                  />
+                ),
+                value: formData.assignedTo.join(','),
+                onChange: (v: string | number) =>
+                  setFormData({
+                    ...formData,
+                    assignedTo: String(v).split(',').filter(Boolean),
+                  }),
+              } as unknown as FormField,
+            ]
             : []),
         ];
 
@@ -1032,8 +1032,8 @@ export default function ManagerTaskBoard() {
 
             ...(formData.teamId
               ? [
-                  //  as unknown as FormField,
-                ]
+                //  as unknown as FormField,
+              ]
               : []),
             {
               name: 'deadline',

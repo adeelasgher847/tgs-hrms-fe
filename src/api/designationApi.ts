@@ -1,6 +1,5 @@
 import axiosInstance from './axiosInstance';
 import { handleApiError } from '../utils/errorHandler';
-import { getCurrentUser } from '../utils/auth';
 // Normalized types exposed to the rest of the app (camelCase)
 export interface BackendDesignation {
   id: string;
@@ -61,10 +60,21 @@ class DesignationApiService {
   private baseUrl = '/designations';
   private departmentUrl = '/departments';
   async getAllDepartments(): Promise<BackendDepartment[]> {
-    const response = await axiosInstance.get<BackendDepartment[]>(
-      this.departmentUrl
-    );
-    const items = Array.isArray(response.data) ? response.data : [];
+    const response = await axiosInstance.get<
+      BackendDepartment[] | { items: BackendDepartment[] }
+    >(this.departmentUrl);
+    
+    let items: BackendDepartment[] = [];
+    if (Array.isArray(response.data)) {
+      items = response.data;
+    } else if (
+      response.data &&
+      'items' in response.data &&
+      Array.isArray(response.data.items)
+    ) {
+      items = response.data.items;
+    }
+
     return items.map((item: unknown) =>
       normalizeDepartment(item as Record<string, unknown>)
     );
@@ -129,43 +139,39 @@ class DesignationApiService {
   // Get all designations from all departments
   async getAllDesignations(): Promise<BackendDesignation[]> {
     try {
-      // Get current user's tenant_id
-      const currentUser = getCurrentUser();
-      const userTenantId = currentUser?.tenant_id;
-      // Global tenant ID that should be shown for all tenants
-      const GLOBAL_TENANT_ID = '00000000-0000-0000-0000-000000000000';
       // Since your backend doesn't have a direct endpoint for all designations,
       // we'll need to fetch all departments first and then get designations for each
       const departments = await this.getAllDepartments();
       const allDesignations: BackendDesignation[] = [];
+      
       for (const department of departments) {
         try {
-          const response = await this.getDesignationsByDepartment(
-            department.id,
-            1
-          );
-          allDesignations.push(...response.items);
+          let currentPage = 1;
+          let totalPages = 1;
+
+          do {
+            const response = await this.getDesignationsByDepartment(
+              department.id,
+              currentPage
+            );
+            
+            if (response.items.length === 0) break;
+
+            allDesignations.push(...response.items);
+            totalPages = response.totalPages;
+            currentPage++;
+          } while (currentPage <= totalPages);
         } catch {
           // Continue with other departments even if one fails
         }
       }
-      // Filter designations to include:
-      // 1. Global designations (tenant_id = "00000000-0000-0000-0000-000000000000")
-      // 2. Designations matching the logged-in user's tenant_id
-      const filteredDesignations = allDesignations.filter(designation => {
-        const designationTenantId = designation.tenantId;
-        // Include global designations
-        if (designationTenantId === GLOBAL_TENANT_ID) {
-          return true;
-        }
-        // Include designations matching user's tenant_id
-        if (userTenantId && designationTenantId === userTenantId) {
-          return true;
-        }
-        // If no user tenant_id is available, only show global designations
-        return false;
-      });
-      return filteredDesignations;
+
+      // Remove duplicates just in case
+      const uniqueDesignationsMap = new Map<string, BackendDesignation>();
+      allDesignations.forEach(d => uniqueDesignationsMap.set(d.id, d));
+      const uniqueDesignations = Array.from(uniqueDesignationsMap.values());
+
+      return uniqueDesignations;
     } catch {
       throw new Error('Failed to fetch all designations');
     }

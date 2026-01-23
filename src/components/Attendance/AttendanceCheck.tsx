@@ -12,6 +12,8 @@ import {
   isNetworkAdmin,
   isHRAdmin,
 } from '../../utils/roleUtils';
+import { useErrorHandler } from '../../hooks/useErrorHandler';
+import ErrorSnackbar from '../common/ErrorSnackbar';
 import AppPageTitle from '../common/AppPageTitle';
 
 type AttendanceStatus = 'Not Checked In' | 'Checked In' | 'Checked Out';
@@ -22,7 +24,7 @@ const AttendanceCheck = () => {
   const [punchOutTime, setPunchOutTime] = useState<string | null>(null);
   const [currentTime, setCurrentTime] = useState<string>('');
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const { snackbar, showError, closeSnackbar } = useErrorHandler();
   const [userName, setUserName] = useState<string>('');
   const [isAdminUser, setIsAdminUser] = useState(false);
   const [isSystemAdminUser, setIsSystemAdminUser] = useState(false);
@@ -48,10 +50,10 @@ const AttendanceCheck = () => {
   };
 
   const fetchToday = async () => {
-    setError(null);
+    closeSnackbar();
     const userId = getCurrentUserId();
     if (!userId) {
-      setError('User not found. Please log in again.');
+      showError('User not found. Please log in again.');
       return;
     }
     try {
@@ -75,7 +77,7 @@ const AttendanceCheck = () => {
         setStatus('Not Checked In');
       }
     } catch {
-      setError("Failed to fetch today's attendance summary.");
+      showError("Failed to fetch today's attendance summary.");
     }
   };
 
@@ -119,11 +121,11 @@ const AttendanceCheck = () => {
 
   const handleCheckIn = async () => {
     setLoading(true);
-    setError(null);
+    closeSnackbar();
 
     // Request high-accuracy geolocation permission and position
     if (!('geolocation' in navigator)) {
-      setError('Geolocation is not available on this device.');
+      showError('Geolocation is not available on this device.');
       setLoading(false);
       return;
     }
@@ -146,32 +148,7 @@ const AttendanceCheck = () => {
       // Inform MyTimeCard that attendance has changed so it can refresh immediately
       setAttendanceRefreshToken(prev => prev + 1);
     } catch (err: unknown) {
-      // Handle geolocation errors specially
-      if (err && typeof err === 'object' && 'code' in err) {
-        const ge = err as GeolocationPositionError;
-        if (ge.code === ge.PERMISSION_DENIED) {
-          setError(
-            'Location permission denied. Please allow location access and try again.'
-          );
-        } else if (ge.code === ge.POSITION_UNAVAILABLE) {
-          setError(
-            'Unable to determine your location. Please ensure GPS is enabled.'
-          );
-        } else if (ge.code === ge.TIMEOUT) {
-          setError('Location request timed out. Please try again.');
-        } else {
-          setError('Failed to get location. Please try again.');
-        }
-      } else if (err && typeof err === 'object' && 'response' in err) {
-        // Server-side error (e.g., outside geofence)
-        const resp = (
-          err as { response?: { data?: { message?: string } } }
-        ).response;
-        const msg = resp?.data?.message || 'Check-in failed. Please try again.';
-        setError(msg);
-      } else {
-        setError('Check-in failed. Please try again.');
-      }
+      showError(err);
     } finally {
       setLoading(false);
     }
@@ -179,10 +156,10 @@ const AttendanceCheck = () => {
 
   const handleCheckOut = async () => {
     setLoading(true);
-    setError(null);
+    closeSnackbar();
 
     if (!('geolocation' in navigator)) {
-      setError('Geolocation is not available on this device.');
+      showError('Geolocation is not available on this device.');
       setLoading(false);
       return;
     }
@@ -204,31 +181,7 @@ const AttendanceCheck = () => {
       // Also notify MyTimeCard on checkout in case it needs to update state
       setAttendanceRefreshToken(prev => prev + 1);
     } catch (err: unknown) {
-      if (err && typeof err === 'object' && 'code' in err) {
-        const ge = err as GeolocationPositionError;
-        if (ge.code === ge.PERMISSION_DENIED) {
-          setError(
-            'Location permission denied. Please allow location access and try again.'
-          );
-        } else if (ge.code === ge.POSITION_UNAVAILABLE) {
-          setError(
-            'Unable to determine your location. Please ensure GPS is enabled.'
-          );
-        } else if (ge.code === ge.TIMEOUT) {
-          setError('Location request timed out. Please try again.');
-        } else {
-          setError('Failed to get location. Please try again.');
-        }
-      } else if (err && typeof err === 'object' && 'response' in err) {
-        const resp = (
-          err as { response?: { data?: { message?: string } } }
-        ).response;
-        const msg =
-          resp?.data?.message || 'Check-out failed. Please try again.';
-        setError(msg);
-      } else {
-        setError('Check-out failed. Please try again.');
-      }
+      showError(err);
     } finally {
       setLoading(false);
     }
@@ -322,18 +275,6 @@ const AttendanceCheck = () => {
           />
         )}
       </Box>
-
-      {error && (
-        <Alert
-          severity='error'
-          sx={{
-            mb: 3,
-            borderRadius: 1,
-          }}
-        >
-          {error}
-        </Alert>
-      )}
 
       <Box display='flex' flexDirection={{ xs: 'column', lg: 'row' }} gap={2}>
         {/* Attendance Status Card */}
@@ -462,9 +403,16 @@ const AttendanceCheck = () => {
         </Box>
       </Box>
 
-      {/* Live Geofence Distance & Map */}
       <EmployeeGeofenceStatus />
-    </Box>
+
+      {/* Toast Notifications */}
+      <ErrorSnackbar
+        open={snackbar.open}
+        message={snackbar.message}
+        severity={snackbar.severity}
+        onClose={closeSnackbar}
+      />
+    </Box >
   );
 };
 
