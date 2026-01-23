@@ -39,7 +39,9 @@ import EmployeeGrowthChart from './EmployeeGrowthChart';
 import SystemUptimeCard from './SystemUptimeCard';
 import RecentActivityLogs from './RecentActivityLogs';
 import { getCurrentUser } from '../../utils/auth';
-import { isSystemAdmin } from '../../utils/roleUtils';
+import SalaryOverviewChart from './SalaryOverviewChart';
+import AttendanceDepartmentChart from './AttendanceDepartmentChart';
+import { isSystemAdmin, isAdmin } from '../../utils/roleUtils';
 import { PAGINATION } from '../../constants/appConstants';
 import AppPageTitle from '../common/AppPageTitle';
 
@@ -585,6 +587,8 @@ const Dashboard: React.FC = () => {
             gap: 3,
           }}
         >
+
+
           {/* Employee Growth Chart - Full Width */}
           <Paper
             elevation={0}
@@ -643,6 +647,13 @@ const Dashboard: React.FC = () => {
               <GenderPercentageChart />
             </Paper>
           </Box>
+
+          {isAdmin(userRole) && (
+            <>
+              <SalaryOverviewChart />
+              <AttendanceDepartmentChart />
+            </>
+          )}
         </Box>
       )}
     </Box>

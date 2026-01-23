@@ -18,32 +18,42 @@ import {
   Tooltip,
   IconButton,
   Pagination,
+  Table,
+  useTheme,
+  Stack,
 } from '@mui/material';
+import AppFormModal from '../common/AppFormModal';
 import {
   Add as AddIcon,
   FileDownload as FileDownloadIcon,
+  Check as CheckIcon,
+  Close as CloseIcon,
 } from '@mui/icons-material';
-import BenefitCard from './BenefitCard';
+import { TextField } from '@mui/material';
 import AssignEmployeeBenefit from './AssignEmployeeBenefit';
 import AppDropdown from '../common/AppDropdown';
 import AppButton from '../common/AppButton';
 import employeeBenefitApi from '../../api/employeeBenefitApi';
 import benefitsApi from '../../api/benefitApi';
-import type { EmployeeWithBenefits } from '../../api/employeeBenefitApi';
+import type { EmployeeWithBenefits, ReimbursementRequest, EmployeeBenefitDetail } from '../../api/employeeBenefitApi';
 import { useErrorHandler } from '../../hooks/useErrorHandler';
 import ErrorSnackbar from '../common/ErrorSnackbar';
 import AppTable from '../common/AppTable';
 import { getUserRole } from '../../utils/auth';
 import { normalizeRole } from '../../utils/permissions';
+import { formatDate } from '../../utils/dateUtils';
+import { env } from '../../config/env';
+import { PAGINATION } from '../../constants/appConstants';
 
-const ITEMS_PER_PAGE = 25; // Backend returns 25 records per page
+const ITEMS_PER_PAGE = PAGINATION.DEFAULT_PAGE_SIZE;
 
 const EmployeeBenefits: React.FC = () => {
   const role = normalizeRole(getUserRole());
+  const theme = useTheme();
   const isManager = role === 'manager';
   const [openForm, setOpenForm] = useState(false);
   const [employees, setEmployees] = useState<EmployeeWithBenefits[]>([]);
-  const [selectedBenefit, setSelectedBenefit] = useState<unknown | null>(null);
+  const [selectedBenefit, setSelectedBenefit] = useState<EmployeeBenefitDetail | null>(null);
   const [openBenefitDialog, setOpenBenefitDialog] = useState(false);
   const [loading, setLoading] = useState(true);
   const [benefitLoading, setBenefitLoading] = useState(false);
@@ -56,10 +66,86 @@ const EmployeeBenefits: React.FC = () => {
   const [totalPages, setTotalPages] = useState(1);
   const [totalRecords, setTotalRecords] = useState(0);
 
+  // Reimbursement History State for Admin/HR
+  const [reimbursementHistory, setReimbursementHistory] = useState<ReimbursementRequest[]>([]);
+  const [loadingHistory, setLoadingHistory] = useState(false);
+
+  // Review Dialog State
+  const [reviewDialogOpen, setReviewDialogOpen] = useState(false);
+  const [reviewRequestId, setReviewRequestId] = useState<string | null>(null);
+  const [reviewStatus, setReviewStatus] = useState<'approved' | 'rejected'>('approved');
+  const [reviewRemarks, setReviewRemarks] = useState('');
+  const [reviewLoading, setReviewLoading] = useState(false);
+
+  const handleReviewClick = (requestId: string, status: 'approved' | 'rejected') => {
+    setReviewRequestId(requestId);
+    setReviewStatus(status);
+    setReviewRemarks(''); // Reset remarks
+    setReviewDialogOpen(true);
+  };
+
+  const handleReviewSubmit = async () => {
+    if (!reviewRequestId) return;
+
+    if (reviewStatus === 'rejected' && !reviewRemarks.trim()) {
+      showError('Remarks are required for rejection.');
+      return;
+    }
+
+    setReviewLoading(true);
+    try {
+      await employeeBenefitApi.reviewBenefitReimbursement(reviewRequestId, {
+        status: reviewStatus,
+        reviewRemarks: reviewRemarks.trim() || undefined
+      });
+      showSuccess(`Request ${reviewStatus} successfully.`);
+      setReviewDialogOpen(false);
+
+      // Refresh history
+      if (selectedBenefit) {
+        // Mock refresh logic similar to initial fetch
+        const benefitAssignmentId = selectedBenefit.benefitAssignmentId;
+        const employeeId = selectedBenefit.employeeId;
+
+        if (benefitAssignmentId && employeeId) {
+          const response = await employeeBenefitApi.getAllReimbursementRequests({
+            employeeId,
+            limit: 100
+          });
+          const allRequests = response.items || [];
+          const filteredHistory = allRequests.filter(
+            r => r.employeeBenefitId === benefitAssignmentId && r.status !== 'cancelled'
+          );
+          setReimbursementHistory(filteredHistory);
+        }
+      }
+    } catch (error: unknown) {
+      const err = error as { response?: { data?: { message?: string } } };
+      console.error('Review failed', error);
+      const errorMessage = err.response?.data?.message || 'Failed to submit review.';
+      showError(errorMessage);
+    } finally {
+      setReviewLoading(false);
+    }
+  };
+
+  const getFileUrl = (path: string) => {
+    if (!path) return '';
+    if (path.startsWith('http') || path.startsWith('https') || path.startsWith('blob:')) return path;
+    const baseUrl = env.apiBaseUrl?.endsWith('/')
+      ? env.apiBaseUrl.slice(0, -1)
+      : env.apiBaseUrl;
+    const relativePath = path.startsWith('/') ? path : `/${path}`;
+    return `${baseUrl}${relativePath}`;
+  };
+
   const fetchEmployees = useCallback(async (pageNum: number = 1) => {
     try {
       setLoading(true);
-      const resp = await employeeBenefitApi.getEmployeesWithBenefits(pageNum);
+      const resp = await employeeBenefitApi.getEmployeesWithBenefits({
+        page: pageNum,
+        limit: ITEMS_PER_PAGE
+      });
 
       // Handle both array and paginated response
       const items = Array.isArray(resp) ? resp : resp.items || [];
@@ -110,7 +196,8 @@ const EmployeeBenefits: React.FC = () => {
   const handleBenefitClick = async (
     benefitId: string,
     employeeBenefitStatus: string,
-    benefitAssignmentId: string
+    benefitAssignmentId: string,
+    employeeId: string
   ) => {
     try {
       setBenefitLoading(true);
@@ -120,9 +207,37 @@ const EmployeeBenefits: React.FC = () => {
         ...benefitDetails,
         employeeStatus: employeeBenefitStatus,
         benefitAssignmentId,
+        employeeId,
       });
 
       setOpenBenefitDialog(true);
+
+      // Fetch reimbursement history for this benefit assignment if user is authorized
+      if (benefitAssignmentId && employeeId) {
+        setLoadingHistory(true);
+        try {
+          // Admin/HR must filter by employeeId to see specific employee requests
+          // Then we filter by employeeBenefitId match client-side to show only for this benefit card
+          const response = await employeeBenefitApi.getAllReimbursementRequests({
+            employeeId,
+            limit: 100 // Fetch enough to filter
+          });
+
+          const allRequests = response.items || [];
+          const filteredHistory = allRequests.filter(
+            r => r.employeeBenefitId === benefitAssignmentId && r.status !== 'cancelled'
+          );
+
+          setReimbursementHistory(filteredHistory);
+        } catch (error) {
+          console.error('Failed to fetch reimbursement history', error);
+          setReimbursementHistory([]);
+        } finally {
+          setLoadingHistory(false);
+        }
+      } else {
+        setReimbursementHistory([]);
+      }
     } catch {
       // Keep previous selection if details fetch fails
     } finally {
@@ -414,7 +529,8 @@ const EmployeeBenefits: React.FC = () => {
                               handleBenefitClick(
                                 b.id,
                                 b.statusOfAssignment,
-                                b.benefitAssignmentId
+                                b.benefitAssignmentId,
+                                emp.employeeId
                               )
                             }
                           />
@@ -465,32 +581,220 @@ const EmployeeBenefits: React.FC = () => {
         }}
       />
 
-      <Dialog
+      <AppFormModal
         open={openBenefitDialog}
         onClose={() => setOpenBenefitDialog(false)}
+        title={selectedBenefit?.name || 'Benefit Details'}
+        cancelLabel='Close'
+        showSubmitButton={false}
+        maxWidth='md'
+        onSubmit={() => { }}
+        paperSx={{
+          backgroundColor: theme.palette.mode === 'dark' ? '#1e1e1e' : '#fff',
+          width: '100%',
+          maxWidth: '800px'
+        }}
       >
         {benefitLoading ? (
           <Box sx={{ textAlign: 'center', p: 3 }}>
             <CircularProgress />
           </Box>
         ) : selectedBenefit ? (
-          <BenefitCard
-            name={selectedBenefit.name}
-            type={selectedBenefit.type}
-            eligibilityCriteria={selectedBenefit.eligibilityCriteria}
-            description={selectedBenefit.description}
-            status={selectedBenefit.employeeStatus || selectedBenefit.status}
-            createdAt={selectedBenefit.createdAt}
-            onCancel={
-              selectedBenefit.employeeStatus === 'active'
-                ? handleDeleteBenefitClick
-                : undefined
-            }
-          />
+          <Stack spacing={3}>
+            {/* Status Header */}
+            <Box>
+              <Typography variant='body2' sx={{ color: theme.palette.text.secondary }}>
+                Status: {' '}
+                <Chip
+                  label={selectedBenefit.employeeStatus || selectedBenefit.status}
+                  size='small'
+                  color={(selectedBenefit.employeeStatus || selectedBenefit.status) === 'active' ? 'success' : 'default'}
+                  sx={{ ml: 1 }}
+                />
+              </Typography>
+            </Box>
+
+            {/* Details Grid */}
+            <Box
+              sx={{
+                display: 'grid',
+                gap: 2,
+                gridTemplateColumns: {
+                  xs: '1fr',
+                  sm: 'repeat(2, minmax(0, 1fr))',
+                  md: 'repeat(4, minmax(0, 1fr))',
+                },
+              }}
+            >
+              <Paper elevation={0} sx={{ p: 2, textAlign: 'center', bgcolor: theme.palette.mode === 'dark' ? '#121212' : '#f8f9fa', borderRadius: 2 }}>
+                <Typography variant="caption" color="textSecondary">Type</Typography>
+                <Typography variant="subtitle1" fontWeight={600}>{selectedBenefit.type || '-'}</Typography>
+              </Paper>
+              <Paper elevation={0} sx={{ p: 2, textAlign: 'center', bgcolor: theme.palette.mode === 'dark' ? '#121212' : '#f8f9fa', borderRadius: 2 }}>
+                <Typography variant="caption" color="textSecondary">Start Date</Typography>
+                <Typography variant="subtitle1" fontWeight={600}>{formatDate(selectedBenefit.startDate || '')}</Typography>
+              </Paper>
+              <Paper elevation={0} sx={{ p: 2, textAlign: 'center', bgcolor: theme.palette.mode === 'dark' ? '#121212' : '#f8f9fa', borderRadius: 2 }}>
+                <Typography variant="caption" color="textSecondary">End Date</Typography>
+                <Typography variant="subtitle1" fontWeight={600}>{formatDate((selectedBenefit.endDate as string) || '')}</Typography>
+              </Paper>
+              <Paper elevation={0} sx={{ p: 2, textAlign: 'center', bgcolor: theme.palette.mode === 'dark' ? '#121212' : '#f8f9fa', borderRadius: 2 }}>
+                <Typography variant="caption" color="textSecondary">Eligibility</Typography>
+                <Typography variant="subtitle1" fontWeight={600} sx={{ fontSize: '0.9rem' }}>{selectedBenefit.eligibilityCriteria || '-'}</Typography>
+              </Paper>
+            </Box>
+
+            {/* Description */}
+            {selectedBenefit.description && (
+              <Box>
+                <Typography variant='subtitle2' fontWeight={600} gutterBottom>Description</Typography>
+                <Paper elevation={0} sx={{ p: 2, bgcolor: theme.palette.mode === 'dark' ? '#121212' : '#f8f9fa', borderRadius: 2 }}>
+                  <Typography variant="body2">{selectedBenefit.description}</Typography>
+                </Paper>
+              </Box>
+            )}
+
+            {/* Reimbursement History */}
+            <Box>
+              <Typography variant='subtitle1' fontWeight={600} gutterBottom>
+                Reimbursement History
+              </Typography>
+              <Paper sx={{ width: '100%', overflow: 'hidden', boxShadow: 'none', border: `1px solid ${theme.palette.divider}`, borderRadius: 2 }}>
+                <Box sx={{ overflowX: 'auto' }}>
+                  <Table size='small' sx={{ minWidth: 650 }}>
+                    <TableHead>
+                      <TableRow sx={{ bgcolor: theme.palette.action.hover }}>
+                        <TableCell>Date</TableCell>
+                        <TableCell>Amount</TableCell>
+                        <TableCell>Status</TableCell>
+                        <TableCell>Description</TableCell>
+                        <TableCell>Proof</TableCell>
+                        <TableCell>Action</TableCell>
+                      </TableRow>
+                    </TableHead>
+                    <TableBody>
+                      {loadingHistory ? (
+                        <TableRow>
+                          <TableCell colSpan={6} align='center'>
+                            <CircularProgress size={20} />
+                          </TableCell>
+                        </TableRow>
+                      ) : reimbursementHistory.length > 0 ? (
+                        reimbursementHistory.map((item) => (
+                          <TableRow key={item.id} hover>
+                            <TableCell>
+                              {formatDate(item.createdAt)}
+                            </TableCell>
+                            <TableCell>{item.amount}</TableCell>
+                            <TableCell>
+                              <Chip
+                                label={item.status}
+                                size='small'
+                                color={
+                                  item.status === 'approved'
+                                    ? 'success'
+                                    : item.status === 'rejected'
+                                      ? 'error'
+                                      : 'warning'
+                                }
+                              />
+                            </TableCell>
+                            <TableCell
+                              sx={{
+                                maxWidth: 200,
+                                whiteSpace: 'nowrap',
+                                overflow: 'hidden',
+                                textOverflow: 'ellipsis',
+                              }}
+                            >
+                              <Tooltip title={
+                                (item.details || item.description || '') +
+                                (item.status === 'rejected' && item.reviewRemarks ? ` \nRejection Reason: ${item.reviewRemarks}` : '')
+                              }>
+                                <span style={{ display: 'flex', flexDirection: 'column' }}>
+                                  <span>{item.details || item.description || '-'}</span>
+                                  {item.status === 'rejected' && item.reviewRemarks && (
+                                    <span style={{ color: 'red', fontSize: '0.8em', marginTop: '4px' }}>
+                                      Reason: {item.reviewRemarks}
+                                    </span>
+                                  )}
+                                </span>
+                              </Tooltip>
+                            </TableCell>
+                            <TableCell>
+                              {item.proofDocuments && item.proofDocuments.length > 0 ? (
+                                item.proofDocuments.slice(-1).map((doc: string, idx: number) => (
+                                  <a
+                                    key={idx}
+                                    href={getFileUrl(doc)}
+                                    target='_blank'
+                                    rel='noopener noreferrer'
+                                    style={{ display: 'block', fontSize: '12px', color: '#1976d2', textDecoration: 'underline' }}
+                                  >
+                                    View Proof
+                                  </a>
+                                ))
+                              ) : (
+                                'No Proof'
+                              )}
+                            </TableCell>
+                            <TableCell>
+                              {item.status === 'pending' && (
+                                <Box display="flex" gap={1}>
+                                  <Tooltip title="Approve">
+                                    <IconButton
+                                      size="small"
+                                      color="success"
+                                      onClick={() => handleReviewClick(item.id, 'approved')}
+                                    >
+                                      <CheckIcon fontSize="small" />
+                                    </IconButton>
+                                  </Tooltip>
+                                  <Tooltip title="Reject">
+                                    <IconButton
+                                      size="small"
+                                      color="error"
+                                      onClick={() => handleReviewClick(item.id, 'rejected')}
+                                    >
+                                      <CloseIcon fontSize="small" />
+                                    </IconButton>
+                                  </Tooltip>
+                                </Box>
+                              )}
+                            </TableCell>
+                          </TableRow>
+                        ))
+                      ) : (
+                        <TableRow>
+                          <TableCell colSpan={6} align='center'>
+                            No requests found.
+                          </TableCell>
+                        </TableRow>
+                      )}
+                    </TableBody>
+                  </Table>
+                </Box>
+              </Paper>
+            </Box>
+
+            {/* Cancel Benefit Action */}
+            {selectedBenefit?.employeeStatus === 'active' && (
+              <Box sx={{ display: 'flex', justifyContent: 'flex-end', pt: 2, borderTop: `1px solid ${theme.palette.divider}` }}>
+                <Button
+                  variant="outlined"
+                  color="error"
+                  onClick={handleDeleteBenefitClick}
+                >
+                  Cancel Benefit Assignment
+                </Button>
+              </Box>
+            )}
+
+          </Stack>
         ) : (
           <Typography sx={{ p: 2 }}>No benefit details available</Typography>
         )}
-      </Dialog>
+      </AppFormModal>
 
       <Dialog
         open={openDeleteDialog}
@@ -516,6 +820,46 @@ const EmployeeBenefits: React.FC = () => {
           </Button>
         </DialogActions>
       </Dialog>
+
+      {/* Review Dialog */}
+      <Dialog open={reviewDialogOpen} onClose={() => !reviewLoading && setReviewDialogOpen(false)}>
+        <DialogTitle>
+          {reviewStatus === 'approved' ? 'Approve Request' : 'Reject Request'}
+        </DialogTitle>
+        <DialogContent>
+          <DialogContentText sx={{ mb: 2 }}>
+            Please provide remarks for this action.
+            {reviewStatus === 'rejected' && ' (Required)'}
+          </DialogContentText>
+          <TextField
+            autoFocus
+            margin="dense"
+            label="Review Remarks"
+            fullWidth
+            multiline
+            rows={3}
+            variant="outlined"
+            value={reviewRemarks}
+            onChange={(e) => setReviewRemarks(e.target.value)}
+            required={reviewStatus === 'rejected'}
+            error={reviewStatus === 'rejected' && !reviewRemarks.trim()}
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setReviewDialogOpen(false)} color="inherit" disabled={reviewLoading}>
+            Cancel
+          </Button>
+          <Button
+            onClick={handleReviewSubmit}
+            color={reviewStatus === 'approved' ? 'success' : 'error'}
+            variant="contained"
+            disabled={reviewLoading}
+          >
+            {reviewLoading ? 'Submitting...' : 'Submit'}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
 
       <ErrorSnackbar
         open={snackbar.open}

@@ -197,17 +197,20 @@ class LeaveApiService {
     return response.data;
   }
 
-  async approveLeave(id: string): Promise<LeaveResponse> {
+  async approveLeave(id: string, remarks?: string): Promise<LeaveResponse> {
+    const payload = remarks?.trim() ? { remarks: remarks.trim() } : {};
     const response = await axiosInstance.put<LeaveResponse>(
-      `${this.baseUrl}/${id}/approve`
+      `${this.baseUrl}/${id}/approve`,
+      payload
     );
     return response.data;
   }
 
-  async rejectLeave(id: string): Promise<LeaveResponse> {
-    // Admin/HR admin rejectLeave API no longer accepts remarks parameter
+  async rejectLeave(id: string, remarks?: string): Promise<LeaveResponse> {
+    const payload = remarks?.trim() ? { remarks: remarks.trim() } : {};
     const response = await axiosInstance.put<LeaveResponse>(
-      `${this.baseUrl}/${id}/reject`
+      `${this.baseUrl}/${id}/reject`,
+      payload
     );
     return response.data;
   }
