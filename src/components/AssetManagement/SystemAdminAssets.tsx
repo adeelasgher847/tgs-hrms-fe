@@ -286,7 +286,6 @@ const SystemAdminAssets: React.FC = () => {
               gridTemplateColumns: {
                 xs: '1fr',
                 sm: 'repeat(2, 1fr)',
-                md: 'repeat(3, 1fr)',
               },
               gap: 3,
               mb: 3,
@@ -486,16 +485,10 @@ const SystemAdminAssets: React.FC = () => {
           <Box
             sx={{
               display: 'grid',
-              gridTemplateColumns: 'repeat(4, 1fr)',
+              gridTemplateColumns: 'repeat(2, 1fr)',
               gap: 3,
               mt: 1,
-              '@media (max-width: 900px)': {
-                gridTemplateColumns: 'repeat(3, 1fr)',
-              },
               '@media (max-width: 600px)': {
-                gridTemplateColumns: 'repeat(2, 1fr)',
-              },
-              '@media (max-width: 400px)': {
                 gridTemplateColumns: '1fr',
               },
             }}
@@ -706,6 +699,7 @@ const SystemAdminAssets: React.FC = () => {
               }}
             >
               <AppDropdown
+                label='Category'
                 showLabel={false}
                 value={categoryFilter}
                 onChange={e => setCategoryFilter(String(e.target.value || ''))}
@@ -724,6 +718,7 @@ const SystemAdminAssets: React.FC = () => {
               }}
             >
               <AppDropdown
+                label='Tenant'
                 showLabel={false}
                 value={tenantFilter}
                 onChange={e => setTenantFilter(String(e.target.value || ''))}
@@ -745,6 +740,7 @@ const SystemAdminAssets: React.FC = () => {
               }}
             >
               <AppDropdown
+                label='Assigned Status'
                 showLabel={false}
                 value={assignedFilter}
                 onChange={e => setAssignedFilter(String(e.target.value || ''))}
@@ -931,10 +927,10 @@ const SystemAdminAssets: React.FC = () => {
                   <StatusChip
                     status={
                       asset.status as
-                        | 'available'
-                        | 'assigned'
-                        | 'under_maintenance'
-                        | 'retired'
+                      | 'available'
+                      | 'assigned'
+                      | 'under_maintenance'
+                      | 'retired'
                     }
                     type='asset'
                   />

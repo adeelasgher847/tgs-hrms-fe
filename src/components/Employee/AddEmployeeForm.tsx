@@ -878,7 +878,14 @@ const AddEmployeeForm: React.FC<AddEmployeeFormProps> = ({
                     type='file'
                     onChange={handleImageUpload('profile')}
                   />
-                  <label htmlFor='profile-picture-upload'>
+                  <label
+                    htmlFor='profile-picture-upload'
+                    style={{
+                      display: 'flex',
+                      height: '100%',
+                      alignItems: 'center',
+                    }}
+                  >
                     <AppButton
                       variant='contained'
                       variantType='primary'
@@ -887,14 +894,14 @@ const AddEmployeeForm: React.FC<AddEmployeeFormProps> = ({
                       text={label('Upload', 'رفع')}
                       sx={{
                         textTransform: 'none',
-                        borderTopLeftRadius: 0,
-                        borderBottomLeftRadius: 0,
-                        borderTopRightRadius: '12px',
-                        borderBottomRightRadius: '12px',
+                        borderRadius: '0px 10px 10px 0px',
                         height: '100%',
                         boxShadow: 'none',
-                        minWidth: '80px',
+                        minWidth: '84px',
                         color: theme.palette.common.white,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
                         '&:hover': {
                           backgroundColor: 'primary.main',
                           boxShadow: 'none',
@@ -938,7 +945,14 @@ const AddEmployeeForm: React.FC<AddEmployeeFormProps> = ({
                     type='file'
                     onChange={handleImageUpload('cnicFront')}
                   />
-                  <label htmlFor='cnic-front-upload'>
+                  <label
+                    htmlFor='cnic-front-upload'
+                    style={{
+                      display: 'flex',
+                      height: '100%',
+                      alignItems: 'center',
+                    }}
+                  >
                     <AppButton
                       variant='contained'
                       variantType='primary'
@@ -947,14 +961,14 @@ const AddEmployeeForm: React.FC<AddEmployeeFormProps> = ({
                       text={label('Upload', 'رفع')}
                       sx={{
                         textTransform: 'none',
-                        borderTopLeftRadius: 0,
-                        borderBottomLeftRadius: 0,
-                        borderTopRightRadius: '12px',
-                        borderBottomRightRadius: '12px',
+                        borderRadius: '0px 10px 10px 0px',
                         height: '100%',
                         boxShadow: 'none',
-                        minWidth: '80px',
+                        minWidth: '84px',
                         color: theme.palette.common.white,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
                         '&:hover': {
                           backgroundColor: 'primary.main',
                           boxShadow: 'none',
@@ -1001,7 +1015,14 @@ const AddEmployeeForm: React.FC<AddEmployeeFormProps> = ({
                     type='file'
                     onChange={handleImageUpload('cnicBack')}
                   />
-                  <label htmlFor='cnic-back-upload'>
+                  <label
+                    htmlFor='cnic-back-upload'
+                    style={{
+                      display: 'flex',
+                      height: '100%',
+                      alignItems: 'center',
+                    }}
+                  >
                     <AppButton
                       variant='contained'
                       variantType='primary'
@@ -1010,14 +1031,14 @@ const AddEmployeeForm: React.FC<AddEmployeeFormProps> = ({
                       text={label('Upload', 'رفع')}
                       sx={{
                         textTransform: 'none',
-                        borderTopLeftRadius: 0,
-                        borderBottomLeftRadius: 0,
-                        borderTopRightRadius: '12px',
-                        borderBottomRightRadius: '12px',
                         height: '100%',
                         boxShadow: 'none',
-                        minWidth: '80px',
+                        minWidth: '84px',
+                        borderRadius: '0px 10px 10px 0px',
                         color: theme.palette.common.white,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
                         '&:hover': {
                           backgroundColor: 'primary.main',
                           boxShadow: 'none',

@@ -6,6 +6,7 @@ import {
   Typography,
   Box,
   useTheme,
+  Checkbox,
   type SelectProps,
 } from '@mui/material';
 import type { SelectChangeEvent } from '@mui/material/Select';
@@ -18,13 +19,13 @@ interface AppDropdownOption {
 
 interface AppDropdownProps
   extends Omit<
-    SelectProps<string | number>,
+    SelectProps<unknown>,
     'label' | 'onChange' | 'variant' | 'open' | 'onOpen' | 'onClose'
   > {
   label: string;
   options: AppDropdownOption[];
-  value: string | number;
-  onChange: (event: SelectChangeEvent<string | number>) => void;
+  value: string | number | Array<string | number>;
+  onChange: (event: SelectChangeEvent<string | number | string[]>) => void;
   labelClassName?: string;
   containerSx?: object;
   placeholder?: string;
@@ -78,11 +79,18 @@ const AppDropdown = React.forwardRef<HTMLDivElement, AppDropdownProps>(
   ) => {
     const theme = useTheme();
     const [open, setOpen] = useState(false);
+    // Provide a sensible default container sizing for large screens
+    // Pages can still override by passing `containerSx` prop.
+    const defaultContainerSx = {
+      minWidth: { md: 220 },
+      width: { xs: '100%', md: 'auto' },
+    };
+    const mergedContainerSx = { ...defaultContainerSx, ...(containerSx || {}) };
 
     return (
       <Box
         sx={{
-          ...containerSx,
+          ...mergedContainerSx,
           display: 'flex',
           flexDirection: 'column',
           gap: '8px',
@@ -198,7 +206,7 @@ const AppDropdown = React.forwardRef<HTMLDivElement, AppDropdownProps>(
             {...rest}
             variant='outlined'
             id={rest.id || (rest.name ? `dropdown-${rest.name}` : undefined)}
-            value={value === 'all' ? '' : value}
+            value={Array.isArray(value) ? value : value === 'all' ? '' : value}
             onChange={onChange}
             displayEmpty
             open={open}
@@ -206,9 +214,18 @@ const AppDropdown = React.forwardRef<HTMLDivElement, AppDropdownProps>(
             onClose={() => setOpen(false)}
             IconComponent={() => <ArrowIcon open={open} />}
             renderValue={selected => {
-              if (!selected || selected === '') {
+              if (
+                !selected ||
+                (Array.isArray(selected) && selected.length === 0)
+              ) {
                 const allOption = options.find(opt => opt.value === 'all');
                 return allOption ? allOption.label : placeholder || '';
+              }
+              if (Array.isArray(selected)) {
+                const labels = (selected as Array<string | number>)
+                  .map(s => options.find(opt => opt.value === s)?.label)
+                  .filter(Boolean);
+                return labels.join(', ');
               }
               const selectedOption = options.find(
                 opt => opt.value === selected
@@ -282,7 +299,20 @@ const AppDropdown = React.forwardRef<HTMLDivElement, AppDropdownProps>(
                   },
                 }}
               >
-                {option.label}
+                {rest.multiple ? (
+                  <Box display='flex' alignItems='center' gap={1}>
+                    <Checkbox
+                      size='small'
+                      checked={
+                        Array.isArray(value) &&
+                        (value as Array<string | number>).includes(option.value)
+                      }
+                    />
+                    <Box>{option.label}</Box>
+                  </Box>
+                ) : (
+                  option.label
+                )}
               </MenuItem>
             ))}
           </Select>

@@ -405,7 +405,7 @@ const PayrollConfiguration: React.FC = () => {
       const errorMessage =
         err && typeof err === 'object' && 'response' in err
           ? (err as { response?: { data?: { message?: string } } }).response
-              ?.data?.message || 'Failed to save payroll configuration'
+            ?.data?.message || 'Failed to save payroll configuration'
           : 'Failed to save payroll configuration';
       setError(errorMessage);
       snackbar.error(errorMessage);
@@ -449,9 +449,9 @@ const PayrollConfiguration: React.FC = () => {
     if (
       config.deductions.taxPercentage !== deductions.taxPercentage ||
       config.deductions.insurancePercentage !==
-        deductions.insurancePercentage ||
+      deductions.insurancePercentage ||
       config.deductions.providentFundPercentage !==
-        deductions.providentFundPercentage
+      deductions.providentFundPercentage
     )
       return true;
 
@@ -465,9 +465,9 @@ const PayrollConfiguration: React.FC = () => {
     // Check leave deduction policy
     if (
       config.leaveDeductionPolicy.unpaidLeaveDeduction !==
-        leaveDeductionPolicy.unpaidLeaveDeduction ||
+      leaveDeductionPolicy.unpaidLeaveDeduction ||
       config.leaveDeductionPolicy.halfDayDeduction !==
-        leaveDeductionPolicy.halfDayDeduction
+      leaveDeductionPolicy.halfDayDeduction
     )
       return true;
 
@@ -658,7 +658,6 @@ const PayrollConfiguration: React.FC = () => {
                     gridTemplateColumns: {
                       xs: '1fr',
                       sm: 'repeat(2, 1fr)',
-                      md: 'repeat(4, 1fr)',
                     },
                     gap: 2,
                   }}
@@ -978,9 +977,9 @@ const PayrollConfiguration: React.FC = () => {
                             color: theme.palette.primary.main,
                           },
                           '& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track':
-                            {
-                              backgroundColor: theme.palette.primary.main,
-                            },
+                          {
+                            backgroundColor: theme.palette.primary.main,
+                          },
                         }}
                       />
                     }
@@ -1092,9 +1091,9 @@ const PayrollConfiguration: React.FC = () => {
                             color: theme.palette.primary.main,
                           },
                           '& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track':
-                            {
-                              backgroundColor: theme.palette.primary.main,
-                            },
+                          {
+                            backgroundColor: theme.palette.primary.main,
+                          },
                         }}
                       />
                     }
@@ -1552,9 +1551,9 @@ const PayrollConfiguration: React.FC = () => {
                         color: theme.palette.primary.main,
                       },
                       '& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track':
-                        {
-                          backgroundColor: theme.palette.primary.main,
-                        },
+                      {
+                        backgroundColor: theme.palette.primary.main,
+                      },
                     }}
                   />
                 }
@@ -1648,9 +1647,9 @@ const PayrollConfiguration: React.FC = () => {
                         color: theme.palette.primary.main,
                       },
                       '& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track':
-                        {
-                          backgroundColor: theme.palette.primary.main,
-                        },
+                      {
+                        backgroundColor: theme.palette.primary.main,
+                      },
                     }}
                   />
                 }

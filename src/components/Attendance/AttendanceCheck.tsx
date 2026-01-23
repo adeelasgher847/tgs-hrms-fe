@@ -1,16 +1,19 @@
 import { useState, useEffect } from 'react';
-import { Box, Typography, Paper, Alert, useTheme } from '@mui/material';
+import { Box, Typography, Paper, useTheme } from '@mui/material';
 import LoginIcon from '@mui/icons-material/Login';
 import LogoutIcon from '@mui/icons-material/Logout';
 import attendanceApi from '../../api/attendanceApi';
 import MyTimeCard from '../TimerTracker/MyTimeCard';
 import AppButton from '../common/AppButton';
+import EmployeeGeofenceStatus from '../Geofencing/EmployeeGeofenceStatus';
 import {
   isAdmin,
   isSystemAdmin,
   isNetworkAdmin,
   isHRAdmin,
 } from '../../utils/roleUtils';
+import { useErrorHandler } from '../../hooks/useErrorHandler';
+import ErrorSnackbar from '../common/ErrorSnackbar';
 import AppPageTitle from '../common/AppPageTitle';
 
 type AttendanceStatus = 'Not Checked In' | 'Checked In' | 'Checked Out';
@@ -21,7 +24,7 @@ const AttendanceCheck = () => {
   const [punchOutTime, setPunchOutTime] = useState<string | null>(null);
   const [currentTime, setCurrentTime] = useState<string>('');
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const { snackbar, showError, closeSnackbar } = useErrorHandler();
   const [userName, setUserName] = useState<string>('');
   const [isAdminUser, setIsAdminUser] = useState(false);
   const [isSystemAdminUser, setIsSystemAdminUser] = useState(false);
@@ -47,10 +50,10 @@ const AttendanceCheck = () => {
   };
 
   const fetchToday = async () => {
-    setError(null);
+    closeSnackbar();
     const userId = getCurrentUserId();
     if (!userId) {
-      setError('User not found. Please log in again.');
+      showError('User not found. Please log in again.');
       return;
     }
     try {
@@ -74,7 +77,7 @@ const AttendanceCheck = () => {
         setStatus('Not Checked In');
       }
     } catch {
-      setError("Failed to fetch today's attendance summary.");
+      showError("Failed to fetch today's attendance summary.");
     }
   };
 
@@ -88,19 +91,64 @@ const AttendanceCheck = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  const getRobustCurrentPosition = () =>
+    new Promise<GeolocationPosition>((resolve, reject) => {
+      // First attempt: High accuracy with increased timeout (20s) and allowed cache (5s)
+      navigator.geolocation.getCurrentPosition(
+        resolve,
+        error => {
+          // If high accuracy times out, try low accuracy as fallback
+          if (error.code === error.TIMEOUT) {
+            console.warn(
+              'High accuracy location timed out, falling back to low accuracy...'
+            );
+            navigator.geolocation.getCurrentPosition(resolve, reject, {
+              enableHighAccuracy: false,
+              timeout: 30000, // 30s timeout for fallback
+              maximumAge: 60000, // Accept up to 1 min old position for fallback
+            });
+          } else {
+            reject(error);
+          }
+        },
+        {
+          enableHighAccuracy: true,
+          timeout: 20000, // 20s
+          maximumAge: 5000, // 5s
+        }
+      );
+    });
+
   const handleCheckIn = async () => {
     setLoading(true);
-    setError(null);
+    closeSnackbar();
+
+    // Request high-accuracy geolocation permission and position
+    if (!('geolocation' in navigator)) {
+      showError('Geolocation is not available on this device.');
+      setLoading(false);
+      return;
+    }
+
     try {
-      await attendanceApi.createAttendance('check-in');
+      const pos = await getRobustCurrentPosition();
+      const lat = pos.coords.latitude;
+      const lon = pos.coords.longitude;
+
+      await attendanceApi.createAttendance({
+        type: 'CHECK_IN',
+        latitude: lat,
+        longitude: lon,
+      });
+
       // Optimistically reflect UI: clear checkout and lock check-in
       setPunchOutTime(null);
       setStatus('Checked In');
       await fetchToday();
       // Inform MyTimeCard that attendance has changed so it can refresh immediately
       setAttendanceRefreshToken(prev => prev + 1);
-    } catch {
-      setError('Check-in failed. Please try again.');
+    } catch (err: unknown) {
+      showError(err);
     } finally {
       setLoading(false);
     }
@@ -108,16 +156,32 @@ const AttendanceCheck = () => {
 
   const handleCheckOut = async () => {
     setLoading(true);
-    setError(null);
+    closeSnackbar();
+
+    if (!('geolocation' in navigator)) {
+      showError('Geolocation is not available on this device.');
+      setLoading(false);
+      return;
+    }
+
     try {
-      await attendanceApi.createAttendance('check-out');
+      const pos = await getRobustCurrentPosition();
+      const lat = pos.coords.latitude;
+      const lon = pos.coords.longitude;
+
+      await attendanceApi.createAttendance({
+        type: 'CHECK_OUT',
+        latitude: lat,
+        longitude: lon,
+      });
+
       // After checkout, both buttons become enabled again
       setStatus('Checked Out');
       await fetchToday();
       // Also notify MyTimeCard on checkout in case it needs to update state
       setAttendanceRefreshToken(prev => prev + 1);
-    } catch {
-      setError('Check-out failed. Please try again.');
+    } catch (err: unknown) {
+      showError(err);
     } finally {
       setLoading(false);
     }
@@ -150,9 +214,9 @@ const AttendanceCheck = () => {
             sx={{ mt: 1 }}
           >
             {isAdminUser ||
-            isSystemAdminUser ||
-            isNetworkAdminUser ||
-            isHRAdminUser
+              isSystemAdminUser ||
+              isNetworkAdminUser ||
+              isHRAdminUser
               ? 'Admin - Track your daily attendance'
               : 'Track your daily attendance'}
           </Typography>
@@ -211,18 +275,6 @@ const AttendanceCheck = () => {
           />
         )}
       </Box>
-
-      {error && (
-        <Alert
-          severity='error'
-          sx={{
-            mb: 3,
-            borderRadius: 1,
-          }}
-        >
-          {error}
-        </Alert>
-      )}
 
       <Box display='flex' flexDirection={{ xs: 'column', lg: 'row' }} gap={2}>
         {/* Attendance Status Card */}
@@ -350,7 +402,17 @@ const AttendanceCheck = () => {
           <MyTimeCard attendanceRefreshToken={attendanceRefreshToken} />
         </Box>
       </Box>
-    </Box>
+
+      <EmployeeGeofenceStatus />
+
+      {/* Toast Notifications */}
+      <ErrorSnackbar
+        open={snackbar.open}
+        message={snackbar.message}
+        severity={snackbar.severity}
+        onClose={closeSnackbar}
+      />
+    </Box >
   );
 };
 

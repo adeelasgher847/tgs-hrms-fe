@@ -32,7 +32,7 @@ export const getDefaultDashboardRoute = (role?: string): string => {
     case 'network-admin':
       return '/dashboard';
     case 'hr-admin':
-      return '/dashboard/AttendanceCheck';
+      return '/dashboard/AttendanceTable';
     case 'admin':
       return '/dashboard';
     case 'manager':
@@ -101,8 +101,8 @@ const ROLE_MENU_ALLOWLIST: Record<NormalizedRole, readonly string[]> = {
     'payroll',
     'benefits',
   ],
-  employee: ['attendance', 'assets', 'benefits', 'leave-analytics', 'payroll'],
-  user: ['attendance', 'assets', 'benefits', 'payroll'],
+  employee: ['attendance', 'assets', 'benefits', 'leave-analytics', 'payroll', 'teams'],
+  user: ['attendance', 'assets', 'benefits', 'payroll', 'teams'],
   unknown: ['benefits'],
 };
 
@@ -146,6 +146,7 @@ type ParentKey =
   | 'payroll'
   | 'assets'
   | 'employees'
+  | 'teams'
   | 'audit logs'
   | 'misc';
 
@@ -157,6 +158,7 @@ const PARENT_KEY_MATCHERS: Array<{ key: ParentKey; patterns: string[] }> = [
   { key: 'payroll', patterns: ['payroll'] },
   { key: 'assets', patterns: ['asset'] },
   { key: 'employees', patterns: ['employee'] },
+  { key: 'teams', patterns: ['team'] },
   { key: 'audit logs', patterns: ['audit logs'] },
 ];
 
@@ -184,10 +186,11 @@ const ROLE_SUBMENU_POLICIES: Record<
     department: { deny: ['user list', 'policies', 'holidays'] },
     benefits: { allowOnly: ['benefits report'] },
     'leave-analytics': { deny: ['report'] },
-    attendance: { deny: ['leave request'] },
     payroll: { allowOnly: ['payroll reports'] },
     assets: { allowOnly: ['assets overview'] },
     employees: { deny: ['employee list'] },
+    teams: { deny: ['my tasks'] }, // Admins see Team Management and Manager Tasks only
+    attendance: { deny: ['leave request'] },
   },
   'network-admin': {
     employees: { deny: ['tenant employees'] },
@@ -196,6 +199,7 @@ const ROLE_SUBMENU_POLICIES: Record<
     benefits: { deny: ['benefits report', 'benefit details'] },
     'audit logs': { denyAll: true },
     assets: { deny: ['asset requests', 'assets overview'] },
+    teams: { deny: ['my tasks'] }, // Admins see Team Management and Manager Tasks only
   },
   'hr-admin': {
     employees: { deny: ['tenant employees'] },
@@ -205,6 +209,7 @@ const ROLE_SUBMENU_POLICIES: Record<
     assets: { deny: ['assets overview', 'asset requests'] },
     benefits: { deny: ['benefits report', 'benefit details'] },
     'leave-analytics': { deny: ['cross tenant leaves'] },
+    teams: { deny: ['my tasks'] }, // Admins see Team Management and Manager Tasks only
   },
   admin: {
     employees: { deny: ['tenant employees'] },
@@ -215,6 +220,7 @@ const ROLE_SUBMENU_POLICIES: Record<
     benefits: { deny: ['benefits report', 'benefit details'] },
     payroll: { deny: ['payroll reports', 'my salary'] },
     assets: { deny: ['assets overview', 'asset requests'] },
+    teams: { deny: ['my tasks'] }, // Admins see Team Management and Manager Tasks only
   },
   manager: {
     employees: { deny: ['tenant employees'] },
@@ -224,15 +230,17 @@ const ROLE_SUBMENU_POLICIES: Record<
     assets: { deny: ['assets overview', 'asset inventory', 'management'] },
     benefits: { allowOnly: ['benefit details'] },
     'leave-analytics': { deny: ['cross tenant leaves'] },
+    teams: { deny: ['my tasks'] }, // Managers see Team Management and Manager Tasks only
   },
   employee: {
     employees: { deny: ['tenant employees'] },
-    attendance: { deny: ['report'] },
+    attendance: { deny: ['report', 'geofencing'] },
     assets: { deny: ['asset inventory', 'management', 'assets overview'] },
     benefits: { allowOnly: ['benefit details'] },
     'leave-analytics': { allowOnly: ['report'] },
     'audit logs': { denyAll: true },
     payroll: { allowOnly: ['my salary'] },
+    teams: { allowOnly: ['my tasks'] }, // Employees see only My Tasks
   },
   user: {
     employees: { deny: ['tenant employees'] },
@@ -242,6 +250,7 @@ const ROLE_SUBMENU_POLICIES: Record<
     'leave-analytics': { allowOnly: ['report'] },
     'audit logs': { denyAll: true },
     payroll: { allowOnly: ['my salary'] },
+    teams: { allowOnly: ['my tasks'] }, // Users see only My Tasks
   },
   unknown: {},
 };
@@ -266,6 +275,16 @@ export const isSubMenuVisibleForRole = (
   const r = normalizeRole(role);
   const parentKey = getParentKey(parentMenuLabel);
   const subKey = normalizeLabel(subLabel);
+  // Specifically hide "Attendance" sub-menu (Check-In page) for admins, but allow "Daily Attendance"
+  // "Attendance" normalizes to 'attendance'
+  // "Daily Attendance" normalizes to 'daily attendance'
+  if (
+    parentKey === 'attendance' &&
+    subKey === 'attendance' &&
+    (r === 'system-admin' || r === 'admin' || r === 'hr-admin')
+  ) {
+    return false;
+  }
 
   if (subKey === 'report' && parentKey === 'attendance') {
     return r === 'admin' || r === 'hr-admin';
@@ -305,6 +324,10 @@ const DASHBOARD_ALLOWLIST_ENTRIES: Record<NormalizedRole, readonly string[]> = {
     'AttendanceCheck/TimesheetLayout',
     'CrossTenantLeaveManagement',
     'teams',
+    'teams/list',
+    'teams/tasks',
+    'manager-tasks',
+    'my-tasks',
     'assets/system-admin',
     'EmployeeProfileView',
     'settings',
@@ -330,6 +353,10 @@ const DASHBOARD_ALLOWLIST_ENTRIES: Record<NormalizedRole, readonly string[]> = {
     'AttendanceTable',
     'AttendanceCheck/TimesheetLayout',
     'teams',
+    'teams/list',
+    'teams/tasks',
+    'manager-tasks',
+    'my-tasks',
     'assets',
     'assets/request-management',
     'EmployeeProfileView',
@@ -341,7 +368,7 @@ const DASHBOARD_ALLOWLIST_ENTRIES: Record<NormalizedRole, readonly string[]> = {
   'hr-admin': [
     'EmployeeManager',
     'Designations',
-    'AttendanceCheck',
+    // 'AttendanceCheck',
     'attendance-summary',
     'AttendanceTable',
     'AttendanceCheck/TimesheetLayout',
@@ -354,6 +381,10 @@ const DASHBOARD_ALLOWLIST_ENTRIES: Record<NormalizedRole, readonly string[]> = {
     'benefits/reporting',
     'my-benefits',
     'teams',
+    'teams/list',
+    'teams/tasks',
+    'manager-tasks',
+    'my-tasks',
     'leaves',
     'Reports',
     'benefits-list',
@@ -361,6 +392,7 @@ const DASHBOARD_ALLOWLIST_ENTRIES: Record<NormalizedRole, readonly string[]> = {
     'payroll-configuration',
     'payroll-records',
     'employee-salary',
+    'geofencing',
   ],
   admin: [
     '',
@@ -377,6 +409,10 @@ const DASHBOARD_ALLOWLIST_ENTRIES: Record<NormalizedRole, readonly string[]> = {
     'AttendanceCheck/TimesheetLayout',
     'Reports',
     'teams',
+    'teams/list',
+    'teams/tasks',
+    'manager-tasks',
+    'my-tasks',
     'assets',
     'assets/request-management',
     'EmployeeProfileView',
@@ -391,6 +427,7 @@ const DASHBOARD_ALLOWLIST_ENTRIES: Record<NormalizedRole, readonly string[]> = {
     'payroll-configuration',
     'payroll-records',
     'employee-salary',
+    'geofencing',
   ],
   manager: [
     'EmployeeManager',
@@ -399,6 +436,11 @@ const DASHBOARD_ALLOWLIST_ENTRIES: Record<NormalizedRole, readonly string[]> = {
     'Reports',
     'AttendanceCheck/TimesheetLayout',
     'teams',
+    'geofencing',
+    'teams/list',
+    'teams/tasks',
+    'manager-tasks',
+    'my-tasks',
     'leaves',
     'UserProfile',
     'assets/requests',
@@ -419,6 +461,7 @@ const DASHBOARD_ALLOWLIST_ENTRIES: Record<NormalizedRole, readonly string[]> = {
     'Reports',
     'AttendanceCheck/TimesheetLayout',
     'leaves',
+    'my-tasks',
     'UserProfile',
     'assets/requests',
     'settings',
@@ -430,6 +473,7 @@ const DASHBOARD_ALLOWLIST_ENTRIES: Record<NormalizedRole, readonly string[]> = {
     'AttendanceTable',
     'AttendanceCheck/TimesheetLayout',
     'leaves',
+    'my-tasks',
     'UserProfile',
     'assets/requests',
     'settings',

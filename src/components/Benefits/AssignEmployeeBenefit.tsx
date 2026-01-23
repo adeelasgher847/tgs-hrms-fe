@@ -212,7 +212,7 @@ const AssignEmployeeBenefit: React.FC<{
     }
   };
 
-  const iconColor = theme.palette.text.primary; 
+  const iconColor = theme.palette.text.primary;
 
   return (
     <>
@@ -230,7 +230,7 @@ const AssignEmployeeBenefit: React.FC<{
               name: 'assign',
               label: '',
               value: '',
-              onChange: () => {},
+              onChange: () => { },
               component: fetching ? (
                 <Box
                   display='flex'

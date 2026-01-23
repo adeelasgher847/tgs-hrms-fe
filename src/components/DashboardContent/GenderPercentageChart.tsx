@@ -151,14 +151,6 @@ export default function GenderPercentageChart() {
           direction: language === 'ar' ? 'rtl' : 'ltr',
         }}
       >
-        <Typography
-          fontWeight='bold'
-          fontSize={{ xs: '20px', lg: '28px' }}
-          mb={0.5}
-          sx={{ color: theme.palette.text.primary }}
-        >
-          {labels.activity[language]}
-        </Typography>
         <Box
           display='flex'
           justifyContent='center'
@@ -192,21 +184,11 @@ export default function GenderPercentageChart() {
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
+          flexWrap: 'wrap',
+          gap: 2,
           mb: 3,
         }}
       >
-        <Typography
-          sx={{
-            fontWeight: 500,
-            fontSize: { xs: '20px', lg: '28px' },
-            lineHeight: { xs: '24px', lg: '28px' },
-            letterSpacing: '-2%',
-            color: theme.palette.text.primary,
-          }}
-        >
-          {labels.activity[language]}
-        </Typography>
-
         <Stack direction='row' spacing={{ xs: 1, lg: 2 }} alignItems='center'>
           {genderData.map((item, index) => (
             <React.Fragment key={item.name}>

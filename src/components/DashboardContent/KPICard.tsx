@@ -47,6 +47,7 @@ const KpiCard: React.FC<KpiCardProps> = ({
           alignItems: 'center',
           justifyContent: 'space-between',
           p: { xs: 2, sm: 3 },
+          overflow: 'visible',
           width: '100%',
         }}
       >
@@ -82,12 +83,12 @@ const KpiCard: React.FC<KpiCardProps> = ({
             color: theme.palette.getContrastText(
               color || theme.palette.primary.main
             ),
-            width: { xs: 44, sm: 60 },
-            height: { xs: 44, sm: 60 },
-            ml: { xs: 1.25, sm: 2 },
+            width: { xs: 40, sm: 52 },
+            height: { xs: 40, sm: 52 },
+            ml: { xs: 0.75, sm: 1.25 },
             flexShrink: 0,
             '& svg': {
-              fontSize: { xs: '1.25rem', sm: '1.5rem' },
+              fontSize: { xs: '1rem', sm: '1.25rem' },
             },
           }}
         >

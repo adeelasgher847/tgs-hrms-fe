@@ -19,21 +19,11 @@ import {
 import {
   Add as AddIcon,
   FilterList as FilterIcon,
-  // MoreVert as MoreVertIcon,
-  // Edit as EditIcon,
-  // Delete as DeleteIcon,
   Person as PersonIcon,
-  // Build as BuildIcon,
-  // CheckCircle as AvailableIcon,
 } from '@mui/icons-material';
 import { Icons } from '../../assets/icons';
 import Icon from '../common/Icon';
-import type {
-  Asset,
-  AssetFilters,
-  MockUser,
-  AssetStatus,
-} from '../../types/asset';
+import type { Asset, AssetFilters, AssetStatus } from '../../types/asset';
 import { assetApi, type Asset as ApiAsset } from '../../api/assetApi';
 // Use shared AppFormModal instead of AssetModal
 import AppFormModal from '../common/AppFormModal';
@@ -148,26 +138,6 @@ const AssetInventory: React.FC = () => {
     limit: PAGINATION.DEFAULT_PAGE_SIZE, // Backend returns records per page
     totalPages: 1,
   });
-  const mockUsers: MockUser[] = [
-    {
-      id: '1',
-      name: 'John Doe',
-      email: 'john.doe@company.com',
-      department: 'IT',
-    },
-    {
-      id: '2',
-      name: 'Jane Smith',
-      email: 'jane.smith@company.com',
-      department: 'HR',
-    },
-    {
-      id: '3',
-      name: 'Mike Johnson',
-      email: 'mike.johnson@company.com',
-      department: 'Finance',
-    },
-  ];
 
   // Helper function to get user name from API response or fallback
   const getUserName = React.useCallback(
@@ -196,18 +166,18 @@ const AssetInventory: React.FC = () => {
           typeof apiAsset.category === 'object'
             ? apiAsset.category
             : {
-                id: apiAsset.category_id || '',
-                name: apiAsset.categoryName || apiAsset.category || '',
-              };
+              id: apiAsset.category_id || '',
+              name: apiAsset.categoryName || apiAsset.category || '',
+            };
 
         // Handle subcategory - can be object or string
         const subcategoryObj = apiAsset.subcategory
           ? typeof apiAsset.subcategory === 'object'
             ? apiAsset.subcategory
             : {
-                id: apiAsset.subcategory_id || '',
-                name: apiAsset.subcategoryName || apiAsset.subcategory || '',
-              }
+              id: apiAsset.subcategory_id || '',
+              name: apiAsset.subcategoryName || apiAsset.subcategory || '',
+            }
           : undefined;
 
         return {
@@ -411,7 +381,6 @@ const AssetInventory: React.FC = () => {
     setFormCategoryId('');
     setFormSubcategory('');
     setFormPurchaseDate(new Date());
-    setFormAssignedTo('');
     setIsModalOpen(true);
   };
 
@@ -422,18 +391,102 @@ const AssetInventory: React.FC = () => {
   const [formPurchaseDate, setFormPurchaseDate] = useState<Date | null>(
     new Date()
   );
-  const [formAssignedTo, setFormAssignedTo] = useState('');
 
   const categoryOptions = assetCategories.map(cat => ({
     value: cat.id,
     label: cat.name,
   }));
-  const subcategoryOptions = formCategoryId
-    ? getSubcategoriesByCategoryId(formCategoryId).map(s => ({
-        value: s,
-        label: s,
-      }))
-    : [];
+  // Backend-driven category/subcategory options to ensure UUIDs are used
+  const [apiCategories, setApiCategories] = useState<
+    { value: string; label: string }[]
+  >([]);
+  const [apiSubcategories, setApiSubcategories] = useState<
+    { value: string; label: string }[]
+  >([]);
+
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const response = await assetApi.getAllAssetCategories();
+        // Define a flexible item type
+        type CategoryItem = { id: string; name: string };
+        let categoriesData: CategoryItem[] = [];
+        // Handle various response shapes safely
+        const anyResp = response as unknown as {
+          data?: CategoryItem[];
+          items?: CategoryItem[];
+          categories?: CategoryItem[];
+        };
+
+        if (Array.isArray(response)) {
+          categoriesData = response as unknown as CategoryItem[];
+        } else if (Array.isArray(anyResp.data)) {
+          categoriesData = anyResp.data;
+        } else if (Array.isArray(anyResp.items)) {
+          categoriesData = anyResp.items;
+        } else if (Array.isArray(anyResp.categories)) {
+          categoriesData = anyResp.categories;
+        }
+
+        const mapped = categoriesData.map(cat => ({
+          value: cat.id,
+          label: cat.name,
+        }));
+        setApiCategories(mapped);
+      } catch {
+        // Fallback to local static categories when API fails
+        setApiCategories(categoryOptions);
+      }
+    };
+
+    if (isModalOpen) fetchCategories();
+    // Only run when modal opens/closes
+  }, [isModalOpen, categoryOptions]);
+
+  useEffect(() => {
+    const fetchSubcategories = async () => {
+      if (!formCategoryId) {
+        setApiSubcategories([]);
+        return;
+      }
+      try {
+        const response =
+          await assetApi.getAssetSubcategoriesByCategoryId(formCategoryId);
+        type SubCategoryItem = { id: string; name: string };
+        let subcategoriesData: SubCategoryItem[] = [];
+        // Handle various response shapes safely
+        const anyResp = response as unknown as {
+          data?: SubCategoryItem[];
+          items?: SubCategoryItem[];
+          subcategories?: SubCategoryItem[];
+        };
+
+        if (Array.isArray(response)) {
+          subcategoriesData = response as unknown as SubCategoryItem[];
+        } else if (Array.isArray(anyResp.data)) {
+          subcategoriesData = anyResp.data;
+        } else if (Array.isArray(anyResp.items)) {
+          subcategoriesData = anyResp.items;
+        } else if (Array.isArray(anyResp.subcategories)) {
+          subcategoriesData = anyResp.subcategories;
+        }
+
+        const mapped = subcategoriesData.map(s => ({
+          value: s.id,
+          label: s.name,
+        }));
+        setApiSubcategories(mapped);
+      } catch {
+        // Fallback to static data when API fails
+        const staticSubs = getSubcategoriesByCategoryId(formCategoryId).map(
+          s => ({ value: s, label: s })
+        );
+        setApiSubcategories(staticSubs);
+      }
+    };
+
+    if (isModalOpen) fetchSubcategories();
+  }, [formCategoryId, isModalOpen]);
 
   const handleEditAsset = (asset: InventoryAsset) => {
     setEditingAsset(asset);
@@ -444,7 +497,6 @@ const AssetInventory: React.FC = () => {
     setFormPurchaseDate(
       asset.purchaseDate ? new Date(asset.purchaseDate) : new Date()
     );
-    setFormAssignedTo(asset.assignedTo || '');
     setIsModalOpen(true);
   };
 
@@ -587,13 +639,11 @@ const AssetInventory: React.FC = () => {
   // Modal form helpers for AppFormModal
   const hasFormChanges = editingAsset
     ? // compare simple fields for edit
-      formName !== (editingAsset.name || '') ||
-      formCategoryId !== resolveCategoryId(editingAsset) ||
-      formSubcategory !== (editingAsset.subcategoryId || '')
+    formName !== (editingAsset.name || '') ||
+    formCategoryId !== resolveCategoryId(editingAsset) ||
+    formSubcategory !== (editingAsset.subcategoryId || '')
     : // for create, require name and category selected
-      formName.trim() !== '' && formCategoryId !== '';
-
-  const assignedOptions = mockUsers.map(u => ({ value: u.id, label: u.name }));
+    formName.trim() !== '' && formCategoryId !== '';
 
   const onFormSubmit = () => {
     // Format purchase date as YYYY-MM-DD
@@ -613,13 +663,12 @@ const AssetInventory: React.FC = () => {
           ? formSubcategory
           : undefined,
       purchaseDate: formatDate(formPurchaseDate),
-      assignedTo: formAssignedTo || undefined,
     };
 
     void handleAssetSubmit(payload);
   };
 
-  const modalFields = [
+  const baseModalFields = [
     {
       name: 'name',
       label: 'Asset Name',
@@ -633,15 +682,24 @@ const AssetInventory: React.FC = () => {
       label: 'Category',
       type: 'dropdown' as const,
       value: formCategoryId,
-      options: categoryOptions,
+      options: apiCategories.length > 0 ? apiCategories : categoryOptions,
       onChange: (v: string | number) => setFormCategoryId(String(v)),
+      // ensure we match what AppFormModal expects for custom components or props
     },
     {
       name: 'subcategory',
       label: 'Subcategory',
       type: 'dropdown' as const,
       value: formSubcategory,
-      options: subcategoryOptions,
+      options:
+        apiSubcategories.length > 0
+          ? apiSubcategories
+          : formCategoryId
+            ? getSubcategoriesByCategoryId(formCategoryId).map(s => ({
+              value: s,
+              label: s,
+            }))
+            : [],
       onChange: (v: string | number) => setFormSubcategory(String(v)),
     },
     {
@@ -715,18 +773,12 @@ const AssetInventory: React.FC = () => {
           />
         </LocalizationProvider>
       ),
-      onChange: () => {},
-    },
-
-    {
-      name: 'assignedTo',
-      label: 'Assigned To',
-      type: 'dropdown' as const,
-      value: formAssignedTo,
-      options: assignedOptions,
-      onChange: (v: string | number) => setFormAssignedTo(String(v)),
+      onChange: () => { },
     },
   ];
+
+  // Modal fields (Assigned To removed for both create and edit)
+  const modalFields = baseModalFields;
 
   if (initialLoading) {
     return (
@@ -895,6 +947,7 @@ const AssetInventory: React.FC = () => {
             }}
           >
             <AppDropdown
+              label='Status'
               showLabel={false}
               size='small'
               fullWidth
@@ -924,6 +977,7 @@ const AssetInventory: React.FC = () => {
             }}
           >
             <AppDropdown
+              label='Category'
               showLabel={false}
               size='small'
               fullWidth

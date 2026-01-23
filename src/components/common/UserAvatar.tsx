@@ -15,118 +15,116 @@ interface UserAvatarProps extends Omit<AvatarProps, 'src' | 'alt'> {
   onClick?: () => void;
 }
 
-const UserAvatar: React.FC<UserAvatarProps> = ({
-  user,
-  size = 40,
-  clickable = false,
-  onClick,
-  sx,
-  ...avatarProps
-}) => {
-  const API_BASE_URL =
-    import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001';
-  const { profilePictureUrl } = useProfilePicture();
-  const { user: currentUser } = useUser();
+const UserAvatar = React.forwardRef<HTMLDivElement, UserAvatarProps>(
+  ({ user, size = 40, clickable = false, onClick, sx, ...avatarProps }, ref) => {
+    const API_BASE_URL =
+      import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001';
+    const { profilePictureUrl } = useProfilePicture();
+    const { user: currentUser } = useUser();
 
-  const [imgError, setImgError] = useState(false);
-  // const [defaultError] = useState(false);
+    const [imgError, setImgError] = useState(false);
+    // const [defaultError] = useState(false);
 
-  const getInitials = (first: string, last: string) =>
-    `${first?.charAt(0) || ''}${last?.charAt(0) || ''}`.toUpperCase();
+    const getInitials = (first: string, last: string) =>
+      `${first?.charAt(0) || ''}${last?.charAt(0) || ''}`.toUpperCase();
 
-  const generateAvatarColor = (name: string) => {
-    const colors = [
-      '#f44336',
-      '#e91e63',
-      '#9c27b0',
-      '#673ab7',
-      '#3f51b5',
-      '#2196f3',
-      '#03a9f4',
-      '#00bcd4',
-      '#009688',
-      '#4caf50',
-      '#8bc34a',
-      '#cddc39',
-      '#ffeb3b',
-      '#ffc107',
-      '#ff9800',
-      '#ff5722',
-      '#795548',
-      '#9e9e9e',
-      '#607d8b',
-    ];
-    return colors[name.charCodeAt(0) % colors.length];
-  };
+    const generateAvatarColor = (name: string) => {
+      const colors = [
+        '#f44336',
+        '#e91e63',
+        '#9c27b0',
+        '#673ab7',
+        '#3f51b5',
+        '#2196f3',
+        '#03a9f4',
+        '#00bcd4',
+        '#009688',
+        '#4caf50',
+        '#8bc34a',
+        '#cddc39',
+        '#ffeb3b',
+        '#ffc107',
+        '#ff9800',
+        '#ff5722',
+        '#795548',
+        '#9e9e9e',
+        '#607d8b',
+      ];
+      return colors[name.charCodeAt(0) % colors.length];
+    };
 
-  const isCurrentUser = currentUser?.id === user.id;
-  const effectiveProfilePictureUrl = isCurrentUser ? profilePictureUrl : null;
+    const isCurrentUser = currentUser?.id === user.id;
+    const effectiveProfilePictureUrl = isCurrentUser ? profilePictureUrl : null;
 
-  // const defaultImageUrl = '/avatar.png';
+    // const defaultImageUrl = '/avatar.png';
 
-  const avatarStyle = {
-    width: size,
-    height: size,
-    fontSize: `${size * 0.4}px`,
-    cursor: clickable ? 'pointer' : 'default',
-    backgroundColor: imgError
-      ? '#9e9e9e'
-      : effectiveProfilePictureUrl || user.profile_pic
-        ? 'transparent'
-        : generateAvatarColor(user.first_name),
-    '& .MuiAvatar-img': {
-      objectFit: 'cover',
-      objectPosition: 'top',
-    },
-    '&:hover': clickable
-      ? {
+    const avatarStyle = {
+      width: size,
+      height: size,
+      fontSize: `${size * 0.4}px`,
+      cursor: clickable ? 'pointer' : 'default',
+      backgroundColor: imgError
+        ? '#9e9e9e'
+        : effectiveProfilePictureUrl || user.profile_pic
+          ? 'transparent'
+          : generateAvatarColor(user.first_name),
+      '& .MuiAvatar-img': {
+        objectFit: 'cover',
+        objectPosition: 'top',
+      },
+      '&:hover': clickable
+        ? {
           opacity: 0.8,
           transform: 'scale(1.05)',
           transition: 'all 0.2s ease-in-out',
         }
-      : {},
-    ...sx,
-  };
-  let imageUrl: string | null = null;
+        : {},
+      ...sx,
+    };
+    let imageUrl: string | null = null;
 
-  if (effectiveProfilePictureUrl) {
-    imageUrl = effectiveProfilePictureUrl;
-  } else if (user.profile_pic) {
-    imageUrl = user.profile_pic.startsWith('http')
-      ? user.profile_pic
-      : `${API_BASE_URL}/users/${user.id}/profile-picture`;
+    if (effectiveProfilePictureUrl) {
+      imageUrl = effectiveProfilePictureUrl;
+    } else if (user.profile_pic) {
+      imageUrl = user.profile_pic.startsWith('http')
+        ? user.profile_pic
+        : `${API_BASE_URL}/users/${user.id}/profile-picture`;
+    }
+
+    if (!imageUrl || imgError) {
+      imageUrl = null;
+    }
+
+    return (
+      <Avatar
+        ref={ref}
+        sx={avatarStyle}
+        onClick={onClick}
+        {...avatarProps}
+        alt={`${user.first_name} ${user.last_name}`}
+      >
+        {imageUrl && !imgError ? (
+          <img
+            src={imageUrl}
+            alt={`${user.first_name} ${user.last_name}`}
+            onError={() => setImgError(true)}
+            loading='lazy'
+            style={{
+              width: '100%',
+              height: '100%',
+              objectFit: 'cover',
+              objectPosition: 'top',
+              borderRadius: '50%',
+            }}
+          />
+        ) : imgError ? null : (
+          getInitials(user.first_name, user.last_name)
+        )}
+      </Avatar>
+    );
   }
+);
 
-  if (!imageUrl || imgError) {
-    imageUrl = null;
-  }
-
-  return (
-    <Avatar
-      sx={avatarStyle}
-      onClick={onClick}
-      {...avatarProps}
-      alt={`${user.first_name} ${user.last_name}`}
-    >
-      {imageUrl && !imgError ? (
-        <img
-          src={imageUrl}
-          alt={`${user.first_name} ${user.last_name}`}
-          onError={() => setImgError(true)}
-          loading='lazy'
-          style={{
-            width: '100%',
-            height: '100%',
-            objectFit: 'cover',
-            objectPosition: 'top',
-            borderRadius: '50%',
-          }}
-        />
-      ) : imgError ? null : (
-        getInitials(user.first_name, user.last_name)
-      )}
-    </Avatar>
-  );
-};
+UserAvatar.displayName = 'UserAvatar';
 
 export default UserAvatar;

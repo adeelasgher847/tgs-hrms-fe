@@ -43,6 +43,7 @@ import AppDropdown from '../common/AppDropdown';
 import AppFormModal from '../common/AppFormModal';
 import AppPageTitle from '../common/AppPageTitle';
 import AppInputField from '../common/AppInputField';
+import AppSearch from '../common/AppSearch';
 
 dayjs.extend(dayjsPluginLocalizedFormat);
 
@@ -71,7 +72,7 @@ const statusOptions: UIStatus[] = ['unpaid', 'paid'];
 
 const mapStatusToBackend = (uiStatus: UIStatus): PayrollStatus => {
   if (uiStatus === 'paid') return 'paid';
-  return 'pending';
+  return 'unpaid';
 };
 
 const mapStatusFromBackend = (backendStatus: string): UIStatus => {
@@ -113,6 +114,8 @@ const PayrollRecords: React.FC = () => {
   const [month, setMonth] = useState<number>(currentDate.month() + 1);
   const [year, setYear] = useState<number | ''>(currentDate.year());
   const [employeeFilter, setEmployeeFilter] = useState<string>('');
+  const [statusFilter, setStatusFilter] = useState<string>('');
+  const [searchQuery, setSearchQuery] = useState<string>('');
   const [records, setRecords] = useState<PayrollRecord[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
   const [currentPage, setCurrentPage] = useState(1);
@@ -321,6 +324,9 @@ const PayrollRecords: React.FC = () => {
         page: currentPage,
         limit: itemsPerPage,
         employee_id: employeeFilter || undefined,
+        status: statusFilter
+          ? mapStatusToBackend(statusFilter as UIStatus)
+          : undefined,
       });
       setRecords(response.items || []);
       if (response.totalPages !== undefined) {
@@ -342,7 +348,7 @@ const PayrollRecords: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  }, [month, year, currentPage, itemsPerPage, employeeFilter]);
+  }, [month, year, currentPage, itemsPerPage, employeeFilter, statusFilter]);
 
   useEffect(() => {
     loadEmployees();
@@ -497,7 +503,31 @@ const PayrollRecords: React.FC = () => {
     isSalaryActiveForPeriod,
   ]);
 
-  const displayedRecords = records;
+  const displayedRecords = useMemo(() => {
+    // Start with all records fetched from backend
+    let list = records.slice();
+
+    // Apply status filter (client-side) if provided
+    if (statusFilter && String(statusFilter).trim() !== '') {
+      list = list.filter(r => mapStatusFromBackend(r.status) === statusFilter);
+    }
+
+    // Apply search filter (name/email) if provided
+    if (searchQuery && String(searchQuery).trim() !== '') {
+      const q = String(searchQuery).toLowerCase().trim();
+      list = list.filter(record => {
+        const name = record.employee?.user
+          ? `${record.employee.user.first_name} ${record.employee.user.last_name}`
+          : '';
+        const email = record.employee?.user?.email || '';
+        return (
+          name.toLowerCase().includes(q) || email.toLowerCase().includes(q)
+        );
+      });
+    }
+
+    return list;
+  }, [records, searchQuery, statusFilter]);
 
   const handleGenerate = useCallback(async () => {
     if (!generateMonth || !generateYear) {
@@ -793,7 +823,18 @@ const PayrollRecords: React.FC = () => {
           </Box>
         </Paper>
       )}
-
+      {/* Search bar (using shared AppSearch) placed below the month/year/generate controls */}
+      <AppCard sx={{ mb: 3 }}>
+        <AppSearch
+          value={searchQuery}
+          onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+            setSearchQuery(String(e.target.value || ''));
+            setCurrentPage(1);
+          }}
+          placeholder='Search employee name or email'
+          sx={{ borderRadius: 2, width: '100%' }}
+        />
+      </AppCard>
       <Paper
         elevation={0}
         sx={{
@@ -809,6 +850,8 @@ const PayrollRecords: React.FC = () => {
             display: 'flex',
             justifyContent: 'flex-start',
             alignItems: 'center',
+            gap: 2,
+            flexWrap: 'wrap',
           }}
         >
           <AppDropdown
@@ -820,12 +863,12 @@ const PayrollRecords: React.FC = () => {
               recordEmployees.length === 0
                 ? [{ value: '', label: 'No employees for this period' }]
                 : [
-                    { value: '', label: 'All employees' },
-                    ...recordEmployees.map(emp => ({
-                      value: emp.id,
-                      label: emp.name,
-                    })),
-                  ]
+                  { value: '', label: 'All employees' },
+                  ...recordEmployees.map(emp => ({
+                    value: emp.id,
+                    label: emp.name,
+                  })),
+                ]
             }
             label='Employee'
             showLabel={false}
@@ -836,6 +879,35 @@ const PayrollRecords: React.FC = () => {
             }
             disabled={recordEmployees.length === 0}
             containerSx={{ minWidth: 220, width: { xs: '100%', md: 'auto' } }}
+            inputBackgroundColor={effectiveDarkMode ? '#1e1e1e' : '#fff'}
+            sx={{
+              '& .MuiSelect-select': {
+                color: effectiveDarkMode ? '#fff' : '#000',
+              },
+              '& .MuiSelect-icon': {
+                color: effectiveDarkMode ? '#fff' : '#000',
+              },
+              '& .MuiOutlinedInput-root': {
+                '& fieldset': { borderColor: theme.palette.divider },
+              },
+            }}
+          />
+
+          <AppDropdown
+            value={statusFilter}
+            onChange={(event: SelectChangeEvent<string | number>) => {
+              setStatusFilter(String(event.target.value || ''));
+              setCurrentPage(1);
+            }}
+            options={[
+              { value: '', label: 'All statuses' },
+              { value: 'paid', label: 'Paid' },
+              { value: 'unpaid', label: 'Unpaid' },
+            ]}
+            label='Status'
+            showLabel={false}
+            placeholder='All statuses'
+            containerSx={{ minWidth: 230, width: { xs: '100%', md: 'auto' } }}
             inputBackgroundColor={effectiveDarkMode ? '#1e1e1e' : '#fff'}
             sx={{
               '& .MuiSelect-select': {
@@ -991,7 +1063,7 @@ const PayrollRecords: React.FC = () => {
       <AppFormModal
         open={detailsOpen && !!selectedRecord}
         onClose={closeDetails}
-        onSubmit={() => {}}
+        onSubmit={() => { }}
         title='Payroll Breakdown'
         cancelLabel='Close'
         showSubmitButton={false}
@@ -1038,7 +1110,7 @@ const PayrollRecords: React.FC = () => {
                 gridTemplateColumns: {
                   xs: '1fr',
                   sm: 'repeat(2, minmax(0, 1fr))',
-                  md: 'repeat(4, minmax(0, 1fr))',
+                  // md: 'repeat(4, minmax(0, 1fr))',
                 },
               }}
             >
@@ -1149,7 +1221,7 @@ const PayrollRecords: React.FC = () => {
                       <TableCell align='right'>
                         {formatCurrency(
                           selectedRecord.deductionsBreakdown.leaveDeductions ||
-                            0
+                          0
                         )}
                       </TableCell>
                       <TableCell align='right'>—</TableCell>
@@ -1402,21 +1474,21 @@ const PayrollRecords: React.FC = () => {
             options={
               employeesForGenerateDialog.length === 0
                 ? [
-                    {
-                      value: '',
-                      label:
-                        employees.length === 0
-                          ? 'No employees with salary configuration'
-                          : 'All employees are already processed',
-                    },
-                  ]
+                  {
+                    value: '',
+                    label:
+                      employees.length === 0
+                        ? 'No employees with salary configuration'
+                        : 'All employees are already processed',
+                  },
+                ]
                 : [
-                    { value: '', label: 'All employees' },
-                    ...employeesForGenerateDialog.map(emp => ({
-                      value: emp.id,
-                      label: emp.name,
-                    })),
-                  ]
+                  { value: '', label: 'All employees' },
+                  ...employeesForGenerateDialog.map(emp => ({
+                    value: emp.id,
+                    label: emp.name,
+                  })),
+                ]
             }
             placeholder={
               employeesForGenerateDialog.length === 0

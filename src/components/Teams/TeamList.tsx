@@ -568,6 +568,7 @@ const TeamList: React.FC<TeamListProps> = ({
                             },
                           }}
                         />
+                        {/* View Tasks button removed per request */}
                         {!isHRAdmin() && (
                           <AppButton
                             variantType='secondary'
@@ -633,9 +634,7 @@ const TeamList: React.FC<TeamListProps> = ({
             maxWidth='lg'
             fullWidth
           >
-            <DialogTitle
-              sx={{ color: theme.palette.text.primary }}
-            >
+            <DialogTitle sx={{ color: theme.palette.text.primary }}>
               {employeePoolTeam?.name
                 ? `${employeePoolTeam.name} - ${lang.viewMembers}`
                 : lang.viewMembers}
@@ -668,9 +667,7 @@ const TeamList: React.FC<TeamListProps> = ({
             maxWidth='md'
             fullWidth
           >
-            <DialogTitle
-              sx={{ color: theme.palette.text.primary }}
-            >
+            <DialogTitle sx={{ color: theme.palette.text.primary }}>
               {lang.addMember} - {selectedTeam?.name}
             </DialogTitle>
             <DialogContent>

@@ -84,6 +84,46 @@ export interface TenantEmployeeWithBenefits {
   }>;
 }
 
+export interface ReimbursementRequest {
+  id: string;
+  employeeId: string;
+  employeeBenefitId: string;
+  amount: string;
+  details?: string;
+  description?: string;
+  proofDocuments?: string[];
+  status: 'pending' | 'approved' | 'rejected' | 'cancelled';
+  reviewedBy?: string | null;
+  reviewer?: Record<string, unknown> | null; // Replace 'any' if you have a User/Employee type
+  reviewedAt?: string | null;
+  reviewRemarks?: string | null;
+  tenant_id: string;
+  createdAt: string;
+  updatedAt: string;
+  employeeBenefit?: {
+    id: string;
+    employeeId: string;
+    benefitId: string;
+    startDate: string;
+    endDate: string;
+    status: string;
+    assignedBy: string;
+    tenant_id: string;
+    createdAt: string;
+    benefit?: {
+      id: string;
+      name: string;
+      description: string;
+      type: string;
+      eligibilityCriteria: string;
+      status: string;
+      tenant_id: string;
+      createdBy: string;
+      createdAt: string;
+    };
+  };
+}
+
 const employeeBenefitApi = {
   async assignBenefit(
     data: AssignBenefitRequest
@@ -125,13 +165,31 @@ const employeeBenefitApi = {
     }
   },
 
-  async getEmployeesWithBenefits(page = 1): Promise<EmployeeWithBenefits[]> {
+  async getEmployeesWithBenefits(params?: {
+    page?: number;
+    limit?: number;
+  }): Promise<
+    | EmployeeWithBenefits[]
+    | { items: EmployeeWithBenefits[]; total: number; totalPages: number }
+  > {
     const response = await axiosInstance.get('/employee-benefits/employees', {
-      params: { page },
+      params: params || { page: 1, limit: 25 },
     });
 
     if (Array.isArray(response.data)) {
       return response.data;
+    }
+
+    if (
+      response.data &&
+      typeof response.data === 'object' &&
+      'items' in response.data
+    ) {
+      return {
+        items: response.data.items,
+        total: response.data.total || response.data.items.length,
+        totalPages: response.data.totalPages || 1,
+      };
     }
 
     return [];
@@ -142,7 +200,8 @@ const employeeBenefitApi = {
     department?: string;
     designation?: string;
     page: number;
-  }): Promise<EmployeeWithBenefits[]> {
+    limit?: number;
+  }): Promise<unknown> {
     const response = await axiosInstance.get('/employee-benefits/employees', {
       params,
     });
@@ -152,7 +211,7 @@ const employeeBenefitApi = {
     }
 
     if (response.data?.items && Array.isArray(response.data.items)) {
-      return response.data.items;
+      return response.data;
     }
 
     return [];
@@ -248,15 +307,15 @@ const employeeBenefitApi = {
     tenant_id?: string;
   }): Promise<
     | {
-        items: TenantEmployeeWithBenefits[];
-        total: number;
-        page: number;
-        limit: number;
-        totalPages: number;
-      }
+      items: TenantEmployeeWithBenefits[];
+      total: number;
+      page: number;
+      limit: number;
+      totalPages: number;
+    }
     | {
-        tenants: TenantEmployeeWithBenefits[];
-      }
+      tenants: TenantEmployeeWithBenefits[];
+    }
   > {
     try {
       const response = await axiosInstance.get(
@@ -318,6 +377,73 @@ const employeeBenefitApi = {
         totalPages: 1,
       };
     }
+  },
+  async createBenefitReimbursement(data: FormData): Promise<Record<string, unknown>> {
+    const response = await axiosInstance.post('/benefit-reimbursements', data);
+    return response.data;
+  },
+
+  async getBenefitReimbursements(employeeBenefitId?: string): Promise<ReimbursementRequest[]> {
+    const params: Record<string, string> = {};
+    if (employeeBenefitId) {
+      params.employeeBenefitId = employeeBenefitId;
+    }
+    const response = await axiosInstance.get('/benefit-reimbursements', {
+      params,
+    });
+    if (Array.isArray(response.data)) {
+      return response.data;
+    }
+    if (response.data?.items && Array.isArray(response.data.items)) {
+      return response.data.items;
+    }
+    return [];
+  },
+
+  async getAllReimbursementRequests(params?: {
+    status?: string;
+    employeeId?: string;
+    page?: number;
+    limit?: number;
+  }): Promise<{ items: ReimbursementRequest[]; total: number; totalPages: number }> {
+    const response = await axiosInstance.get('/benefit-reimbursements', {
+      params,
+    });
+
+    if (response.data?.items && Array.isArray(response.data.items)) {
+      return {
+        items: response.data.items,
+        total: response.data.total || response.data.items.length,
+        totalPages: response.data.totalPages || 1,
+      };
+    }
+
+    // Fallback if backend returns simple array
+    if (Array.isArray(response.data)) {
+      return {
+        items: response.data,
+        total: response.data.length,
+        totalPages: 1,
+      };
+    }
+
+    return { items: [], total: 0, totalPages: 1 };
+  },
+
+
+  async updateBenefitReimbursement(id: string, data: FormData): Promise<Record<string, unknown>> {
+    const response = await axiosInstance.put(`/benefit-reimbursements/${id}`, data);
+    return response.data;
+  },
+
+  async cancelBenefitReimbursement(id: string): Promise<Record<string, unknown>> {
+    const response = await axiosInstance.delete(`/benefit-reimbursements/${id}/cancel`);
+    return response.data;
+  },
+
+  async reviewBenefitReimbursement(id: string, data: { status: 'approved' | 'rejected', reviewRemarks: string }): Promise<Record<string, unknown>> {
+    const response = await axiosInstance.put(`/benefit-reimbursements/${id}/review`, data);
+    return response.data;
   },
 };
 

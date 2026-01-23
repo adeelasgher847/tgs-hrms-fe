@@ -1,16 +1,38 @@
 import axiosInstance from './axiosInstance';
 
+export interface UserShort {
+  id: string;
+  first_name: string;
+  last_name: string;
+  email: string;
+}
+
 export interface AttendanceEvent {
   id: string;
   user_id: string;
   timestamp: string;
   type: 'check-in' | 'check-out' | string;
-  user?: {
-    id: string;
-    first_name: string;
-    last_name: string;
-    email: string;
-  };
+  near_boundary?: boolean;
+  user?: UserShort;
+}
+
+export interface TeamAttendanceEntry {
+  date: string;
+  checkIn: string | null;
+  checkOut: string | null;
+  workedHours: number;
+}
+
+export interface TeamMember {
+  user_id: string;
+  first_name: string;
+  last_name: string;
+  email?: string;
+  profile_pic?: string;
+  attendance: TeamAttendanceEntry[];
+  user?: UserShort;
+  totalDaysWorked?: number;
+  totalHoursWorked?: number;
 }
 
 export interface AttendanceRecord {
@@ -258,11 +280,45 @@ class AttendanceApiService {
     }
   }
 
-  // Create attendance record
+  // Create attendance record. Accept optional coordinates for check-in.
   async createAttendance(
-    type: 'check-in' | 'check-out'
+    payload:
+      | { type: 'check-in' | 'check-out' | string }
+      | { type: string; latitude?: number; longitude?: number }
   ): Promise<AttendanceEvent> {
-    const response = await axiosInstance.post(this.baseUrl, { type });
+    // Normalize type to backend expected format (prefer uppercase with underscore)
+    // Normalize type to backend expected format (prefer uppercase with underscore)
+    // Use an intersection type to safely access properties that might exist
+    const input = payload as {
+      type: string;
+      latitude?: number;
+      longitude?: number;
+    };
+    let typeVal = input.type || '';
+    if (typeof typeVal === 'string') {
+      const lowered = typeVal.toLowerCase();
+      if (
+        lowered === 'check-in' ||
+        lowered === 'check_in' ||
+        lowered === 'check in'
+      )
+        typeVal = 'check-in';
+      else if (
+        lowered === 'check-out' ||
+        lowered === 'check_out' ||
+        lowered === 'check out'
+      )
+        typeVal = 'check-out';
+      else typeVal = lowered;
+    }
+
+    const body: { type: string; latitude?: number; longitude?: number } = {
+      type: typeVal,
+    };
+    if (typeof input.latitude === 'number') body.latitude = input.latitude;
+    if (typeof input.longitude === 'number') body.longitude = input.longitude;
+
+    const response = await axiosInstance.post(this.baseUrl, body);
     return response.data;
   }
 
@@ -302,6 +358,78 @@ class AttendanceApiService {
         totalPages: 1,
       };
     }
+  }
+
+  // Get today's attendance for all team members (Manager only)
+  async getTodayTeamAttendance(): Promise<{
+    items: {
+      user_id: string;
+      first_name: string;
+      last_name: string;
+      email: string;
+      profile_pic?: string;
+      designation?: string;
+      department?: string;
+      attendance: {
+        date: string;
+        checkIn: string;
+        checkInId: string;
+        checkOut: string | null;
+        checkOutId: string | null;
+        workedHours: number;
+        approvalStatus: string;
+        approvalRemarks: string | null;
+        approvedBy: string | null;
+        approvedAt: string | null;
+      }[];
+      totalDaysWorked: number;
+      totalHoursWorked: number;
+    }[];
+    total: number;
+  }> {
+    try {
+      const response = await axiosInstance.get(
+        `${this.baseUrl}/team/today/attendance`
+      );
+      return response.data;
+    } catch {
+      return {
+        items: [],
+        total: 0,
+      };
+    }
+  }
+
+  // Approve a single check-in (Manager only)
+  async approveCheckIn(id: string): Promise<AttendanceEvent> {
+    const response = await axiosInstance.patch(
+      `${this.baseUrl}/check-in/${id}/approve`
+    );
+    return response.data;
+  }
+
+  // Disapprove a single check-in (Manager only)
+  async disapproveCheckIn(id: string): Promise<AttendanceEvent> {
+    const response = await axiosInstance.patch(
+      `${this.baseUrl}/check-in/${id}/disapprove`
+    );
+    return response.data;
+  }
+
+  // Approve all today's check-ins (Manager only)
+  async approveAllCheckIns(): Promise<{ updated: number }> {
+    const response = await axiosInstance.patch(
+      `${this.baseUrl}/check-in/approve-all`
+    );
+    return response.data;
+  }
+
+  // Disapprove all today's check-ins (Manager only)
+  async disapproveAllCheckIns(): Promise<{ updated: number }> {
+    const response = await axiosInstance.patch(
+      `${this.baseUrl}/check-in/disapprove-all`
+    );
+    return response.data;
   }
 
   // Get system-wide (cross-tenant) attendance for system admin
