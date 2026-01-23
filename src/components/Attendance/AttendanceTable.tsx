@@ -47,6 +47,9 @@ import AppDropdown from '../common/AppDropdown';
 import systemEmployeeApiService from '../../api/systemEmployeeApi';
 import type { SelectChangeEvent } from '@mui/material/Select';
 import AppPageTitle from '../common/AppPageTitle';
+import { type CheckInTeamMember, type TeamAttendanceEntry } from './TeamCheckInDialog';
+
+import TeamCheckInView from './TeamCheckInView';
 
 type TenantOption = { id: string; name: string };
 interface AttendanceRecord {
@@ -101,11 +104,11 @@ const AttendanceTable = () => {
   const [isNetworkAdminUser, setIsNetworkAdminUser] = useState(false);
   const [isHRAdminUser, setIsHRAdminUser] = useState(false);
   const [adminView, setAdminView] = useState<'my' | 'all'>('my');
-  const [managerView, setManagerView] = useState<'my' | 'team'>('my');
+  const [managerView, setManagerView] = useState<'my' | 'team' | 'checkin'>('my');
   const [tab, setTab] = useState(0); // 0: My Attendance, 1: Team Attendance
-  const [teamAttendance, setTeamAttendance] = useState<TeamMember[]>([]);
+  const [teamAttendance, setTeamAttendance] = useState<CheckInTeamMember[]>([]);
   const [filteredTeamAttendance, setFilteredTeamAttendance] = useState<
-    TeamMember[]
+    CheckInTeamMember[]
   >([]);
   const [teamEmployees, setTeamEmployees] = useState<
     Array<{ id: string; name: string }>
@@ -126,6 +129,7 @@ const AttendanceTable = () => {
     useState('all');
   const [teamStartDate, setTeamStartDate] = useState('');
   const [teamEndDate, setTeamEndDate] = useState('');
+
 
   const toDisplayTime = (iso: string | null) =>
     iso ? new Date(iso).toLocaleTimeString() : null;
@@ -416,11 +420,11 @@ const AttendanceTable = () => {
       );
 
       const teamItems = response.items || [];
-      setTeamAttendance(teamItems);
+      setTeamAttendance(teamItems as unknown as CheckInTeamMember[]);
       if (startDate || endDate) {
         const filteredItems = teamItems
           .map((memberUnknown: unknown) => {
-            const member = (memberUnknown as TeamMember) || ({} as TeamMember);
+            const member = (memberUnknown as CheckInTeamMember) || ({} as CheckInTeamMember);
             const filteredAttendance =
               (member.attendance || []).filter((att: TeamAttendanceEntry) => {
                 if (!att.date) return false;
@@ -466,7 +470,7 @@ const AttendanceTable = () => {
             };
           })
           .filter(
-            (member: TeamMember) =>
+            (member: CheckInTeamMember) =>
               member.attendance && member.attendance.length > 0
           );
         setFilteredTeamAttendance(filteredItems);
@@ -596,13 +600,13 @@ const AttendanceTable = () => {
           limit: 10, // Default limit
           totalPages: teamResponse.totalPages,
         };
-        const teamItems = (response.items as AttendanceEvent[]) || [];
+        const teamItems = (response.items as unknown as CheckInTeamMember[]) || [];
         setTeamAttendance(teamItems);
 
         const selectedDateStr = date;
         const filteredItems = teamItems
           .map((memberUnknown: unknown) => {
-            const member = (memberUnknown as TeamMember) || ({} as TeamMember);
+            const member = (memberUnknown as CheckInTeamMember) || ({} as CheckInTeamMember);
             const filteredAttendance =
               (member.attendance || []).filter((att: TeamAttendanceEntry) => {
                 if (!att.date) return false;
@@ -644,7 +648,7 @@ const AttendanceTable = () => {
             };
           })
           .filter(
-            (member: TeamMember) =>
+            (member: CheckInTeamMember) =>
               member.attendance && member.attendance.length > 0
           );
         setFilteredTeamAttendance(filteredItems);
@@ -1345,7 +1349,7 @@ const AttendanceTable = () => {
 
       const filtered = teamAttendance
         .map((memberUnknown: unknown) => {
-          const member = (memberUnknown as TeamMember) || ({} as TeamMember);
+          const member = (memberUnknown as CheckInTeamMember) || ({} as CheckInTeamMember);
           const filteredAttendance =
             (member.attendance || []).filter((att: TeamAttendanceEntry) => {
               if (!att.date) return false;
@@ -1387,7 +1391,7 @@ const AttendanceTable = () => {
           };
         })
         .filter(
-          (member: TeamMember) =>
+          (member: CheckInTeamMember) =>
             member.attendance && member.attendance.length > 0
         );
 
@@ -1401,7 +1405,7 @@ const AttendanceTable = () => {
   useEffect(() => {
     const unique = new Map<string, { id: string; name: string }>();
     teamAttendance.forEach(memberUnknown => {
-      const member = (memberUnknown as TeamMember) || ({} as TeamMember);
+      const member = (memberUnknown as CheckInTeamMember) || ({} as CheckInTeamMember);
       const id = member.user_id as string | undefined;
       if (!id) return;
       const firstName = member.first_name || member.user?.first_name || '';
@@ -1481,7 +1485,7 @@ const AttendanceTable = () => {
         })),
       };
 
-      setFilteredTeamAttendance([member as TeamMember]);
+      setFilteredTeamAttendance([member as CheckInTeamMember]);
     } catch (error) {
       setFilteredTeamAttendance([]);
       showError(error);
@@ -1644,9 +1648,15 @@ const AttendanceTable = () => {
                       My Attendance
                     </AppButton>
                     <AppButton
-                      variant={managerView === 'team' ? 'contained' : 'outlined'}
+                      variant={
+                        managerView === 'team' || managerView === 'checkin'
+                          ? 'contained'
+                          : 'outlined'
+                      }
                       variantType={
-                        managerView === 'team' ? 'primary' : 'secondary'
+                        managerView === 'team' || managerView === 'checkin'
+                          ? 'primary'
+                          : 'secondary'
                       }
                       onClick={handleManagerTeamAttendance}
                       sx={{
@@ -2006,12 +2016,18 @@ const AttendanceTable = () => {
             sx={{
               mb: 3,
               display: 'flex',
+              flexDirection: { xs: 'column', sm: 'row' },
               gap: 2,
-              alignItems: 'center',
+              alignItems: { xs: 'stretch', sm: 'center' },
               flexWrap: 'wrap',
             }}
           >
-            <Box sx={{ width: '200px' }}>
+            <Box sx={{
+              width: { xs: '100%', sm: '200px' },
+              minWidth: { xs: '100%', sm: '200px' },
+              maxWidth: { sm: '200px' },
+              flexShrink: 0,
+            }}>
               <DatePicker
                 range
                 numberOfMonths={2}
@@ -2092,6 +2108,7 @@ const AttendanceTable = () => {
             {/* Team Employee Filter - for team attendance (regular users) */}
             {teamEmployees.length > 0 && (
               <AppDropdown
+                showLabel={false}
                 label='Employee'
                 value={selectedTeamEmployee || ''}
                 onChange={(e: SelectChangeEvent<string | number>) =>
@@ -2162,7 +2179,7 @@ const AttendanceTable = () => {
               ) : (
                 filteredTeamAttendance.flatMap((memberUnknown: unknown) => {
                   const member =
-                    (memberUnknown as TeamMember) || ({} as TeamMember);
+                    (memberUnknown as CheckInTeamMember) || ({} as CheckInTeamMember);
                   const attendanceList = member.attendance || [];
                   if (attendanceList.length > 0) {
                     return attendanceList.map(
@@ -2228,8 +2245,9 @@ const AttendanceTable = () => {
               mb: 3,
               mt: 3,
               display: 'flex',
+              flexDirection: { xs: 'column', sm: 'row' },
               gap: 2,
-              alignItems: 'center',
+              alignItems: { xs: 'stretch', sm: 'center' },
               flexWrap: 'wrap',
             }}
           >
@@ -2242,9 +2260,9 @@ const AttendanceTable = () => {
               }
               onClick={handleManagerMyAttendance}
               sx={{
-                width: '200px',
-                minWidth: '200px',
-                maxWidth: '200px',
+                width: { xs: '100%', sm: '200px' },
+                minWidth: { xs: '100%', sm: '200px' },
+                maxWidth: { sm: '200px' },
                 borderRadius: '12px',
                 boxSizing: 'border-box',
                 flexShrink: 0,
@@ -2260,9 +2278,9 @@ const AttendanceTable = () => {
               variantType={managerView === 'team' ? 'primary' : 'secondary'}
               onClick={handleManagerTeamAttendance}
               sx={{
-                width: '200px',
-                minWidth: '200px',
-                maxWidth: '200px',
+                width: { xs: '100%', sm: '200px' },
+                minWidth: { xs: '100%', sm: '200px' },
+                maxWidth: { sm: '200px' },
                 borderRadius: '12px',
                 boxSizing: 'border-box',
                 flexShrink: 0,
@@ -2273,9 +2291,9 @@ const AttendanceTable = () => {
 
             <Box
               sx={{
-                width: '200px',
-                minWidth: '200px',
-                maxWidth: '200px',
+                width: { xs: '100%', sm: '200px' },
+                minWidth: { xs: '100%', sm: '200px' },
+                maxWidth: { sm: '200px' },
                 flexShrink: 0,
               }}
             >
@@ -2358,6 +2376,7 @@ const AttendanceTable = () => {
             {/* Team Employee Filter - for manager team attendance */}
             {teamEmployees.length > 0 && (
               <AppDropdown
+                showLabel={false}
                 label='Employee'
                 value={selectedTeamEmployee || ''}
                 onChange={(e: SelectChangeEvent<string | number>) =>
@@ -2372,13 +2391,30 @@ const AttendanceTable = () => {
                 ]}
                 placeholder='SELECT EMPLOYEE'
                 containerSx={{
-                  width: '200px',
-                  minWidth: '200px',
-                  maxWidth: '200px',
+                  width: { xs: '100%', sm: '200px' },
+                  minWidth: { xs: '100%', sm: '200px' },
+                  maxWidth: { sm: '200px' },
                   flexShrink: 0,
                 }}
               />
             )}
+            <AppButton
+              variant='contained'
+              variantType='primary'
+              onClick={() => {
+                setManagerView('checkin');
+              }}
+              sx={{
+                width: { xs: '100%', sm: '200px' },
+                minWidth: { xs: '100%', sm: '200px' },
+                maxWidth: { sm: '200px' },
+                borderRadius: '12px',
+                boxSizing: 'border-box',
+                flexShrink: 0,
+              }}
+            >
+              Team Check In
+            </AppButton>
             <AppButton
               variant='outlined'
               variantType='secondary'
@@ -2390,9 +2426,9 @@ const AttendanceTable = () => {
                 fetchTeamAttendance(1);
               }}
               sx={{
-                width: '200px',
-                minWidth: '200px',
-                maxWidth: '200px',
+                width: { xs: '100%', sm: '200px' },
+                minWidth: { xs: '100%', sm: '200px' },
+                maxWidth: { sm: '200px' },
                 borderRadius: '12px',
                 boxSizing: 'border-box',
                 flexShrink: 0,
@@ -2431,7 +2467,7 @@ const AttendanceTable = () => {
               ) : (
                 filteredTeamAttendance.flatMap((memberUnknown: unknown) => {
                   const member =
-                    (memberUnknown as TeamMember) || ({} as TeamMember);
+                    (memberUnknown as CheckInTeamMember) || ({} as CheckInTeamMember);
                   const attendanceList = member.attendance || [];
                   if (attendanceList.length > 0) {
                     return attendanceList.map(
@@ -2488,6 +2524,9 @@ const AttendanceTable = () => {
         </Paper>
       )}
 
+      {isManager && !isAdminLike && managerView === 'checkin' && (
+        <TeamCheckInView onBack={() => setManagerView('team')} />
+      )}
       <ErrorSnackbar
         open={snackbar.open}
         message={snackbar.message}

@@ -247,22 +247,18 @@ export default function DesignationManager() {
     }
     if (selectedDepartmentId !== 'all') {
       fetchDesignations(selectedDepartmentId, page);
-    } else {
-      fetchAllDesignations();
     }
+    // For 'all', pagination is handled client-side, so no need to fetch
   };
 
   const fetchAllDesignations = useCallback(async () => {
     try {
       setLoading(true);
-      console.log('Fetching all designations...');
       const backendDesignations =
         await designationApiService.getAllDesignations();
-      console.log('Backend designations:', backendDesignations);
       const frontendDesignations = backendDesignations.map(designation =>
         designationApiService.convertBackendToFrontend(designation)
       );
-      console.log('Frontend designations:', frontendDesignations);
       setDesignations(frontendDesignations);
       // Reset pagination when fetching all designations
       setCurrentPage(1);
@@ -281,11 +277,6 @@ export default function DesignationManager() {
   }, [fetchDepartments]);
 
   useEffect(() => {
-    console.log('Designation fetch effect triggered:', {
-      isSystemAdmin,
-      selectedDepartmentId,
-      selectedTenantId,
-    });
     if (isSystemAdmin) {
       fetchSystemAdminDesignations();
     } else {
@@ -464,7 +455,8 @@ export default function DesignationManager() {
           ...newFrontendDesignation,
           titleAr: data.titleAr || '',
         };
-        setDesignations(prev => [...prev, newDesignation]);
+        setDesignations(prev => [newDesignation, ...prev]);
+        setCurrentPage(1);
 
         showSuccess('Designation created successfully');
       }
@@ -498,13 +490,15 @@ export default function DesignationManager() {
     return designations.filter(d => d.departmentId === selectedDepartmentId);
   }, [designations, selectedDepartmentId]);
 
-  const totalPagesForFiltered = Math.ceil(
-    filteredDesignations.length / itemsPerPage
-  );
-  const paginatedData = filteredDesignations.slice(
-    (currentPage - 1) * itemsPerPage,
-    currentPage * itemsPerPage
-  );
+  const isServerSidePagination =
+    selectedDepartmentId !== 'all' && !isSystemAdmin;
+
+  const paginatedData = isServerSidePagination
+    ? filteredDesignations
+    : filteredDesignations.slice(
+        (currentPage - 1) * itemsPerPage,
+        currentPage * itemsPerPage
+      );
 
   return (
     <Box dir={isRTL ? 'rtl' : 'ltr'}>
@@ -954,25 +948,52 @@ export default function DesignationManager() {
         </TableBody>
       </AppTable>
 
-      {totalPagesForFiltered > 1 && (
-        <Box display='flex' justifyContent='center' mt={2}>
-          <Pagination
-            count={totalPagesForFiltered}
-            page={currentPage}
-            onChange={(_, page) => handlePageChange(page)}
-            color='primary'
-            showFirstButton
-            showLastButton
-          />
-        </Box>
-      )}
+      {(() => {
+        // Calculate pagination based on current view (server-side vs client-side)
+        const currentTotalItems = isServerSidePagination ? totalRecords : filteredDesignations.length;
+        
+        // Calculate exact total pages
+        const exactTotalPages = 
+          currentTotalItems > 0 && itemsPerPage > 0
+            ? Math.ceil(currentTotalItems / itemsPerPage)
+            : 1;
+            
+        const finalTotalPages = exactTotalPages;
+        
+        // Get current page record count for visibility logic
+        const currentPageRowsCount = paginatedData.length;
 
-      {paginatedData.length > 0 && (
+        // Pagination visibility logic
+        const shouldShowPagination =
+          finalTotalPages > 1 &&
+          currentPageRowsCount > 0 &&
+          (currentPage === 1
+            ? currentPageRowsCount === itemsPerPage // First page: only show if full limit (optional, but matches EmployeeList)
+            : true);
+
+        return shouldShowPagination ? (
+          <Box display='flex' justifyContent='center' mt={2}>
+            <Pagination
+              count={finalTotalPages}
+              page={Math.min(currentPage, finalTotalPages)}
+              onChange={(_, page) => {
+                const validPage = Math.min(page, finalTotalPages);
+                handlePageChange(validPage);
+              }}
+              color='primary'
+              showFirstButton
+              showLastButton
+            />
+          </Box>
+        ) : null;
+      })()}
+
+      {(isServerSidePagination ? totalRecords : filteredDesignations.length) > 0 && (
         <Box display='flex' justifyContent='center' mt={1}>
           <Typography variant='body2' color='textSecondary'>
             {getText(
-              `Showing page ${currentPage} of ${totalPagesForFiltered} (${selectedDepartmentId === 'all' ? filteredDesignations.length : totalRecords} total records)`,
-              `عرض الصفحة ${currentPage} من ${totalPagesForFiltered} (${selectedDepartmentId === 'all' ? filteredDesignations.length : totalRecords} سجل إجمالي)`
+              `Showing page ${currentPage} of ${isServerSidePagination ? Math.ceil(totalRecords / itemsPerPage) : Math.ceil(filteredDesignations.length / itemsPerPage)} (${isServerSidePagination ? totalRecords : filteredDesignations.length} total records)`,
+              `عرض الصفحة ${currentPage} من ${isServerSidePagination ? Math.ceil(totalRecords / itemsPerPage) : Math.ceil(filteredDesignations.length / itemsPerPage)} (${isServerSidePagination ? totalRecords : filteredDesignations.length} سجل إجمالي)`
             )}
           </Typography>
         </Box>

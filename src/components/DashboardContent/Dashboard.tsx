@@ -58,7 +58,9 @@ import EmployeeGrowthChart from './EmployeeGrowthChart';
 import SystemUptimeCard from './SystemUptimeCard';
 import RecentActivityLogs from './RecentActivityLogs';
 import { getCurrentUser } from '../../utils/auth';
-import { isSystemAdmin } from '../../utils/roleUtils';
+import SalaryOverviewChart from './SalaryOverviewChart';
+import AttendanceDepartmentChart from './AttendanceDepartmentChart';
+import { isSystemAdmin, isAdmin } from '../../utils/roleUtils';
 import { PAGINATION } from '../../constants/appConstants';
 import AppPageTitle from '../common/AppPageTitle';
 
@@ -1348,7 +1350,12 @@ const Dashboard: React.FC = () => {
             </Box>
           </Box>
 
-          {/* Alerts moved to Navbar notifications (NotificationProvider + Navbar NotificationButton) */}
+          {isAdmin(userRole) && (
+            <>
+              <SalaryOverviewChart />
+              <AttendanceDepartmentChart />
+            </>
+          )}
         </Box>
       )}
     </Box>

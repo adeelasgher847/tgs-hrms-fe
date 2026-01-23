@@ -95,6 +95,23 @@ export interface AssetRequest {
     email: string;
   };
   asset_category?: string;
+  comments?: AssetRequestComment[];
+}
+
+export interface AssetRequestComment {
+  id: string;
+  asset_request_id: string;
+  commented_by: string;
+  commentedByUser?: {
+    id: string;
+    first_name?: string;
+    last_name?: string;
+    name?: string;
+    profile_pic?: string | null;
+  };
+  comment: string;
+  tenant_id: string;
+  created_at: string;
 }
 
 export const validateRequestStatus = (
@@ -481,6 +498,44 @@ class AssetApiService {
     };
   }
 
+  async getManagerTeamAssetRequests(filters?: {
+    status?: string;
+    page?: number;
+    limit?: number;
+  }) {
+    const params = new URLSearchParams();
+    if (filters?.status) params.append('status', filters.status);
+    if (filters?.page) params.append('page', filters.page.toString());
+    if (filters?.limit) params.append('limit', filters.limit.toString());
+
+    const response = await axiosInstance.get(
+      `${this.assetRequestsUrl}/team?${params.toString()}`
+    );
+
+    const responseData = response.data;
+
+    if (responseData.items && Array.isArray(responseData.items)) {
+      return {
+        items: responseData.items,
+        total: responseData.total || 0,
+        page: responseData.page || 1,
+        limit: responseData.limit || 25,
+        totalPages: responseData.totalPages || 1,
+        counts: responseData.counts || undefined,
+      };
+    }
+
+    // Fallback for other structures if necessary, though the prompt specifies the structure.
+    return {
+      items: [],
+      total: 0,
+      page: 1,
+      limit: 25,
+      totalPages: 1,
+      counts: undefined,
+    };
+  }
+
   async createAssetRequest(data: CreateAssetRequestRequest) {
     const response = await axiosInstance.post(this.assetRequestsUrl, data);
     return response.data;
@@ -524,6 +579,21 @@ class AssetApiService {
   async deleteAssetRequest(id: string) {
     const response = await axiosInstance.delete(
       `${this.assetRequestsUrl}/${id}`
+    );
+    return response.data;
+  }
+
+  async addAssetRequestComment(id: string, comment: string) {
+    const response = await axiosInstance.post(
+      `${this.assetRequestsUrl}/${id}/comments`,
+      { comment }
+    );
+    return response.data;
+  }
+
+  async getAssetRequestComments(id: string) {
+    const response = await axiosInstance.get(
+      `${this.assetRequestsUrl}/${id}/comments`
     );
     return response.data;
   }
