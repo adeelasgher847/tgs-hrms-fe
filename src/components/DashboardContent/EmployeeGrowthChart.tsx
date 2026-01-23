@@ -4,7 +4,7 @@ import Chart from 'react-apexcharts';
 import { useOutletContext } from 'react-router-dom';
 import { useLanguage } from '../../hooks/useLanguage';
 import systemEmployeeApiService from '../../api/systemEmployeeApi';
-import systemDashboardApiService from '@/api/systemDashboardApi';
+import systemDashboardApiService from '../../api/systemDashboardApi';
 import AppDropdown from '../common/AppDropdown';
 // using shared AppDropdown for time selector
 
@@ -133,6 +133,10 @@ const EmployeeGrowthChart: React.FC = () => {
     xaxis: {
       categories: months,
       labels: {
+        rotate: -45,
+        rotateAlways: false,
+        hideOverlappingLabels: true,
+        trim: true,
         style: {
           fontSize: '11px',
           colors: theme.palette.text.primary,
@@ -152,7 +156,7 @@ const EmployeeGrowthChart: React.FC = () => {
     },
     grid: {
       borderColor: theme.palette.divider,
-      padding: { top: 20, left: 10, right: 10, bottom: 10 },
+      padding: { top: 20, left: 15, right: 15, bottom: 10 },
     },
     colors: ['#C61952'],
     tooltip: {
@@ -311,7 +315,7 @@ const EmployeeGrowthChart: React.FC = () => {
             padding: 0,
           }}
         >
-          <Chart options={options} series={series} type='line' height={300} />
+          <Chart options={options} series={series} type='line' width='100%' height={300} />
         </Box>
       </Box>
     </Box>

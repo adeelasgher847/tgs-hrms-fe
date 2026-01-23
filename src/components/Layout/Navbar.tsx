@@ -38,6 +38,7 @@ import {
   ListItemText,
   ListItemButton,
 } from '@mui/material';
+import { useNotifications } from '../../context/NotificationContext';
 import UserAvatar from '../common/UserAvatar';
 import MenuIcon from '@mui/icons-material/Menu';
 import GroupOutlinedIcon from '@mui/icons-material/GroupOutlined';
@@ -118,21 +119,21 @@ interface SearchResult {
   path: string;
   category: string;
   type:
-  | 'route'
-  | 'employee'
-  | 'asset'
-  | 'team'
-  | 'department'
-  | 'designation'
-  | 'benefit'
-  | 'leave'
-  | 'policy'
-  | 'holiday'
-  | 'tenant'
-  | 'project'
-  | 'asset-request'
-  | 'attendance'
-  | 'payroll';
+    | 'route'
+    | 'employee'
+    | 'asset'
+    | 'team'
+    | 'department'
+    | 'designation'
+    | 'benefit'
+    | 'leave'
+    | 'policy'
+    | 'holiday'
+    | 'tenant'
+    | 'project'
+    | 'asset-request'
+    | 'attendance'
+    | 'payroll';
   id?: string;
   icon?: React.ReactNode;
   subtitle?: string;
@@ -360,6 +361,169 @@ interface NavbarProps {
   onOpenInviteModal: () => void;
 }
 
+/**
+ * NotificationButton - small component to render notification bell with unread badge
+ * and a Menu listing notifications from NotificationContext.
+ */
+const NotificationButton: React.FC = () => {
+  const theme = useTheme();
+  const {
+    notifications,
+    unreadCount,
+    markAsRead,
+    markAllAsRead,
+    clearNotification,
+    clearAllNotifications,
+  } = useNotifications();
+
+  const [anchor, setAnchor] = React.useState<null | HTMLElement>(null);
+  const open = Boolean(anchor);
+
+  const handleOpen = (e: React.MouseEvent<HTMLElement>) =>
+    setAnchor(e.currentTarget);
+  const handleClose = () => setAnchor(null);
+
+  return (
+    <>
+      <IconButton
+        onClick={handleOpen}
+        sx={{ padding: { xs: '6px', md: '8px' } }}
+        aria-label='Notifications'
+        aria-haspopup='true'
+        aria-expanded={open ? 'true' : undefined}
+      >
+        <Badge
+          badgeContent={unreadCount > 0 ? unreadCount : 0}
+          color='error'
+          overlap='circular'
+          showZero={false}
+          sx={{
+            '& .MuiBadge-badge': {
+              fontSize: '0.65rem',
+              minWidth: 18,
+              height: 18,
+            },
+          }}
+        >
+          <Box
+            component='img'
+            src={Icons.notification}
+            alt='Notifications'
+            sx={{
+              width: { xs: 18, md: 24 },
+              height: { xs: 18, md: 24 },
+              filter:
+                theme.palette.mode === 'dark'
+                  ? 'brightness(0) saturate(100%) invert(56%)'
+                  : 'brightness(0) saturate(100%)',
+            }}
+          />
+        </Badge>
+      </IconButton>
+
+      <Menu
+        anchorEl={anchor}
+        open={open}
+        onClose={handleClose}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+        transformOrigin={{ vertical: 'top', horizontal: 'right' }}
+        PaperProps={{
+          sx: {
+            width: { xs: 300, sm: 360 },
+            maxHeight: 420,
+            bgcolor: theme.palette.background.paper,
+          },
+        }}
+      >
+        <Box
+          sx={{ px: 1, py: 0.5, display: 'flex', alignItems: 'center', gap: 1 }}
+        >
+          <Typography variant='subtitle1' sx={{ fontWeight: 700 }}>
+            Notifications
+          </Typography>
+          <Box sx={{ flex: 1 }} />
+          <Button
+            size='small'
+            onClick={() => {
+              markAllAsRead();
+            }}
+          >
+            Mark all read
+          </Button>
+          <Button
+            size='small'
+            onClick={() => {
+              clearAllNotifications();
+            }}
+          >
+            Clear
+          </Button>
+        </Box>
+        <Divider />
+        {notifications.length === 0 ? (
+          <List sx={{ p: 2 }}>
+            <ListItem>
+              <ListItemText
+                primary='No notifications'
+                primaryTypographyProps={{ color: 'text.secondary' }}
+              />
+            </ListItem>
+          </List>
+        ) : (
+          <List>
+            {notifications.map(n => (
+              <ListItemButton
+                key={n.id}
+                onClick={() => {
+                  markAsRead(n.id);
+                }}
+                sx={{
+                  alignItems: 'flex-start',
+                  bgcolor: n.read
+                    ? 'transparent'
+                    : theme.palette.action.selected,
+                }}
+              >
+                <ListItemText
+                  primary={n.title}
+                  secondary={
+                    <>
+                      <Typography
+                        component='span'
+                        variant='body2'
+                        color='text.secondary'
+                      >
+                        {n.text}
+                      </Typography>
+                      <Typography
+                        component='div'
+                        variant='caption'
+                        color='text.secondary'
+                        sx={{ mt: 0.5 }}
+                      >
+                        {new Date(n.timestamp).toLocaleString()}
+                      </Typography>
+                    </>
+                  }
+                />
+                <IconButton
+                  size='small'
+                  onClick={e => {
+                    e.stopPropagation();
+                    clearNotification(n.id);
+                  }}
+                >
+                  ×
+                </IconButton>
+              </ListItemButton>
+            ))}
+          </List>
+        )}
+      </Menu>
+    </>
+  );
+};
+
 const Navbar: React.FC<NavbarProps> = ({
   darkMode,
   onToggleSidebar,
@@ -378,7 +542,6 @@ const Navbar: React.FC<NavbarProps> = ({
   const searchContainerRef = React.useRef<HTMLDivElement>(null);
   const searchTimeoutRef = React.useRef<NodeJS.Timeout | null>(null);
   const abortControllerRef = React.useRef<AbortController | null>(null);
-
 
   // Cache for API responses to avoid redundant calls
   const dataCacheRef = React.useRef<{
@@ -404,8 +567,6 @@ const Navbar: React.FC<NavbarProps> = ({
     tenants: null,
     cacheTime: 0,
   });
-
-
 
   const managerTeamMembersRef = React.useRef<TeamMember[]>([]);
 
@@ -950,8 +1111,10 @@ const Navbar: React.FC<NavbarProps> = ({
             let apiResponse;
 
             try {
-              const isNetAdmin = isNetworkAdmin && isNetworkAdmin(currentUserRole);
-              const isSysAdmin = roleIsSystemAdmin && roleIsSystemAdmin(currentUserRole);
+              const isNetAdmin =
+                isNetworkAdmin && isNetworkAdmin(currentUserRole);
+              const isSysAdmin =
+                roleIsSystemAdmin && roleIsSystemAdmin(currentUserRole);
               // Check for Admin role
               const isRoleAdmin = isAdmin && isAdmin(currentUserRole);
               // Check for HR Admin role
@@ -962,15 +1125,19 @@ const Navbar: React.FC<NavbarProps> = ({
               const isRoleManager = isManager && isManager(currentUserRole);
 
               if (isSysAdmin) {
-                apiResponse = await searchApiService.searchSystemAdmin(searchParams);
+                apiResponse =
+                  await searchApiService.searchSystemAdmin(searchParams);
               } else if (isRoleHRAdmin) {
-                apiResponse = await searchApiService.searchHrAdmin(searchParams);
+                apiResponse =
+                  await searchApiService.searchHrAdmin(searchParams);
               } else if (isRoleAdmin) {
                 apiResponse = await searchApiService.searchAdmin(searchParams);
               } else if (isRoleManager) {
-                apiResponse = await searchApiService.searchManager(searchParams);
+                apiResponse =
+                  await searchApiService.searchManager(searchParams);
               } else if (isRoleEmployee) {
-                apiResponse = await searchApiService.searchEmployee(searchParams);
+                apiResponse =
+                  await searchApiService.searchEmployee(searchParams);
 
                 // Strict filtering for Employee role
                 if (user?.id && apiResponse?.results) {
@@ -979,42 +1146,54 @@ const Navbar: React.FC<NavbarProps> = ({
 
                   // Filter employees (only self)
                   if (apiResponse.results.employees) {
-                    apiResponse.results.employees = apiResponse.results.employees.filter(
-                      item => item.metadata?.userId === userId
-                    );
+                    apiResponse.results.employees =
+                      apiResponse.results.employees.filter(
+                        item => item.metadata?.userId === userId
+                      );
                   }
                   if (apiResponse.results.leaves) {
-                    apiResponse.results.leaves = apiResponse.results.leaves.filter(
-                      item => item.metadata?.userId === userId
-                    );
+                    apiResponse.results.leaves =
+                      apiResponse.results.leaves.filter(
+                        item => item.metadata?.userId === userId
+                      );
                   }
                   if (apiResponse.results.payroll) {
-                    apiResponse.results.payroll = apiResponse.results.payroll.filter(
-                      item => item.metadata?.userId === userId
-                    );
+                    apiResponse.results.payroll =
+                      apiResponse.results.payroll.filter(
+                        item => item.metadata?.userId === userId
+                      );
                   }
                   if (apiResponse.results.benefits) {
-                    apiResponse.results.benefits = apiResponse.results.benefits.filter(
-                      item => item.metadata?.userId === userId
-                    );
+                    apiResponse.results.benefits =
+                      apiResponse.results.benefits.filter(
+                        item => item.metadata?.userId === userId
+                      );
                   }
                   if (apiResponse.results.attendance && userEmail) {
-                    apiResponse.results.attendance = apiResponse.results.attendance.filter(
-                      item => item.metadata?.userEmail === userEmail
-                    );
+                    apiResponse.results.attendance =
+                      apiResponse.results.attendance.filter(
+                        item => item.metadata?.userEmail === userEmail
+                      );
                   }
                 }
               } else if (isManager(currentUserRole)) {
-                apiResponse = await searchApiService.searchManager(searchParams);
-                if (managerTeamMembersRef.current.length > 0 && apiResponse.results && apiResponse.results.employees) {
-                  const teamMemberIds = new Set(managerTeamMembersRef.current.map(m => m.user.id));
+                apiResponse =
+                  await searchApiService.searchManager(searchParams);
+                if (
+                  managerTeamMembersRef.current.length > 0 &&
+                  apiResponse.results &&
+                  apiResponse.results.employees
+                ) {
+                  const teamMemberIds = new Set(
+                    managerTeamMembersRef.current.map(m => m.user.id)
+                  );
 
-                  apiResponse.results.employees = apiResponse.results.employees.filter(employee => {
-                    const empUserId = employee.metadata?.userId as string;
-                    return empUserId && teamMemberIds.has(empUserId);
-                  });
+                  apiResponse.results.employees =
+                    apiResponse.results.employees.filter(employee => {
+                      const empUserId = employee.metadata?.userId as string;
+                      return empUserId && teamMemberIds.has(empUserId);
+                    });
                 }
-
               } else if (isNetAdmin) {
                 if (typeof searchApiService.searchNetworkAdmin === 'function') {
                   apiResponse =
@@ -1550,7 +1729,6 @@ const Navbar: React.FC<NavbarProps> = ({
                               '&.Mui-selected': {
                                 backgroundColor: 'var(--primary-dark-color)',
                                 color: '#ffffff',
-
                               },
                             }}
                           >
@@ -1691,41 +1869,8 @@ const Navbar: React.FC<NavbarProps> = ({
                 justifyContent: 'center',
               }}
             >
-              <IconButton
-                sx={{
-                  padding: { xs: '6px', md: '8px' },
-                }}
-                aria-label='Notifications'
-                aria-describedby='notifications-badge'
-              >
-                <Badge
-                  variant='dot'
-                  sx={{
-                    '& .MuiBadge-dot': {
-                      backgroundColor: 'var(--secondary-color)',
-                      width: { xs: 6, md: 8 },
-                      height: { xs: 6, md: 8 },
-                    },
-                  }}
-                  id='notifications-badge'
-                >
-                  <Box
-                    component='img'
-                    src={Icons.notification}
-                    alt='Notifications'
-                    sx={{
-                      width: { xs: 18, md: 24 },
-                      height: { xs: 18, md: 24 },
-                      filter:
-                        theme.palette.mode === 'dark'
-                          ? 'brightness(0) saturate(100%) invert(56%)'
-                          : 'brightness(0) saturate(100%)',
-                      transition: 'filter 0.2s ease',
-                    }}
-                    aria-hidden='true'
-                  />
-                </Badge>
-              </IconButton>
+              {/** Notifications: use NotificationContext to show unread count and list */}
+              <NotificationButton />
             </Paper>
 
             <Divider

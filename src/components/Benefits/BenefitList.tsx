@@ -63,6 +63,8 @@ const BenefitList: React.FC = () => {
       // Handle both array and paginated response
       const items = Array.isArray(resp) ? resp : resp.items || [];
       const itemsArr = items as Benefit[];
+      // Populate benefits state so the table can render rows
+      setBenefits(itemsArr);
       const paginationInfo = Array.isArray(resp)
         ? null
         : 'total' in resp && 'totalPages' in resp
@@ -231,7 +233,12 @@ const BenefitList: React.FC = () => {
         flexWrap='wrap'
         gap={2}
       >
-        <Box display='flex' flexWrap='wrap' gap={2} sx={{ width: { xs: '100%', sm: 'auto' } }}>
+        <Box
+          display='flex'
+          flexWrap='wrap'
+          gap={2}
+          sx={{ width: { xs: '100%', sm: 'auto' } }}
+        >
           <AppDropdown
             label='Type'
             showLabel={false}
@@ -274,7 +281,12 @@ const BenefitList: React.FC = () => {
           />
         </Box>
 
-        <Box display='flex' gap={1} flexWrap='wrap' sx={{ width: { xs: '100%', sm: 'auto' } }}>
+        <Box
+          display='flex'
+          gap={1}
+          flexWrap='wrap'
+          sx={{ width: { xs: '100%', sm: 'auto' } }}
+        >
           <AppButton
             variant='contained'
             startIcon={<AddIcon />}
@@ -495,8 +507,9 @@ const BenefitList: React.FC = () => {
       <DeleteConfirmationDialog
         open={deleteDialogOpen}
         title='Delete Benefit'
-        message={`Are you sure you want to delete the benefit "${selectedBenefit?.name || ''
-          }"? This action cannot be undone.`}
+        message={`Are you sure you want to delete the benefit "${
+          selectedBenefit?.name || ''
+        }"? This action cannot be undone.`}
         confirmText='Delete'
         cancelText='Cancel'
         onConfirm={handleConfirmDelete}
