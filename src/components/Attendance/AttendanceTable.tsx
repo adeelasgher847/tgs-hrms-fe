@@ -25,7 +25,6 @@ import type {
   AttendanceEvent,
   AttendanceResponse,
   UserShort,
-  TeamMember,
   TeamAttendanceEntry,
 } from '../../api/attendanceApi';
 import {
@@ -47,7 +46,7 @@ import AppDropdown from '../common/AppDropdown';
 import systemEmployeeApiService from '../../api/systemEmployeeApi';
 import type { SelectChangeEvent } from '@mui/material/Select';
 import AppPageTitle from '../common/AppPageTitle';
-import { type CheckInTeamMember, type TeamAttendanceEntry } from './TeamCheckInDialog';
+import { type CheckInTeamMember } from './TeamCheckInDialog';
 
 import TeamCheckInView from './TeamCheckInView';
 
@@ -1116,13 +1115,8 @@ const AttendanceTable = () => {
     setStartDate('');
     setEndDate('');
     setCurrentNavigationDate('all');
-
-    // Fetch initial attendance IMMEDIATELY for System Admin "All Attendance"
-    // so that /attendance/system/all is hit right away on button click.
     fetchAttendance('all', undefined, '', '');
 
-    // 👉 Load tenants using same API as Employee List (only for system admin)
-    // Run this in parallel so it doesn't delay the attendance API call.
     const storedUser = localStorage.getItem('user');
     if (storedUser) {
       try {

@@ -45,60 +45,22 @@ export function extractErrorMessage(error: unknown): ErrorHandlingResult {
     }
 
     // Handle different HTTP status codes
-    switch (axiosError.response?.status) {
-      case 400:
-        return {
-          message:
-            axiosError.response?.data?.message ||
-            'Invalid request. Please check your input.',
-          type: 'error',
-          shouldShow: true,
-        };
-      case 401:
-        return {
-          message: 'Authentication required. Please log in again.',
-          type: 'error',
-          shouldShow: true,
-        };
-      case 403:
-        return {
-          message: 'You do not have permission to perform this action.',
-          type: 'error',
-          shouldShow: true,
-        };
-      case 404:
-        return {
-          message: 'The requested resource was not found.',
-          type: 'error',
-          shouldShow: true,
-        };
-      case 409:
-        return {
-          message: 'A conflict occurred. The resource may already exist.',
-          type: 'error',
-          shouldShow: true,
-        };
-      case 422:
-        return {
-          message:
-            axiosError.response?.data?.message ||
-            'Validation failed. Please check your input.',
-          type: 'error',
-          shouldShow: true,
-        };
-      case 500:
-        return {
-          message: 'Server error. Please try again later.',
-          type: 'error',
-          shouldShow: true,
-        };
-      default:
-        return {
-          message: axiosError.message || defaultMessage,
-          type: 'error',
-          shouldShow: true,
-        };
+    const backendMessage = axiosError.response?.data?.message;
+    const axiosMsg = axiosError.message;
+
+    if (backendMessage) {
+      return {
+        message: backendMessage,
+        type: 'error',
+        shouldShow: true,
+      };
     }
+
+    return {
+      message: axiosMsg || defaultMessage,
+      type: 'error',
+      shouldShow: true,
+    };
   }
 
   // Handle regular Error objects
@@ -285,7 +247,7 @@ export function isGlobalDepartment(department: {
   return (
     !department.tenantId ||
     department.tenantId === 'GLOBAL' ||
-    department.id?.startsWith('global-')
+    !!department.id?.startsWith('global-')
   );
 }
 
@@ -302,6 +264,6 @@ export function isGlobalDesignation(designation: {
   return (
     !designation.tenantId ||
     designation.tenantId === 'GLOBAL' ||
-    designation.id?.startsWith('global-')
+    !!designation.id?.startsWith('global-')
   );
 }

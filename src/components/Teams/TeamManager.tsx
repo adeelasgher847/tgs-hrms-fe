@@ -81,7 +81,7 @@ const TeamManager: React.FC<TeamManagerProps> = ({
   const [showCreateForm, setShowCreateForm] = useState(false);
   const { language } = useLanguage();
   const theme = useTheme();
-  
+
   const labels = {
     en: {
       title: 'Team Management',
@@ -264,7 +264,6 @@ const TeamManager: React.FC<TeamManagerProps> = ({
             gridTemplateColumns: {
               xs: '1fr',
               sm: 'repeat(2, 1fr)',
-              md: 'repeat(3, 1fr)',
             },
             gap: 3,
           }}

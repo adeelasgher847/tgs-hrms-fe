@@ -31,6 +31,7 @@ import icon from 'leaflet/dist/images/marker-icon.png';
 import iconShadow from 'leaflet/dist/images/marker-shadow.png';
 import type { Geofence } from '../../types/geofencing';
 import { geofencingApi } from '../../api/geofencingApi';
+import { extractErrorMessage } from '../../utils/errorHandler';
 
 const DefaultIcon = L.icon({
   iconUrl: icon,
@@ -41,7 +42,6 @@ const DefaultIcon = L.icon({
 L.Marker.prototype.options.icon = DefaultIcon;
 
 type LatLngTuple = [number, number];
-const CHECK_IN_THRESHOLD = 20;
 
 /* ---------------- Map Fit Helper ---------------- */
 
@@ -52,9 +52,9 @@ function FitGeofence({ geofence }: { geofence: Geofence }) {
     if (!geofence) return;
 
     if (geofence.type === 'circle' && geofence.radius) {
-      const threshold = geofence.threshold_enabled && geofence.threshold_distance
-        ? geofence.threshold_distance
-        : CHECK_IN_THRESHOLD;
+      const threshold = geofence.threshold_enabled
+        ? Number(geofence.threshold_distance)
+        : 0;
       const bounds = L.circle(geofence.center, {
         radius: geofence.radius + threshold,
       }).getBounds();
@@ -126,6 +126,7 @@ const EmployeeGeofenceStatus = () => {
   const [position, setPosition] = useState<LatLngTuple | null>(null);
   const [geofence, setGeofence] = useState<Geofence | null>(null);
   const [distance, setDistance] = useState<number>(0);
+  const [isInside, setIsInside] = useState<boolean>(false);
 
   /* -------- Auto live tracking -------- */
 
@@ -138,9 +139,21 @@ const EmployeeGeofenceStatus = () => {
     (async () => {
       try {
         const list = await geofencingApi.getGeofences();
-        const active = list.find(g => g.isActive);
+
+        // Use user's team ID if available to find the correct geofence
+        const userStr = localStorage.getItem('user');
+        const userObj = userStr ? JSON.parse(userStr) : null;
+        const userTeamId = userObj?.team_id || userObj?.teamId;
+
+        console.log('User team ID for geofencing:', userTeamId);
+
+        // Find active geofence for the user's team, or fallback to any active one if no team assigned
+        const active = userTeamId
+          ? list.find(g => g.isActive && g.teamId === userTeamId)
+          : list.find(g => g.isActive);
+
         if (!active) {
-          setError('No active geofence configured.');
+          setError('No active geofence found');
           setLoading(false);
           return;
         }
@@ -149,21 +162,22 @@ const EmployeeGeofenceStatus = () => {
 
         const updateDistance = (current: LatLngTuple) => {
           let dist = 0;
-          let isInside = false;
+          let inside = false;
 
           if (active.type === 'circle' && active.radius) {
             const distToCenter = haversineDistanceMeters(current, active.center);
-            isInside = distToCenter <= active.radius;
-            dist = isInside ? 0 : distToCenter - active.radius;
+            inside = distToCenter <= active.radius;
+            dist = inside ? 0 : distToCenter - active.radius;
           } else if (active.coordinates && active.coordinates.length >= 3) {
             const coords = active.coordinates as LatLngTuple[];
-            isInside = isPointInPolygon(current, coords);
-            dist = isInside ? 0 : haversineDistanceMeters(current, active.center);
+            inside = isPointInPolygon(current, coords);
+            dist = inside ? 0 : haversineDistanceMeters(current, active.center);
           } else {
             dist = haversineDistanceMeters(current, active.center);
           }
 
           setDistance(dist);
+          setIsInside(inside);
         };
 
         const processPosition = () => {
@@ -195,25 +209,21 @@ const EmployeeGeofenceStatus = () => {
             }
             updateTimeout = setTimeout(processPosition, 2000);
           },
-          (err) => {
+          (err: GeolocationPositionError | any) => {
             console.warn('Geolocation watch error:', err);
-            if (err.code === err.TIMEOUT) {
-              setError('Location request timed out. Please ensure GPS is enabled and try again.');
-            } else if (err.code === err.PERMISSION_DENIED) {
-              setError('Location permission denied. Please allow location access.');
-            } else {
-              setError('Unable to access live location.');
-            }
+            const errorResult = extractErrorMessage(err);
+            setError(errorResult.message);
             setLoading(false);
           },
           {
             enableHighAccuracy: true,
-            timeout: 30000, // Increased to 30 seconds
-            maximumAge: 10000, // Accept positions up to 10 seconds old
+            timeout: 30000,
+            maximumAge: 10000,
           }
         );
-      } catch {
-        setError('Failed to load geofence.');
+      } catch (err) {
+        const errorResult = extractErrorMessage(err);
+        setError(errorResult.message);
         setLoading(false);
       }
     })();
@@ -230,25 +240,15 @@ const EmployeeGeofenceStatus = () => {
 
   /* -------- Derived state -------- */
 
-  const threshold = geofence?.threshold_enabled && geofence.threshold_distance
-    ? geofence.threshold_distance
-    : CHECK_IN_THRESHOLD;
+  const threshold = geofence?.threshold_enabled
+    ? (Number(geofence.threshold_distance))
+    : 0;
 
-  const isInside =
-    geofence?.type === 'circle' &&
-    geofence.radius !== undefined &&
-    distance <= geofence.radius;
+  const canCheckIn = isInside || (geofence?.threshold_enabled && threshold > 0 && distance <= threshold);
 
-  const canCheckIn =
-    isInside || distance <= threshold;
-
-  const progress = Math.min(
-    100,
-    Math.max(
-      0,
-      ((threshold - distance) / threshold) * 100
-    )
-  );
+  const progress = threshold > 0
+    ? Math.min(100, Math.max(0, ((threshold - distance) / threshold) * 100))
+    : 0;
 
   /* ---------------- UI ---------------- */
 
@@ -259,7 +259,7 @@ const EmployeeGeofenceStatus = () => {
           Live Geofence Tracking
         </Typography>
         <Typography variant="body2" color="text.secondary" mb={2}>
-          Live location tracking is active automatically
+          {geofence?.name ? `Geofence: ${geofence.name}` : 'Live location tracking is active automatically'}
         </Typography>
 
         {error && (
@@ -292,8 +292,8 @@ const EmployeeGeofenceStatus = () => {
                   p: 2.5,
                   borderRadius: 2,
                   border: `2px solid ${canCheckIn
-                      ? theme.palette.success.main
-                      : theme.palette.warning.main
+                    ? theme.palette.success.main
+                    : theme.palette.warning.main
                     }`,
                   background: alpha(
                     canCheckIn

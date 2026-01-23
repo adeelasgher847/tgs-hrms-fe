@@ -76,7 +76,7 @@ const GeofencingManagement = () => {
   const [deletingGeofence, setDeletingGeofence] = useState<Geofence | null>(
     null
   );
-  const [managerTeamIds, setManagerTeamIds] = useState<string[]>([]);
+  const [managerTeams, setManagerTeams] = useState<any[]>([]);
   const userContext = useContext(UserContext);
   const [formModalOpen, setFormModalOpen] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -109,9 +109,9 @@ const GeofencingManagement = () => {
     (async () => {
       try {
         const teams = await teamApiService.getMyTeams();
-        setManagerTeamIds(teams.map(t => t.id));
+        setManagerTeams(teams);
       } catch {
-        setManagerTeamIds([]);
+        setManagerTeams([]);
       }
     })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -151,12 +151,8 @@ const GeofencingManagement = () => {
   ) => {
     try {
       setSaving(true);
-      // Ensure team scoping: prefer editing geofence teamId, otherwise use manager's first team
-      const teamId =
-        editingGeofence?.teamId ??
-        (managerTeamIds.length > 0 ? managerTeamIds[0] : undefined);
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const payload = { ...data, teamId } as any;
+      // Data from form should already have teamId if provided
+      const payload = { ...data };
 
       if (editingGeofence) {
         await geofencingApi.updateGeofence(editingGeofence.id, payload);
@@ -223,7 +219,7 @@ const GeofencingManagement = () => {
             isManager(role) &&
             !isAdmin(role) &&
             !isHRAdmin(role) &&
-            managerTeamIds.length > 0
+            managerTeams.length > 0
           ) {
             return (
               <AppButton
@@ -242,7 +238,7 @@ const GeofencingManagement = () => {
       {/* Geofence List */}
       {geofences.length === 0 ? (
         <Alert severity='info'>
-          No geofences created yet. Click "Create Geofence" to add one.
+          No geofences created yet.
         </Alert>
       ) : (
         <Box
@@ -315,7 +311,7 @@ const GeofencingManagement = () => {
                     !isAdmin(role) &&
                     !isHRAdmin(role) &&
                     geofence.teamId &&
-                    managerTeamIds.includes(geofence.teamId);
+                    managerTeams.some(t => t.id === geofence.teamId);
                   if (isTeamManager) {
                     return (
                       <>
@@ -358,6 +354,7 @@ const GeofencingManagement = () => {
         onSubmit={handleFormSubmit}
         geofence={editingGeofence}
         loading={saving}
+        availableTeams={managerTeams}
       />
 
       {/* View Dialog */}

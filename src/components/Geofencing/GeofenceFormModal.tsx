@@ -275,6 +275,7 @@ interface GeofenceFormModalProps {
   onSubmit: (data: Omit<Geofence, 'id' | 'createdAt' | 'updatedAt'>) => void;
   geofence?: Geofence | null;
   loading?: boolean;
+  availableTeams?: any[];
 }
 
 const GeofenceFormModal: React.FC<GeofenceFormModalProps> = ({
@@ -283,6 +284,7 @@ const GeofenceFormModal: React.FC<GeofenceFormModalProps> = ({
   onSubmit,
   geofence,
   loading = false,
+  availableTeams = [],
 }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<LocationSearchResult[]>(
@@ -311,6 +313,7 @@ const GeofenceFormModal: React.FC<GeofenceFormModalProps> = ({
     isActive: true,
     threshold_enabled: false,
     threshold_distance: 50,
+    teamId: '',
   });
 
   // Track initial snapshot to detect changes for enabling Update button
@@ -324,6 +327,7 @@ const GeofenceFormModal: React.FC<GeofenceFormModalProps> = ({
     coordinates?: [number, number][] | null;
     threshold_enabled?: boolean;
     threshold_distance?: number | null;
+    teamId?: string;
   } | null>(null);
 
   type ShapeData = {
@@ -363,6 +367,7 @@ const GeofenceFormModal: React.FC<GeofenceFormModalProps> = ({
       return true;
     if (formData.threshold_distance !== (init.threshold_distance ?? 50))
       return true;
+    if (formData.teamId !== (init.teamId || '')) return true;
 
     // Compare center/coordinates/drawn shape
     const coordsEqual = (
@@ -448,6 +453,7 @@ const GeofenceFormModal: React.FC<GeofenceFormModalProps> = ({
           isActive: geofence.isActive,
           threshold_enabled: geofence.threshold_enabled ?? false,
           threshold_distance: geofence.threshold_distance ?? 50,
+          teamId: geofence.teamId || '',
         });
         setSelectedLocation(geofence.center);
         setSelectedLocationName(geofence.name);
@@ -482,6 +488,7 @@ const GeofenceFormModal: React.FC<GeofenceFormModalProps> = ({
           coordinates: geofence.coordinates ?? null,
           threshold_enabled: geofence.threshold_enabled ?? false,
           threshold_distance: geofence.threshold_distance ?? null,
+          teamId: geofence.teamId || '',
         };
       } else {
         setFormData({
@@ -491,6 +498,7 @@ const GeofenceFormModal: React.FC<GeofenceFormModalProps> = ({
           isActive: true,
           threshold_enabled: false,
           threshold_distance: 50,
+          teamId: availableTeams.length > 0 ? availableTeams[0].id : '',
         });
         setSelectedLocation(null);
         setSelectedLocationName('');
@@ -911,6 +919,7 @@ const GeofenceFormModal: React.FC<GeofenceFormModalProps> = ({
       threshold_distance: formData.threshold_enabled
         ? formData.threshold_distance
         : undefined,
+      teamId: formData.teamId,
     });
   };
 
@@ -1071,6 +1080,8 @@ const GeofenceFormModal: React.FC<GeofenceFormModalProps> = ({
                   setFormData({ ...formData, description: e.target.value })
                 }
               />
+
+
 
               <Box sx={{ display: 'flex', gap: 1 }}>
                 <TextField
