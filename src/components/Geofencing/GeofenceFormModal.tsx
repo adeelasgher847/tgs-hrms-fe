@@ -457,7 +457,7 @@ const GeofenceFormModal: React.FC<GeofenceFormModalProps> = ({
         });
         setSelectedLocation(geofence.center);
         setSelectedLocationName(geofence.name);
-        setSearchQuery(geofence.name);
+        setSearchQuery('');
         setMapCenter(geofence.center);
         setMapZoom(15);
         setManualCoordinates({
@@ -1195,12 +1195,6 @@ const GeofenceFormModal: React.FC<GeofenceFormModalProps> = ({
                     step: 1,
                   }}
                 />
-              )}
-
-              {drawnShape && (
-                <Alert severity='success'>
-                  Boundary drawn on map. Ready to save.
-                </Alert>
               )}
 
               {!drawnShape && (

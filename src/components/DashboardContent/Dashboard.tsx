@@ -210,10 +210,10 @@ const Dashboard: React.FC = () => {
       ? attendanceData
       : attendanceData.filter(d => d.department === selectedDept);
 
-  const attendanceMinChartWidth = Math.max(
-    displayedAttendance.length * attendanceBarSize,
-    600
-  );
+  const attendanceMinChartWidth =
+    displayedAttendance.length > 0
+      ? Math.max(displayedAttendance.length * attendanceBarSize, 600)
+      : 0;
 
   const attendanceForceScrollThreshold = 6; // bars
   const attendanceShouldForceMinWidthOnXs =
@@ -1253,7 +1253,10 @@ const Dashboard: React.FC = () => {
                         xs: attendanceShouldForceMinWidthOnXs
                           ? `${attendanceMinChartWidth}px`
                           : '100%',
-                        md: `${attendanceMinChartWidth}px`,
+                        md:
+                          attendanceShouldForceMinWidthOnXs
+                            ? `${attendanceMinChartWidth}px`
+                            : '100%',
                       },
                       height: { xs: 360, md: 420 },
                     }}
