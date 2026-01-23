@@ -1243,7 +1243,6 @@ const Dashboard: React.FC = () => {
                     width: '100%',
                     flex: 1,
                     minHeight: { xs: 360, md: 420 },
-                    minHeight: { xs: 360, md: 420 },
                     overflowX: 'auto',
                     overflowY: 'hidden',
                   }}
