@@ -455,15 +455,9 @@ const GeofenceFormModal: React.FC<GeofenceFormModalProps> = ({
           threshold_distance: geofence.threshold_distance ?? 50,
           teamId: geofence.teamId || '',
         });
-        setSelectedLocation(geofence.center);
         setSelectedLocationName(geofence.name);
-        setSearchQuery(geofence.name);
-        setMapCenter(geofence.center);
+        setSearchQuery('');
         setMapZoom(15);
-        setManualCoordinates({
-          latitude: geofence.center[0].toFixed(6),
-          longitude: geofence.center[1].toFixed(6),
-        });
 
         if (geofence.type === 'circle' && geofence.radius) {
           setDrawnShape({
@@ -471,10 +465,31 @@ const GeofenceFormModal: React.FC<GeofenceFormModalProps> = ({
             center: geofence.center,
             radius: geofence.radius,
           });
+          setSelectedLocation(geofence.center);
+          setMapCenter(geofence.center);
+          setManualCoordinates({
+            latitude: geofence.center[0].toFixed(6),
+            longitude: geofence.center[1].toFixed(6),
+          });
         } else if (geofence.coordinates) {
+          let calculatedCenter = geofence.center;
+          try {
+            const bounds = L.latLngBounds(geofence.coordinates);
+            const c = bounds.getCenter();
+            calculatedCenter = [c.lat, c.lng];
+          } catch (e) {
+            console.warn('Center calculation failed', e);
+          }
           setDrawnShape({
             type: geofence.type,
+            center: calculatedCenter,
             coordinates: geofence.coordinates,
+          });
+          setSelectedLocation(calculatedCenter);
+          setMapCenter(calculatedCenter);
+          setManualCoordinates({
+            latitude: calculatedCenter[0].toFixed(6),
+            longitude: calculatedCenter[1].toFixed(6),
           });
         }
         // Capture initial snapshot for dirty-check
@@ -704,30 +719,18 @@ const GeofenceFormModal: React.FC<GeofenceFormModalProps> = ({
       if (drawnShape.type === 'circle' && drawnShape.center) {
         setDrawnShape(prev => (prev ? { ...prev, center: newLocation } : null));
       } else if (drawnShape.coordinates && drawnShape.coordinates.length > 0) {
-        // For polygon/rectangle, update the first coordinate
-        const updatedCoords = [...drawnShape.coordinates];
-        updatedCoords[0] = newLocation;
-        // If rectangle, update all corner coordinates proportionally
-        if (drawnShape.type === 'rectangle' && updatedCoords.length >= 4) {
-          const oldCenter = drawnShape.coordinates[0];
-          const latDiff = newLocation[0] - oldCenter[0];
-          const lngDiff = newLocation[1] - oldCenter[1];
-          updatedCoords[1] = [
-            updatedCoords[1][0] + latDiff,
-            updatedCoords[1][1] + lngDiff,
-          ];
-          updatedCoords[2] = [
-            updatedCoords[2][0] + latDiff,
-            updatedCoords[2][1] + lngDiff,
-          ];
-          updatedCoords[3] = [
-            updatedCoords[3][0] + latDiff,
-            updatedCoords[3][1] + lngDiff,
-          ];
-          if (updatedCoords.length > 4) updatedCoords[4] = updatedCoords[0];
-        }
+        const oldRef = drawnShape.center || drawnShape.coordinates[0];
+        const latDiff = newLocation[0] - oldRef[0];
+        const lngDiff = newLocation[1] - oldRef[1];
+
+        const updatedCoords = drawnShape.coordinates.map(
+          ([lat, lng]): [number, number] => [lat + latDiff, lng + lngDiff]
+        );
+
         setDrawnShape(prev =>
-          prev ? { ...prev, coordinates: updatedCoords } : null
+          prev
+            ? { ...prev, center: newLocation, coordinates: updatedCoords }
+            : null
         );
       }
     }
@@ -779,8 +782,10 @@ const GeofenceFormModal: React.FC<GeofenceFormModalProps> = ({
       const bounds = rectangle.getBounds();
       const sw = bounds.getSouthWest();
       const ne = bounds.getNorthEast();
+      const center = bounds.getCenter();
       shapeData = {
         type: 'rectangle',
+        center: [center.lat, center.lng],
         coordinates: [
           [sw.lat, sw.lng],
           [ne.lat, sw.lng],
@@ -792,8 +797,10 @@ const GeofenceFormModal: React.FC<GeofenceFormModalProps> = ({
     } else {
       const polygon = layer as L.Polygon;
       const latlngs = polygon.getLatLngs()[0] as L.LatLng[];
+      const center = polygon.getBounds().getCenter();
       shapeData = {
         type: 'polygon',
+        center: [center.lat, center.lng],
         coordinates: latlngs.map(ll => [ll.lat, ll.lng]),
       };
     }
@@ -809,7 +816,7 @@ const GeofenceFormModal: React.FC<GeofenceFormModalProps> = ({
       });
       setSelectedLocation(shapeData.center);
     } else if (shapeData.coordinates && shapeData.coordinates.length > 0) {
-      const center = shapeData.coordinates[0];
+      const center = shapeData.center || shapeData.coordinates[0];
       setManualCoordinates({
         latitude: center[0].toFixed(6),
         longitude: center[1].toFixed(6),
@@ -834,8 +841,10 @@ const GeofenceFormModal: React.FC<GeofenceFormModalProps> = ({
         const bounds = layer.getBounds();
         const sw = bounds.getSouthWest();
         const ne = bounds.getNorthEast();
+        const center = bounds.getCenter();
         updatedShape = {
           type: 'rectangle',
+          center: [center.lat, center.lng],
           coordinates: [
             [sw.lat, sw.lng],
             [ne.lat, sw.lng],
@@ -846,8 +855,10 @@ const GeofenceFormModal: React.FC<GeofenceFormModalProps> = ({
         };
       } else if (layer instanceof L.Polygon) {
         const latlngs = layer.getLatLngs()[0] as L.LatLng[];
+        const center = layer.getBounds().getCenter();
         updatedShape = {
           type: 'polygon',
+          center: [center.lat, center.lng],
           coordinates: latlngs.map(ll => [ll.lat, ll.lng]),
         };
       }
@@ -865,12 +876,12 @@ const GeofenceFormModal: React.FC<GeofenceFormModalProps> = ({
         });
         setSelectedLocation(shape.center);
       } else if (shape.coordinates && shape.coordinates.length > 0) {
-        const first = shape.coordinates[0];
+        const center = shape.center || shape.coordinates[0];
         setManualCoordinates({
-          latitude: first[0].toFixed(6),
-          longitude: first[1].toFixed(6),
+          latitude: center[0].toFixed(6),
+          longitude: center[1].toFixed(6),
         });
-        setSelectedLocation(first);
+        setSelectedLocation(center);
       }
     }
   };
@@ -1195,12 +1206,6 @@ const GeofenceFormModal: React.FC<GeofenceFormModalProps> = ({
                     step: 1,
                   }}
                 />
-              )}
-
-              {drawnShape && (
-                <Alert severity='success'>
-                  Boundary drawn on map. Ready to save.
-                </Alert>
               )}
 
               {!drawnShape && (
