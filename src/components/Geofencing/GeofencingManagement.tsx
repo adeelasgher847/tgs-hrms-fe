@@ -186,6 +186,23 @@ const GeofencingManagement = () => {
     }
   };
 
+  const getDisplayCenter = (geofence: Geofence): [number, number] => {
+    if (
+      geofence.type === 'circle' ||
+      !geofence.coordinates ||
+      geofence.coordinates.length === 0
+    ) {
+      return geofence.center;
+    }
+    try {
+      const bounds = L.latLngBounds(geofence.coordinates);
+      const center = bounds.getCenter();
+      return [center.lat, center.lng];
+    } catch {
+      return geofence.center;
+    }
+  };
+
 
 
   if (loading) {
@@ -450,8 +467,8 @@ const GeofencingManagement = () => {
                     Coordinates
                   </Typography>
                   <Typography variant='body1'>
-                    {viewingGeofence.center[0].toFixed(6)},{' '}
-                    {viewingGeofence.center[1].toFixed(6)}
+                    {getDisplayCenter(viewingGeofence)[0].toFixed(6)},{' '}
+                    {getDisplayCenter(viewingGeofence)[1].toFixed(6)}
                   </Typography>
                 </Box>
                 {viewingGeofence.type === 'circle' &&
@@ -503,7 +520,7 @@ const GeofencingManagement = () => {
                 }}
               >
                 <MapContainer
-                  center={viewingGeofence.center}
+                  center={getDisplayCenter(viewingGeofence)}
                   zoom={15}
                   style={{ height: '100%', width: '100%' }}
                   zoomControl={true}
@@ -513,9 +530,9 @@ const GeofencingManagement = () => {
                     attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
                     url='https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png'
                   />
-                  <MapController center={viewingGeofence.center} zoom={15} />
+                  <MapController center={getDisplayCenter(viewingGeofence)} zoom={15} />
 
-                  <Marker position={viewingGeofence.center}>
+                  <Marker position={getDisplayCenter(viewingGeofence)}>
                     <Popup>
                       <Typography variant='subtitle2'>
                         {viewingGeofence.name}
