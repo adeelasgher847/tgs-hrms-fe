@@ -29,6 +29,7 @@ import UndoIcon from '@mui/icons-material/Undo';
 import FileDownloadIcon from '@mui/icons-material/FileDownload';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
 import EditIcon from '@mui/icons-material/Edit';
+import DeleteIcon from '@mui/icons-material/Delete';
 import type { Leave } from '../../type/levetypes';
 import { formatDate } from '../../utils/dateUtils';
 import { leaveApi } from '../../api/leaveApi';
@@ -41,6 +42,8 @@ import { IoCloseCircleOutline } from 'react-icons/io5';
 import LeaveForm from './LeaveForm';
 import { env } from '../../config/env';
 import { authService } from '../../api/authService';
+import ErrorSnackbar from '../common/ErrorSnackbar';
+import { useErrorHandler } from '../../hooks/useErrorHandler';
 
 const ITEMS_PER_PAGE = PAGINATION.DEFAULT_PAGE_SIZE;
 
@@ -152,12 +155,15 @@ const LeaveHistory: React.FC<LeaveHistoryProps> = ({
   const [loadingAllLeaves, setLoadingAllLeaves] = useState(false);
   const [openDocs, setOpenDocs] = useState(false);
   const [currentDocs, setCurrentDocs] = useState<string[]>([]);
+  const [currentLeaveId, setCurrentLeaveId] = useState<string>('');
   const [openLeaveForm, setOpenLeaveForm] = useState(false);
   const [editingLeave, setEditingLeave] = useState<Leave | null>(null);
   const [failedImages, setFailedImages] = useState<Set<number>>(new Set());
   const [menuAnchorEl, setMenuAnchorEl] = useState<null | HTMLElement>(null);
   const [selectedLeaveForMenu, setSelectedLeaveForMenu] =
     useState<Leave | null>(null);
+
+  const { snackbar, showSuccess, showError, closeSnackbar } = useErrorHandler();
   const theme = useTheme();
   // Reset page to 1 when employee filter changes
   useEffect(() => {
@@ -314,10 +320,27 @@ const LeaveHistory: React.FC<LeaveHistoryProps> = ({
     }
   };
 
-  const handleViewDocs = (docs: string[]) => {
+  const handleViewDocs = (leaveId: string, docs: string[]) => {
+    setCurrentLeaveId(leaveId);
     setCurrentDocs(docs);
     setFailedImages(new Set()); // Reset failed images when opening dialog
     setOpenDocs(true);
+  };
+
+  const handleDeleteDocument = async (docUrl: string) => {
+    if (!currentLeaveId) return;
+    if (!window.confirm('Are you sure you want to delete this document?')) return;
+
+    try {
+      await leaveApi.deleteDocument(currentLeaveId, docUrl);
+      // Remove from local state
+      setCurrentDocs(prev => prev.filter(d => d !== docUrl));
+      // Refresh leaves to update the main list
+      refreshLeaves();
+    } catch (error) {
+      console.error('Failed to delete document', error);
+      alert('Failed to delete document');
+    }
   };
 
   const handleMenuClick = (
@@ -542,7 +565,7 @@ const LeaveHistory: React.FC<LeaveHistoryProps> = ({
                 <TableCell>
                   {leave.documents && leave.documents.length > 0 ? (
                     <IconButton
-                      onClick={() => handleViewDocs(leave.documents || [])}
+                      onClick={() => handleViewDocs(leave.id, leave.documents || [])}
                     >
                       <img
                         src={getIcon('password')}
@@ -965,52 +988,73 @@ const LeaveHistory: React.FC<LeaveHistoryProps> = ({
                   return (
                     <Box
                       key={idx}
-                      sx={{
-                        width: { xs: 120, sm: 150, md: 180 },
-                        height: { xs: 120, sm: 150, md: 180 },
-                        border: '1px solid #ccc',
-                        borderRadius: 2,
-                        overflow: 'hidden',
-                        cursor: 'pointer',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        flexDirection: 'column',
-                        '&:hover': { boxShadow: 2 },
-                        transition: 'all 0.2s',
-                      }}
-                      onClick={() => window.open(fullDocUrl, '_blank')}
+                      sx={{ position: 'relative' }}
                     >
-                      {imageFailed ? (
-                        <>
-                          <Typography
-                            variant='body2'
-                            sx={{ mb: 1, textAlign: 'center', fontSize: 12 }}
-                          >
-                            Image failed to load
-                          </Typography>
-                          <Typography
-                            variant='caption'
-                            sx={{ color: '#1976d2', fontWeight: 'bold' }}
-                          >
-                            Click to view
-                          </Typography>
-                        </>
-                      ) : (
-                        <img
-                          src={fullDocUrl}
-                          alt={`Document ${idx + 1}`}
-                          style={{
-                            maxWidth: '100%',
-                            maxHeight: '100%',
-                            objectFit: 'contain',
-                            transition: 'transform 0.2s',
-                          }}
-                          onError={() => {
-                            setFailedImages(prev => new Set(prev).add(idx));
-                          }}
-                        />
-                      )}
+                      <Box
+                        sx={{
+                          width: { xs: 120, sm: 150, md: 180 },
+                          height: { xs: 120, sm: 150, md: 180 },
+                          border: '1px solid #ccc',
+                          borderRadius: 2,
+                          overflow: 'hidden',
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          flexDirection: 'column',
+                          '&:hover': { boxShadow: 2 },
+                          transition: 'all 0.2s',
+                        }}
+                        onClick={() => window.open(fullDocUrl, '_blank')}
+                      >
+                        {imageFailed ? (
+                          <>
+                            <Typography
+                              variant='body2'
+                              sx={{ mb: 1, textAlign: 'center', fontSize: 12 }}
+                            >
+                              Image failed to load
+                            </Typography>
+                            <Typography
+                              variant='caption'
+                              sx={{ color: '#1976d2', fontWeight: 'bold' }}
+                            >
+                              Click to view
+                            </Typography>
+                          </>
+                        ) : (
+                          <img
+                            src={fullDocUrl}
+                            alt={`Document ${idx + 1}`}
+                            style={{
+                              maxWidth: '100%',
+                              maxHeight: '100%',
+                              objectFit: 'contain',
+                              transition: 'transform 0.2s',
+                            }}
+                            onError={() => {
+                              setFailedImages(prev => new Set(prev).add(idx));
+                            }}
+                          />
+                        )}
+                      </Box>
+                      <IconButton
+                        size='small'
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDeleteDocument(doc);
+                        }}
+                        sx={{
+                          position: 'absolute',
+                          top: 4,
+                          right: 4,
+                          bgcolor: 'background.paper',
+                          boxShadow: 1,
+                          '&:hover': { bgcolor: 'error.light', color: 'white' },
+                        }}
+                      >
+                        <DeleteIcon fontSize='small' />
+                      </IconButton>
                     </Box>
                   );
                 }
@@ -1020,32 +1064,55 @@ const LeaveHistory: React.FC<LeaveHistoryProps> = ({
                   <Box
                     key={idx}
                     sx={{
-                      width: { xs: 120, sm: 150, md: 180 },
-                      height: { xs: 120, sm: 150, md: 180 },
-                      border: '1px solid #ccc',
-                      borderRadius: 2,
-                      p: 1,
-                      textAlign: 'center',
-                      cursor: 'pointer',
-                      display: 'flex',
-                      flexDirection: 'column',
-                      justifyContent: 'center',
-                      '&:hover': { boxShadow: 3 },
+                      position: 'relative',
                     }}
-                    onClick={() => window.open(fullDocUrl, '_blank')}
                   >
-                    <Typography
-                      variant='body2'
-                      sx={{ mb: 1, wordBreak: 'break-word', fontWeight: 500 }}
+                    <Box
+                      sx={{
+                        width: { xs: 120, sm: 150, md: 180 },
+                        height: { xs: 120, sm: 150, md: 180 },
+                        border: '1px solid #ccc',
+                        borderRadius: 2,
+                        p: 1,
+                        textAlign: 'center',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        justifyContent: 'center',
+                        '&:hover': { boxShadow: 3 },
+                      }}
+                      onClick={() => window.open(fullDocUrl, '_blank')}
                     >
-                      {doc.split('/').pop()}
-                    </Typography>
-                    <Typography
-                      variant='caption'
-                      sx={{ color: '#1976d2', fontWeight: 'bold' }}
+                      <Typography
+                        variant='body2'
+                        sx={{ mb: 1, wordBreak: 'break-word', fontWeight: 500 }}
+                      >
+                        {doc.split('/').pop()}
+                      </Typography>
+                      <Typography
+                        variant='caption'
+                        sx={{ color: '#1976d2', fontWeight: 'bold' }}
+                      >
+                        View / Download
+                      </Typography>
+                    </Box>
+                    <IconButton
+                      size='small'
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleDeleteDocument(doc);
+                      }}
+                      sx={{
+                        position: 'absolute',
+                        top: 4,
+                        right: 4,
+                        bgcolor: 'background.paper',
+                        boxShadow: 1,
+                        '&:hover': { bgcolor: 'error.light', color: 'white' },
+                      }}
                     >
-                      View / Download
-                    </Typography>
+                      <DeleteIcon fontSize='small' />
+                    </IconButton>
                   </Box>
                 );
               })}
@@ -1065,13 +1132,20 @@ const LeaveHistory: React.FC<LeaveHistoryProps> = ({
             leaveId={editingLeave.id}
             initialData={editingLeave}
             onSuccess={() => {
+              showSuccess('Leave updated successfully');
               refreshLeaves();
               handleCloseLeaveForm();
             }}
-            onError={msg => alert(msg)}
+            onError={msg => showError(msg)}
           />
         </Dialog>
       )}
+      <ErrorSnackbar
+        open={snackbar.open}
+        message={snackbar.message}
+        severity={snackbar.severity}
+        onClose={closeSnackbar}
+      />
     </Box>
   );
 };

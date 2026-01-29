@@ -379,7 +379,7 @@ const LeaveRequestPage = () => {
 
       // Update local state
       setLeaves(prev =>
-        prev.map(l => {
+        prev.map((l: Leave) => {
           if (l.id === selectedId) {
             const updated: Leave = {
               ...l,
@@ -419,7 +419,7 @@ const LeaveRequestPage = () => {
       await leaveApi.cancelLeave(selectedId);
       showSuccess('Leave withdrawn successfully!');
       setLeaves(prev =>
-        prev.map(l => (l.id === selectedId ? { ...l, status: 'withdrawn' } : l))
+        prev.map((l: Leave) => (l.id === selectedId ? { ...l, status: 'withdrawn' } : l))
       );
     } catch (error: unknown) {
       showError(getErrorMessage(error) || 'Failed to withdraw leave');
