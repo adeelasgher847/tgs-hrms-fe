@@ -17,6 +17,7 @@ import {
   Stack,
   Pagination,
   Button,
+  Tooltip,
 } from '@mui/material';
 import {
   Add as AddIcon,
@@ -979,9 +980,33 @@ const AssetRequests: React.FC = () => {
         {request.rejectionReason &&
           request.rejectionReason !== null &&
           request.rejectionReason.trim() !== '' && (
-            <Typography variant='body2' color='text.primary'>
-              {request.rejectionReason}
-            </Typography>
+            <Tooltip
+              title={request.rejectionReason}
+              placement='top'
+              arrow
+              slotProps={{
+                tooltip: {
+                  sx: {
+                    position: 'relative',
+                    left: '-115px',
+                  },
+                },
+              }}
+            >
+              <Typography
+                variant='body2'
+                color='text.primary'
+                sx={{
+                  maxWidth: { xs: 110, sm: 130, md: 180 },
+                  whiteSpace: 'nowrap',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  cursor: 'help',
+                }}
+              >
+                {request.rejectionReason}
+              </Typography>
+            </Tooltip>
           )}
       </TableCell>
       {viewMode === 'team_requests' && roleIsManager() && (

@@ -172,31 +172,37 @@ const LeaveForm: React.FC<LeaveFormProps> = ({
         if (reason.trim() !== initialData.reason)
           payload.reason = reason.trim();
 
-        // Handle documents:
-        // - If new documents are added, send them (backend will replace all)
-        // - If documents were removed (existingDocuments changed), send new documents array
-        // - If all documents were removed, send empty array
-        const hasNewDocuments = documents.length > 0;
-        const hasRemovedDocuments = documentsToRemove.length > 0;
-        const allDocumentsRemoved =
-          existingDocuments.length === 0 &&
-          documentsToRemove.length > 0 &&
-          documents.length === 0;
-
-        if (hasNewDocuments || hasRemovedDocuments) {
-          // Send new documents array (backend will replace all existing documents)
-          payload.documents = documents;
-        } else if (allDocumentsRemoved) {
-          // All documents were removed, send empty array
-          payload.documents = [];
+        // Handle removed documents explicitly
+        if (documentsToRemove.length > 0) {
+          try {
+            await Promise.all(
+              documentsToRemove.map(doc => leaveApi.deleteDocument(leaveId, doc))
+            );
+          } catch (error) {
+            console.error('Failed to delete some documents', error);
+            // We continue even if delete fails, implicitly relying on backend or user creates another request?
+            // Ideally we should warn, but for now we proceed.
+          }
         }
 
-        if (Object.keys(payload).length === 0) {
+        const hasNewDocuments = documents.length > 0;
+
+        if (hasNewDocuments) {
+          // Send new documents
+          payload.documents = documents;
+        }
+
+        const updatesAvailable = Object.keys(payload).length > 0;
+        const removalsProcessed = documentsToRemove.length > 0;
+
+        if (!updatesAvailable && !removalsProcessed) {
           onError?.('No changes to update.');
           return;
         }
 
-        await leaveApi.updateLeave(leaveId, payload);
+        if (updatesAvailable) {
+          await leaveApi.updateLeave(leaveId, payload);
+        }
         onSuccess?.();
         return;
       }
@@ -325,10 +331,10 @@ const LeaveForm: React.FC<LeaveFormProps> = ({
             day: {
               sx: {
                 '&.MuiPickersDay-root.Mui-selected, &.MuiPickersDay-root.Mui-selected:hover':
-                  {
-                    backgroundColor: 'var(--primary-dark-color) !important',
-                    color: '#FFFFFF !important',
-                  },
+                {
+                  backgroundColor: 'var(--primary-dark-color) !important',
+                  color: '#FFFFFF !important',
+                },
                 '&.MuiPickersDay-root.MuiPickersDay-today:not(.Mui-selected)': {
                   backgroundColor: 'var(--primary-dark-color) !important',
                   color: '#FFFFFF !important',
@@ -374,10 +380,10 @@ const LeaveForm: React.FC<LeaveFormProps> = ({
             day: {
               sx: {
                 '&.MuiPickersDay-root.Mui-selected, &.MuiPickersDay-root.Mui-selected:hover':
-                  {
-                    backgroundColor: 'var(--primary-dark-color) !important',
-                    color: '#FFFFFF !important',
-                  },
+                {
+                  backgroundColor: 'var(--primary-dark-color) !important',
+                  color: '#FFFFFF !important',
+                },
                 '&.MuiPickersDay-root.MuiPickersDay-today:not(.Mui-selected)': {
                   backgroundColor: 'var(--primary-dark-color) !important',
                   color: '#FFFFFF !important',

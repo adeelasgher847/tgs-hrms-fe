@@ -24,7 +24,7 @@ import {
   Edit as EditIcon,
   Delete as CancelIcon,
 } from '@mui/icons-material';
-import employeeBenefitApi from '../../api/employeeBenefitApi';
+import employeeBenefitApi, { type ReimbursementRequest } from '../../api/employeeBenefitApi';
 import BenefitCard from '../Benefits/BenefitCard';
 import { formatDate } from '../../utils/dateUtils';
 import { getUserRole } from '../../utils/auth';
@@ -35,19 +35,9 @@ import { IoEyeOutline } from 'react-icons/io5';
 import { env } from '../../config/env';
 import AppFormModal from '../common/AppFormModal';
 import AppButton from '../common/AppButton';
+import { snackbar } from '../../utils/snackbar';
 
 const ITEMS_PER_PAGE = 10;
-
-interface ReimbursementRequest {
-  id: string;
-  amount: string;
-  details?: string;
-  description?: string;
-  status: string;
-  createdAt: string;
-  proofDocuments?: string[];
-  reviewRemarks?: string;
-}
 
 interface BenefitRow {
   benefitAssignmentId?: string;
@@ -87,10 +77,27 @@ const BenefitDetails: React.FC = () => {
       const fetchHistory = async () => {
         setLoadingHistory(true);
         try {
+          const benefitId = selectedBenefit.benefitAssignmentId || selectedBenefit.id;
+          const currentEmployeeId = localStorage.getItem('employeeId');
+
+          if (!benefitId) {
+            setReimbursementHistory([]);
+            return;
+          }
+
           const history = await employeeBenefitApi.getBenefitReimbursements(
-            selectedBenefit.benefitAssignmentId || selectedBenefit.id
+            benefitId
           );
-          setReimbursementHistory(history);
+
+          // Strict filtering to ensure we only show history for THIS benefit and THIS employee
+          const filteredHistory = history.filter(item =>
+            // Match the specific benefit assignment ID
+            (item.employeeBenefitId === benefitId) &&
+            // Match the current employee (ensure no cross-employee leakage)
+            (currentEmployeeId ? item.employeeId === currentEmployeeId : true)
+          );
+
+          setReimbursementHistory(filteredHistory);
         } catch (error) {
           console.error('Failed to fetch reimbursement history', error);
           setReimbursementHistory([]);
@@ -153,7 +160,7 @@ const BenefitDetails: React.FC = () => {
 
   const handleDownload = () => {
     if (benefits.length === 0) {
-      alert('No data to download.');
+      snackbar.info('No data to download.');
       return;
     }
 
@@ -250,7 +257,7 @@ const BenefitDetails: React.FC = () => {
 
     try {
       await employeeBenefitApi.cancelBenefitReimbursement(requestId);
-      alert('Reimbursement request cancelled successfully.');
+      snackbar.success('Reimbursement request cancelled successfully.');
 
       // Refresh history
       if (selectedBenefit) {
@@ -261,7 +268,7 @@ const BenefitDetails: React.FC = () => {
       }
     } catch (error) {
       console.error('Error cancelling request:', error);
-      alert('Failed to cancel request.');
+      snackbar.error('Failed to cancel request.');
     }
   };
 
@@ -272,7 +279,7 @@ const BenefitDetails: React.FC = () => {
       const validImageTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
 
       if (!validImageTypes.includes(file.type)) {
-        alert('Invalid file type. Only image files are allowed (JPG, JPEG, PNG, GIF, WebP)');
+        snackbar.error('Invalid file type. Only image files are allowed (JPG, JPEG, PNG, GIF, WebP)');
         event.target.value = '';
         return;
       }
@@ -298,7 +305,7 @@ const BenefitDetails: React.FC = () => {
     const benefitId = selectedBenefit.benefitAssignmentId || selectedBenefit.id;
 
     if (!benefitId) {
-      alert('Benefit ID is missing, cannot submit reimbursement.');
+      snackbar.error('Benefit ID is missing, cannot submit reimbursement.');
       return;
     }
 
@@ -320,10 +327,10 @@ const BenefitDetails: React.FC = () => {
 
       if (pendingRequest) {
         await employeeBenefitApi.updateBenefitReimbursement(pendingRequest.id, formData);
-        alert('Reimbursement request updated successfully!');
+        snackbar.success('Reimbursement request updated successfully!');
       } else {
         await employeeBenefitApi.createBenefitReimbursement(formData);
-        alert('Reimbursement request submitted successfully!');
+        snackbar.success('Reimbursement request submitted successfully!');
       }
 
       handleReimburseClose();
@@ -361,9 +368,9 @@ const BenefitDetails: React.FC = () => {
           errorMessage = serverData.error;
         }
 
-        alert(`Server Error: ${errorMessage}`);
+        snackbar.error(`Server Error: ${errorMessage}`);
       } else {
-        alert(errorMessage);
+        snackbar.error(errorMessage);
       }
     } finally {
       setSubmittingReimbursement(false);
