@@ -140,7 +140,7 @@ class LeaveApiService {
                   const notif = await notificationsApi.sendNotification({
                     user_ids: [String(managerId)],
                     message,
-                    type: 'alert',
+                    type: 'leave',
                   });
                   if (!notif.ok) {
                     console.warn(
@@ -174,7 +174,7 @@ class LeaveApiService {
             const notif = await notificationsApi.sendNotification({
               user_ids: adminIds,
               message,
-              type: 'alert',
+              type: 'leave',
             });
             if (!notif.ok) {
               console.warn('Notification send failed for createLeave (admins)', notif.message, notif.correlationId);
@@ -327,7 +327,7 @@ class LeaveApiService {
           const notif = await notificationsApi.sendNotification({
             user_ids: [String(recipient)],
             message,
-            type: 'alert',
+            type: 'leave',
           });
           if (!notif.ok) {
             // Log for debugging: backend message + correlationId if available
@@ -376,7 +376,7 @@ class LeaveApiService {
           const notif = await notificationsApi.sendNotification({
             user_ids: [String(recipient)],
             message,
-            type: 'alert',
+            type: 'leave',
           });
           if (!notif.ok) {
             console.warn('Notification send failed for rejectLeave', notif.message, notif.correlationId);
@@ -435,7 +435,7 @@ class LeaveApiService {
           const notif = await notificationsApi.sendNotification({
             user_ids: [String(recipient)],
             message,
-            type: 'alert',
+            type: 'leave',
           });
           if (!notif.ok) {
             console.warn('Notification send failed for approveManagerLeave', notif.message, notif.correlationId);
@@ -487,7 +487,7 @@ class LeaveApiService {
           const notif = await notificationsApi.sendNotification({
             user_ids: [String(recipient)],
             message,
-            type: 'alert',
+            type: 'leave',
           });
           if (!notif.ok) {
             console.warn('Notification send failed for approveLeaveByManager', notif.message, notif.correlationId);

@@ -1,5 +1,6 @@
 import axiosInstance from './axiosInstance';
 import { notificationsApi } from './notificationsApi';
+import { getCurrentUser } from '../utils/auth';
 import type { Task, TaskStatus } from '../Data/taskMockData';
 
 // The backend uses snake_case keys; our frontend uses camelCase Task interface.
@@ -115,14 +116,20 @@ export async function createTask(payload: Record<string, unknown>): Promise<Task
   // Send notification to assigned user (non-blocking). If multiple assigned users, notify all.
   (async () => {
     try {
-      const assigned = Array.isArray(task.assignedTo) ? task.assignedTo : [task.assignedTo];
-      const userIds = assigned.filter(Boolean).map(String);
+        const assigned = Array.isArray(task.assignedTo) ? task.assignedTo : [task.assignedTo];
+        const currentUser = getCurrentUser();
+        const currentUserId = currentUser?.id;
+        // Exclude the actor (creator/manager) from recipients so they don't get the notification
+        const userIds = assigned
+          .filter(Boolean)
+          .map(String)
+          .filter(id => id !== String(currentUserId));
       if (userIds.length > 0) {
         const message = `A new task has been assigned to you`;
         const notif = await notificationsApi.sendNotification({
           user_ids: userIds,
           message,
-          type: 'alert',
+          type: 'task',
         });
         if (!notif.ok) {
           // Notification send failed
@@ -134,6 +141,7 @@ export async function createTask(payload: Record<string, unknown>): Promise<Task
         }
         // Dispatch rich in-app event for immediate UI update in other tabs
         try {
+          const actorId = currentUserId;
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           (window as any).dispatchEvent(
             new CustomEvent('hrms:notification', {
@@ -142,6 +150,7 @@ export async function createTask(payload: Record<string, unknown>): Promise<Task
                 message,
                 taskTitle: task.title,
                 employeeName: undefined,
+                actorId,
                 data: { task },
               },
             })
@@ -245,7 +254,7 @@ export async function patchTaskStatus(taskId: string, status: string): Promise<T
       const notif = await notificationsApi.sendNotification({
         user_ids: uniqueRecipients,
         message,
-        type: 'alert',
+        type: 'task',
       });
       if (!notif.ok) {
         console.warn(
@@ -257,6 +266,7 @@ export async function patchTaskStatus(taskId: string, status: string): Promise<T
       // Dispatch in-app event with status details
       try {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const actorId = storedUser?.id;
         (window as any).dispatchEvent(
           new CustomEvent('hrms:notification', {
             detail: {
@@ -266,6 +276,7 @@ export async function patchTaskStatus(taskId: string, status: string): Promise<T
               employeeName,
               oldStatus: undefined,
               newStatus: updatedTask.status,
+              actorId,
               data: { task: updatedTask },
             },
           })
