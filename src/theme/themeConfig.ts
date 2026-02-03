@@ -271,6 +271,13 @@ export const createAppTheme = (mode: 'light' | 'dark') => {
           body: {
             color: palette.text.primary,
           },
+          '.MuiTooltip-tooltip': {
+            backgroundColor: '#c0bdbd !important',
+            color: '#000000 !important',
+          },
+          '.MuiTooltip-arrow': {
+            color: '#c0bdbd !important',
+          },
         },
       },
       MuiDialog: {

@@ -38,7 +38,8 @@ const TenantGrowthChart: React.FC = () => {
   const [tenants, setTenants] = useState<Tenant[]>([]);
   const [loadingTenants, setLoadingTenants] = useState(true);
   const [selectedTenant, setSelectedTenant] = useState<string>('');
-  const [selectedYear, setSelectedYear] = useState<number>(2025);
+  const currentYear = new Date().getFullYear();
+  const [selectedYear, setSelectedYear] = useState<number>(currentYear);
   const [tenantGrowthData, setTenantGrowthData] = useState<TenantGrowth[]>([]);
 
   // Check if user is system admin
@@ -213,10 +214,13 @@ const TenantGrowthChart: React.FC = () => {
                 value: 'all',
                 label: language === 'ar' ? 'كل الوقت' : 'All Time',
               },
-              ...Array.from({ length: 5 }, (_, i) => ({
-                value: selectedYear - i,
-                label: String(selectedYear - i),
-              })),
+              ...Array.from(
+                { length: 6 },
+                (_, i) => {
+                  const year = currentYear - 4 + i;
+                  return { value: year, label: String(year) };
+                }
+              ),
             ]}
             containerSx={{ minWidth: 120 }}
             sx={{

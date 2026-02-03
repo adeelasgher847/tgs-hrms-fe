@@ -205,7 +205,7 @@ const ROLE_SUBMENU_POLICIES: Record<
     employees: { deny: ['tenant employees'] },
     'audit logs': { denyAll: true },
     payroll: { deny: ['payroll reports', 'my salary'] },
-    department: { allowOnly: ['designation'] },
+    department: { allowOnly: ['designation', 'department list'] },
     assets: { deny: ['assets overview', 'asset requests'] },
     benefits: { deny: ['benefits report', 'benefit details'] },
     'leave-analytics': { deny: ['cross tenant leaves'] },
@@ -366,6 +366,7 @@ const DASHBOARD_ALLOWLIST_ENTRIES: Record<NormalizedRole, readonly string[]> = {
     'employee-benefit',
   ],
   'hr-admin': [
+    'departments',
     'EmployeeManager',
     'Designations',
     // 'AttendanceCheck',
