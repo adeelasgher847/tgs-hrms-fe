@@ -1778,13 +1778,15 @@ const RequestManagement: React.FC = () => {
           </Tooltip>
         )}
       </TableCell>
-      <TableCell>
+      <TableCell data-truncate='true'>
         {request.rejectionReason &&
           request.rejectionReason !== null &&
           request.rejectionReason.trim() !== '' && (
-            <Typography variant='body2' color='text.primary'>
-              {request.rejectionReason}
-            </Typography>
+            <Tooltip title={request.rejectionReason} arrow>
+              <Typography variant='body2' color='text.primary'>
+                {request.rejectionReason}
+              </Typography>
+            </Tooltip>
           )}
       </TableCell>
       {canViewManagerRemarks && (

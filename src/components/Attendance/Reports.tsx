@@ -652,7 +652,6 @@ const Reports: React.FC = () => {
             sx={{
               padding: 0,
               backgroundColor: darkMode ? '#1e1e1e' : '#ffffff',
-              overflowX: 'auto',
             }}
           >
             <AppTable sx={{ minWidth: 1100 }}>

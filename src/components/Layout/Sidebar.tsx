@@ -26,6 +26,7 @@ import { Icons } from '../../assets/icons';
 import {
   Apps,
   BusinessCenter,
+  Campaign,
   Code,
   ConfirmationNumber,
   History,
@@ -183,6 +184,11 @@ const menuItems: MenuItem[] = [
     icon: Icons.dashboard,
     iconFill: Icons.dashboardFill,
     subItems: [{ label: 'Dashboard', path: '' }],
+  },
+  {
+    label: 'Announcements',
+    icon: <Campaign />,
+    subItems: [{ label: 'Announcements', path: 'announcements' }],
   },
   {
     label: 'Projects',

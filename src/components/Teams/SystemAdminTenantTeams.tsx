@@ -16,6 +16,7 @@ import {
   TableRow,
   Paper,
   CircularProgress,
+  Tooltip,
   useTheme,
 } from '@mui/material';
 import AppButton from '../common/AppButton';
@@ -325,9 +326,11 @@ const SystemAdminTenantTeams: React.FC<SystemAdminTenantTeamsProps> = ({
               },
             }}
           >
-            {selectedTenantTeams.map((team: TenantTeam) => (
-              <Card
-                key={team.id}
+            {selectedTenantTeams.map((team: TenantTeam) => {
+              const teamDescription = (team.description || '').trim();
+              return (
+                <Card
+                  key={team.id}
                 sx={{
                   backgroundColor: theme => theme.palette.background.paper,
                   height: { xs: 'auto', sm: 'auto', md: 'auto' },
@@ -399,24 +402,27 @@ const SystemAdminTenantTeams: React.FC<SystemAdminTenantTeamsProps> = ({
                     </Box>
                   </Box>
 
-                  {team.description && (
-                    <Typography
-                      variant='body2'
-                      sx={{
-                        color: theme.palette.text.secondary,
-                        mb: 3,
-                        lineHeight: 1.6,
-                        fontSize: 'var(--body-font-size)',
-                        display: '-webkit-box',
-                        WebkitLineClamp: 3,
-                        WebkitBoxOrient: 'vertical',
-                        overflow: 'hidden',
-                        textOverflow: 'ellipsis',
-                        minHeight: { xs: '3.6em', sm: '4.2em' },
-                      }}
-                    >
-                      {team.description}
-                    </Typography>
+                  {teamDescription && (
+                    <Tooltip title={teamDescription} arrow placement='top'>
+                      <Typography
+                        variant='body2'
+                        sx={{
+                          color: theme.palette.text.secondary,
+                          mb: 3,
+                          lineHeight: 1.6,
+                          fontSize: 'var(--body-font-size)',
+                          display: '-webkit-box',
+                          WebkitLineClamp: 3,
+                          WebkitBoxOrient: 'vertical',
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                          minHeight: { xs: '3.6em', sm: '4.2em' },
+                          cursor: 'help',
+                        }}
+                      >
+                        {teamDescription}
+                      </Typography>
+                    </Tooltip>
                   )}
 
                   <Box
@@ -488,7 +494,8 @@ const SystemAdminTenantTeams: React.FC<SystemAdminTenantTeamsProps> = ({
                   </Box>
                 </CardContent>
               </Card>
-            ))}
+              );
+            })}
           </Box>
         ) : (
           <Box

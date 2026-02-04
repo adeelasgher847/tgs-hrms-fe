@@ -962,11 +962,13 @@ const AssetRequests: React.FC = () => {
           </Box>
         </Box>
       </TableCell>
-      <TableCell>
+      <TableCell data-truncate='true'>
         {request.remarks && (
-          <Typography variant='body2' color='text.secondary'>
-            {request.remarks}
-          </Typography>
+          <Tooltip title={request.remarks} arrow>
+            <Typography variant='body2' color='text.secondary'>
+              {request.remarks}
+            </Typography>
+          </Tooltip>
         )}
       </TableCell>
       <TableCell>
@@ -976,34 +978,12 @@ const AssetRequests: React.FC = () => {
       <TableCell>
         {request.processedDate && formatDate(request.processedDate)}
       </TableCell>
-      <TableCell>
+      <TableCell data-truncate='true'>
         {request.rejectionReason &&
           request.rejectionReason !== null &&
           request.rejectionReason.trim() !== '' && (
-            <Tooltip
-              title={request.rejectionReason}
-              placement='top'
-              arrow
-              slotProps={{
-                tooltip: {
-                  sx: {
-                    position: 'relative',
-                    left: '-115px',
-                  },
-                },
-              }}
-            >
-              <Typography
-                variant='body2'
-                color='text.primary'
-                sx={{
-                  maxWidth: { xs: 110, sm: 130, md: 180 },
-                  whiteSpace: 'nowrap',
-                  overflow: 'hidden',
-                  textOverflow: 'ellipsis',
-                  cursor: 'help',
-                }}
-              >
+            <Tooltip title={request.rejectionReason} arrow>
+              <Typography variant='body2' color='text.primary'>
                 {request.rejectionReason}
               </Typography>
             </Tooltip>
