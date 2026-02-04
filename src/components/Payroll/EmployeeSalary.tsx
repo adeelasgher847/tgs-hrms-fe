@@ -502,22 +502,40 @@ const EmployeeSalaryPage: React.FC = () => {
               : d.percentage || 0,
         }));
 
+      // Validate percentages do not exceed 100% (handle fractional inputs)
+      for (const a of validAllowances) {
+        const p = Number(a.percentage || 0);
+        const ppercent = Math.abs(p) <= 1 ? p * 100 : p;
+        if (ppercent > 100) {
+          snackbar.error(`Allowance "${a.type}" percentage cannot exceed 100%`);
+          return;
+        }
+      }
+      for (const d of validDeductions) {
+        const p = Number(d.percentage || 0);
+        const ppercent = Math.abs(p) <= 1 ? p * 100 : p;
+        if (ppercent > 100) {
+          snackbar.error(`Deduction "${d.type}" percentage cannot exceed 100%`);
+          return;
+        }
+      }
+
       // Calculate baseSalary from basePayComponents
       const calculatedBaseSalary =
         (typeof basePayComponents.basic === 'string' &&
-          basePayComponents.basic === ''
+        basePayComponents.basic === ''
           ? 0
           : basePayComponents.basic || 0) +
         (typeof basePayComponents.houseRent === 'string' &&
-          basePayComponents.houseRent === ''
+        basePayComponents.houseRent === ''
           ? 0
           : basePayComponents.houseRent || 0) +
         (typeof basePayComponents.medical === 'string' &&
-          basePayComponents.medical === ''
+        basePayComponents.medical === ''
           ? 0
           : basePayComponents.medical || 0) +
         (typeof basePayComponents.transport === 'string' &&
-          basePayComponents.transport === ''
+        basePayComponents.transport === ''
           ? 0
           : basePayComponents.transport || 0);
 
@@ -608,7 +626,16 @@ const EmployeeSalaryPage: React.FC = () => {
   };
 
   const formatPercentage = (value: number) => {
-    return `${value}%`;
+    if (value === null || value === undefined || Number.isNaN(Number(value)))
+      return '0%';
+    const num = Number(value);
+    // If value is provided as a fraction (e.g., 0.05) convert to percent
+    const percent = Math.abs(num) <= 1 ? num * 100 : num;
+    // Clamp to 100%
+    const clamped = Math.min(percent, 100);
+    // Round to max 2 decimal places, but show integer when possible
+    const rounded = Math.round(clamped * 100) / 100;
+    return `${rounded % 1 === 0 ? rounded.toFixed(0) : rounded.toFixed(2)}%`;
   };
 
   const isFormValid = useCallback(() => {
@@ -618,7 +645,7 @@ const EmployeeSalaryPage: React.FC = () => {
     // Check if at least basic component has a value
     const basicValue =
       typeof basePayComponents.basic === 'string' &&
-        basePayComponents.basic === ''
+      basePayComponents.basic === ''
         ? 0
         : basePayComponents.basic || 0;
     if (basicValue <= 0) {
@@ -627,19 +654,19 @@ const EmployeeSalaryPage: React.FC = () => {
     // Calculate total base salary
     const totalBaseSalary =
       (typeof basePayComponents.basic === 'string' &&
-        basePayComponents.basic === ''
+      basePayComponents.basic === ''
         ? 0
         : basePayComponents.basic || 0) +
       (typeof basePayComponents.houseRent === 'string' &&
-        basePayComponents.houseRent === ''
+      basePayComponents.houseRent === ''
         ? 0
         : basePayComponents.houseRent || 0) +
       (typeof basePayComponents.medical === 'string' &&
-        basePayComponents.medical === ''
+      basePayComponents.medical === ''
         ? 0
         : basePayComponents.medical || 0) +
       (typeof basePayComponents.transport === 'string' &&
-        basePayComponents.transport === ''
+      basePayComponents.transport === ''
         ? 0
         : basePayComponents.transport || 0);
     if (totalBaseSalary <= 0) {
@@ -661,11 +688,15 @@ const EmployeeSalaryPage: React.FC = () => {
         typeof allowance.percentage === 'string' && allowance.percentage === ''
           ? 0
           : allowance.percentage || 0;
+      // normalize percentage for validation (treat fractions <=1 as fraction)
+      const pnum = Number(percentage);
+      const ppercent = Math.abs(pnum) <= 1 ? pnum * 100 : pnum;
       if (
         !allowance.type ||
         allowance.type.trim() === '' ||
         amount < 0 ||
-        percentage < 0
+        percentage < 0 ||
+        ppercent > 100
       ) {
         return false;
       }
@@ -683,7 +714,10 @@ const EmployeeSalaryPage: React.FC = () => {
         !deduction.type ||
         deduction.type.trim() === '' ||
         amount < 0 ||
-        percentage < 0
+        percentage < 0 ||
+        (Math.abs(Number(percentage)) <= 1
+          ? Number(percentage) * 100
+          : Number(percentage)) > 100
       ) {
         return false;
       }
@@ -713,19 +747,19 @@ const EmployeeSalaryPage: React.FC = () => {
     // Calculate total from basePayComponents
     const totalBaseSalary =
       (typeof basePayComponents.basic === 'string' &&
-        basePayComponents.basic === ''
+      basePayComponents.basic === ''
         ? 0
         : basePayComponents.basic || 0) +
       (typeof basePayComponents.houseRent === 'string' &&
-        basePayComponents.houseRent === ''
+      basePayComponents.houseRent === ''
         ? 0
         : basePayComponents.houseRent || 0) +
       (typeof basePayComponents.medical === 'string' &&
-        basePayComponents.medical === ''
+      basePayComponents.medical === ''
         ? 0
         : basePayComponents.medical || 0) +
       (typeof basePayComponents.transport === 'string' &&
-        basePayComponents.transport === ''
+      basePayComponents.transport === ''
         ? 0
         : basePayComponents.transport || 0);
     if (currentBaseSalary !== totalBaseSalary) return true;
@@ -1362,7 +1396,7 @@ const EmployeeSalaryPage: React.FC = () => {
       <AppFormModal
         open={viewModalOpen}
         onClose={() => setViewModalOpen(false)}
-        onSubmit={() => { }}
+        onSubmit={() => {}}
         title={
           selectedEmployee
             ? `${selectedEmployee.employee.user.first_name} ${selectedEmployee.employee.user.last_name} - Salary Structure`
@@ -1429,7 +1463,12 @@ const EmployeeSalaryPage: React.FC = () => {
                           </Typography>
                           <Typography
                             variant='body2'
-                            sx={{ color: darkMode ? '#8f8f8f' : '#666' }}
+                            sx={{
+                              color: darkMode ? '#8f8f8f' : '#666',
+                              whiteSpace: 'normal',
+                              wordBreak: 'break-word',
+                              overflowWrap: 'break-word',
+                            }}
                           >
                             Amount: {formatCurrency(allowance.amount)} |
                             Percentage: {formatPercentage(allowance.percentage)}
@@ -1440,6 +1479,9 @@ const EmployeeSalaryPage: React.FC = () => {
                               sx={{
                                 color: darkMode ? '#8f8f8f' : '#666',
                                 mt: 1,
+                                whiteSpace: 'normal',
+                                wordBreak: 'break-word',
+                                overflowWrap: 'break-word',
                               }}
                             >
                               {allowance.description}
@@ -1483,7 +1525,12 @@ const EmployeeSalaryPage: React.FC = () => {
                           </Typography>
                           <Typography
                             variant='body2'
-                            sx={{ color: darkMode ? '#8f8f8f' : '#666' }}
+                            sx={{
+                              color: darkMode ? '#8f8f8f' : '#666',
+                              whiteSpace: 'normal',
+                              wordBreak: 'break-word',
+                              overflowWrap: 'break-word',
+                            }}
                           >
                             Amount: {formatCurrency(deduction.amount)} |
                             Percentage: {formatPercentage(deduction.percentage)}
@@ -1494,6 +1541,9 @@ const EmployeeSalaryPage: React.FC = () => {
                               sx={{
                                 color: darkMode ? '#8f8f8f' : '#666',
                                 mt: 1,
+                                whiteSpace: 'normal',
+                                wordBreak: 'break-word',
+                                overflowWrap: 'break-word',
                               }}
                             >
                               {deduction.description}
@@ -1753,9 +1803,9 @@ const EmployeeSalaryPage: React.FC = () => {
                     [
                       payrollConfig.deductions?.taxPercentage && 'Tax',
                       payrollConfig.deductions?.insurancePercentage &&
-                      'Insurance',
+                        'Insurance',
                       payrollConfig.deductions?.providentFundPercentage &&
-                      'Provident Fund',
+                        'Provident Fund',
                     ].filter(Boolean).length
                   }
                 </Typography>
@@ -1924,7 +1974,7 @@ const EmployeeSalaryPage: React.FC = () => {
                 Total Base Salary:{' '}
                 {formatCurrency(
                   Object.values(basePayComponents).reduce(
-                    (sum, val) => sum + (val || 0),
+                    (sum, val) => sum + (typeof val === 'string' ? 0 : val || 0),
                     0
                   )
                 )}
@@ -1993,9 +2043,21 @@ const EmployeeSalaryPage: React.FC = () => {
                       value={
                         allowance.percentage === 0 ? '' : allowance.percentage
                       }
-                      onChange={val =>
-                        handleUpdateAllowance(index, 'percentage', val)
-                      }
+                      onChange={val => {
+                        // Normalize and clamp percentage to 0-100 for user input
+                        if (val === '')
+                          return handleUpdateAllowance(index, 'percentage', '');
+                        const num = Number(val);
+                        if (Number.isNaN(num))
+                          return handleUpdateAllowance(
+                            index,
+                            'percentage',
+                            val
+                          );
+                        const clamped = Math.max(0, Math.min(100, num));
+                        handleUpdateAllowance(index, 'percentage', clamped);
+                      }}
+                      inputProps={{ max: 100 }}
                       min={0}
                       darkMode={darkMode}
                     />
@@ -2087,16 +2149,30 @@ const EmployeeSalaryPage: React.FC = () => {
                       value={
                         deduction.percentage === 0 ? '' : deduction.percentage
                       }
-                      onChange={val =>
-                        handleUpdateDeduction(index, 'percentage', val)
-                      }
+                      onChange={val => {
+                        if (val === '')
+                          return handleUpdateDeduction(index, 'percentage', '');
+                        const num = Number(val);
+                        if (Number.isNaN(num))
+                          return handleUpdateDeduction(
+                            index,
+                            'percentage',
+                            val
+                          );
+                        const clamped = Math.max(0, Math.min(100, num));
+                        handleUpdateDeduction(index, 'percentage', clamped);
+                      }}
+                      inputProps={{ max: 100 }}
                       min={0}
                       darkMode={darkMode}
                     />
                     <IconButton
                       onClick={() => handleRemoveDeduction(index)}
                       size='small'
-                      sx={{ color: theme.palette.text.primary, ':hover': { backgroundColor: 'transparent' }, }}
+                      sx={{
+                        color: theme.palette.text.primary,
+                        ':hover': { backgroundColor: 'transparent' },
+                      }}
                     >
                       <CloseIcon />
                     </IconButton>

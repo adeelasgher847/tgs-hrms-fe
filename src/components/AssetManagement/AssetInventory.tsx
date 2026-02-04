@@ -166,18 +166,18 @@ const AssetInventory: React.FC = () => {
           typeof apiAsset.category === 'object'
             ? apiAsset.category
             : {
-              id: apiAsset.category_id || '',
-              name: apiAsset.categoryName || apiAsset.category || '',
-            };
+                id: apiAsset.category_id || '',
+                name: apiAsset.categoryName || apiAsset.category || '',
+              };
 
         // Handle subcategory - can be object or string
         const subcategoryObj = apiAsset.subcategory
           ? typeof apiAsset.subcategory === 'object'
             ? apiAsset.subcategory
             : {
-              id: apiAsset.subcategory_id || '',
-              name: apiAsset.subcategoryName || apiAsset.subcategory || '',
-            }
+                id: apiAsset.subcategory_id || '',
+                name: apiAsset.subcategoryName || apiAsset.subcategory || '',
+              }
           : undefined;
 
         return {
@@ -639,11 +639,11 @@ const AssetInventory: React.FC = () => {
   // Modal form helpers for AppFormModal
   const hasFormChanges = editingAsset
     ? // compare simple fields for edit
-    formName !== (editingAsset.name || '') ||
-    formCategoryId !== resolveCategoryId(editingAsset) ||
-    formSubcategory !== (editingAsset.subcategoryId || '')
+      formName !== (editingAsset.name || '') ||
+      formCategoryId !== resolveCategoryId(editingAsset) ||
+      formSubcategory !== (editingAsset.subcategoryId || '')
     : // for create, require name and category selected
-    formName.trim() !== '' && formCategoryId !== '';
+      formName.trim() !== '' && formCategoryId !== '';
 
   const onFormSubmit = () => {
     // Format purchase date as YYYY-MM-DD
@@ -696,9 +696,9 @@ const AssetInventory: React.FC = () => {
           ? apiSubcategories
           : formCategoryId
             ? getSubcategoriesByCategoryId(formCategoryId).map(s => ({
-              value: s,
-              label: s,
-            }))
+                value: s,
+                label: s,
+              }))
             : [],
       onChange: (v: string | number) => setFormSubcategory(String(v)),
     },
@@ -773,7 +773,7 @@ const AssetInventory: React.FC = () => {
           />
         </LocalizationProvider>
       ),
-      onChange: () => { },
+      onChange: () => {},
     },
   ];
 
@@ -1050,7 +1050,7 @@ const AssetInventory: React.FC = () => {
               <TableCell>Status</TableCell>
               <TableCell>Assigned To</TableCell>
               <TableCell>Purchase Date</TableCell>
-              {!hideActions && <TableCell align='right'>Actions</TableCell>}
+              {!hideActions && <TableCell align='center'>Actions</TableCell>}
             </TableRow>
           </TableHead>
           <TableBody>
@@ -1123,8 +1123,11 @@ const AssetInventory: React.FC = () => {
                       <Box
                         sx={{
                           display: 'flex',
+                          flexDirection: 'row',
                           gap: { xs: 0.5, sm: 1 },
+                          alignItems: 'center',
                           justifyContent: 'center',
+                          left: '50%',
                         }}
                       >
                         <IconButton

@@ -34,6 +34,11 @@ export interface EmployeeBenefitResponse {
 }
 
 export interface EmployeeBenefitDetail {
+  employeeStatus: string;
+  employeeStatus: string;
+  benefitAssignmentId: Key | null | undefined;
+  employeeId: any;
+  benefitAssignmentId: any;
   id: string;
   name: string;
   status: string;
