@@ -31,10 +31,7 @@ function getStatusColorLocal(status: string) {
       return 'default';
   }
 }
-import { useNotifications } from '../../context/NotificationContext';
-
 const CURRENT_USER_ID = localStorage.getItem('employeeId') ?? undefined;
-
 const statusOptions = [
   { value: 'Pending', label: 'Pending' },
   { value: 'In Progress', label: 'In Progress' },
@@ -42,7 +39,6 @@ const statusOptions = [
 ];
 
 export default function MyTasks() {
-  const { addNotification } = useNotifications();
   const [tasks, setTasks] = useState<Task[]>([]);
 
   useEffect(() => {
@@ -64,10 +60,7 @@ export default function MyTasks() {
   }, []);
 
   const { snackbar, showError, showSuccess, closeSnackbar } = useErrorHandler();
-
-  // Update task status and send notification to manager (optimistic + API)
   const updateStatus = async (taskId: string, newStatus: string) => {
-    // Save previous state for rollback
     let previousTasks: Task[] = [];
     setTasks(prev => {
       previousTasks = prev;
@@ -86,28 +79,6 @@ export default function MyTasks() {
       const updated = await tasksApi.patchTaskStatus(taskId, newStatus);
       setTasks(prev => prev.map(t => (t.id === updated.id ? updated : t)));
       showSuccess('Status updated');
-
-      // send notification to manager if status changed
-      const oldTask = previousTasks.find(t => t.id === taskId);
-      if (oldTask && oldTask.status !== updated.status) {
-        const storedUser = getStoredUser<Record<string, unknown>>();
-        const employeeName =
-          storedUser && storedUser.first_name
-            ? `${String(storedUser.first_name)} ${String(
-                storedUser.last_name ?? ''
-              )}`.trim()
-            : String(
-                (storedUser as Record<string, unknown> | null)?.name ??
-                  'Employee'
-              );
-        addNotification({
-          taskId: updated.id,
-          taskTitle: updated.title,
-          employeeName,
-          oldStatus: oldTask.status,
-          newStatus: updated.status as TaskStatus,
-        });
-      }
     } catch (err) {
       // rollback optimistic update
       setTasks(previousTasks);
