@@ -77,6 +77,8 @@ class NotificationsApi {
       result.correlationId = headerCorr ?? dataCorr ?? null;
 
       // Dispatch an in-app event so the UI can show the notification immediately
+      // Dispatch an in-app event so the UI can show the notification immediately
+      /*
       try {
         const eventDetail = {
           message: result.message ?? payload.message,
@@ -94,6 +96,7 @@ class NotificationsApi {
       } catch {
         // ignore
       }
+      */
 
       return result;
     } catch (err: unknown) {

@@ -41,6 +41,7 @@ export interface LeaveResponse {
   approvedAt?: string | null;
   remarks?: string | null;
   managerRemarks?: string | null;
+  documents?: string[];
 }
 
 export interface CreateLeaveForEmployeeRequest {
@@ -186,6 +187,7 @@ class LeaveApiService {
         console.warn('Unexpected error while sending leave creation notification', err);
       }
       // Dispatch an in-app event to update local UI immediately
+      /* 
       try {
         const detail = {
           title: 'Leave Applied',
@@ -198,6 +200,7 @@ class LeaveApiService {
       } catch {
         // ignore
       }
+      */
     })();
 
     return res;
@@ -701,6 +704,7 @@ class LeaveApiService {
       }
 
       // Dispatch an in-app event to update local UI immediately
+      /*
       try {
         const resTyped = res as LeaveResWithRelations;
         const employeeName =
@@ -719,6 +723,7 @@ class LeaveApiService {
       } catch {
         // ignore
       }
+      */
     })();
 
     return res;
@@ -763,6 +768,23 @@ class LeaveApiService {
       }
     );
 
+    return response.data;
+  }
+
+  async deleteDocument(
+    id: string,
+    documentUrl: string
+  ): Promise<LeaveResponse> {
+    // Pass the document URL in the body as 'documentUrl'
+    const response = await axiosInstance.delete<LeaveResponse>(
+      `${this.baseUrl}/${id}/documents`,
+      {
+        data: { documentUrl },
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      }
+    );
     return response.data;
   }
 }
