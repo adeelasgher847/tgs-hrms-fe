@@ -209,7 +209,7 @@ const EmployeeGeofenceStatus = () => {
             }
             updateTimeout = setTimeout(processPosition, 2000);
           },
-          (err: GeolocationPositionError | any) => {
+          (err: unknown) => {
             console.warn('Geolocation watch error:', err);
             const errorResult = extractErrorMessage(err);
             setError(errorResult.message);

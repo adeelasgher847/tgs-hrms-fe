@@ -4,7 +4,7 @@ import AppPageTitle from '../common/AppPageTitle';
 import AppCard from '../common/AppCard';
 import AppDropdown from '../common/AppDropdown';
 import * as tasksApi from '../../api/tasksApi';
-import { getStoredUser } from '../../utils/authSession';
+// removed unused getStoredUser
 import { useErrorHandler } from '../../hooks/useErrorHandler';
 import ErrorSnackbar from '../common/ErrorSnackbar';
 // teamApiService not required in this component

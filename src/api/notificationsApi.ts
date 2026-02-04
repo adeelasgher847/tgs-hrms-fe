@@ -1,4 +1,5 @@
 import axiosInstance from './axiosInstance';
+import { getCurrentUser } from '../utils/auth';
 
 export interface SendNotificationRequest {
   user_ids: string[];
@@ -50,11 +51,6 @@ export interface GetNotificationsResult {
 
 class NotificationsApi {
   private baseUrl = '/notifications';
-
-  /**
-   * Send notifications to one or more users.
-   * Returns a normalized result containing status, message, data and correlationId if available.
-   */
   async sendNotification(payload: SendNotificationRequest): Promise<SendNotificationResult> {
     const result: SendNotificationResult = {
       ok: false,
@@ -87,9 +83,12 @@ class NotificationsApi {
           data: result.data,
           correlationId: result.correlationId,
           type: payload.type ?? 'alert',
+          // include actor id so consumers can filter out self-originated events
+          actorId: getCurrentUser()?.id ?? undefined,
+          // include recipients for additional client-side filtering if needed
+          recipientIds: Array.isArray(payload.user_ids) ? payload.user_ids : undefined,
         };
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        (window as any).dispatchEvent(
+        (window as unknown as EventTarget).dispatchEvent(
           new CustomEvent('hrms:notification', { detail: eventDetail })
         );
       } catch {
@@ -100,15 +99,17 @@ class NotificationsApi {
     } catch (err: unknown) {
       // Try to extract useful info from axios error shape
       // Keep normalized error shape so callers can log/show friendly info
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const axiosErr = err as any;
+      const axiosErr = err as unknown as { response?: unknown };
       result.error = err;
 
       if (axiosErr?.response) {
-        result.status = axiosErr.response.status ?? 0;
-        result.message = axiosErr.response.data?.message ?? axiosErr.response.data?.error ?? undefined;
-        result.data = axiosErr.response.data ?? undefined;
-        result.correlationId = axiosErr.response.headers?.['x-correlation-id'] ?? axiosErr.response.data?.correlationId ?? null;
+        const respObj = axiosErr.response as Record<string, unknown>;
+        result.status = (respObj?.status as number) ?? 0;
+        const respData = respObj?.data as Record<string, unknown> | undefined;
+        result.message = (respData?.message as string | undefined) ?? (respData?.error as string | undefined) ?? undefined;
+        result.data = respData ?? undefined;
+        const headers = respObj?.headers as Record<string, string> | undefined;
+        result.correlationId = (headers?.['x-correlation-id'] as string | undefined) ?? (respData?.correlationId as string | undefined) ?? null;
       }
 
       return result;
@@ -127,12 +128,13 @@ class NotificationsApi {
       res.message = data.message ?? undefined;
       return res;
     } catch (err: unknown) {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const axiosErr = err as any;
+      const axiosErr = err as unknown as { response?: unknown };
       res.error = err;
       if (axiosErr?.response) {
-        res.status = axiosErr.response.status ?? 0;
-        res.message = axiosErr.response.data?.message ?? undefined;
+        const respObj = axiosErr.response as Record<string, unknown>;
+        res.status = (respObj?.status as number) ?? 0;
+        const respData = respObj?.data as Record<string, unknown> | undefined;
+        res.message = (respData?.message as string | undefined) ?? undefined;
       }
       return res;
     }
@@ -148,12 +150,13 @@ class NotificationsApi {
       res.message = resp.data?.message ?? undefined;
       return res;
     } catch (err: unknown) {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const axiosErr = err as any;
+      const axiosErr = err as unknown as { response?: unknown };
       res.error = err;
       if (axiosErr?.response) {
-        res.status = axiosErr.response.status ?? 0;
-        res.message = axiosErr.response.data?.message ?? undefined;
+        const respObj = axiosErr.response as Record<string, unknown>;
+        res.status = (respObj?.status as number) ?? 0;
+        const respData = respObj?.data as Record<string, unknown> | undefined;
+        res.message = (respData?.message as string | undefined) ?? undefined;
       }
       return res;
     }

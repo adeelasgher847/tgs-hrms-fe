@@ -22,10 +22,12 @@ function mapApiTaskToTask(apiTask: Record<string, unknown>): Task {
     assignedToName = [assignedToNameRaw];
   } else if (assignedToNameRaw && typeof assignedToNameRaw === 'object') {
     // assignedEmployee may be an object with nested user
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const obj = assignedToNameRaw as any;
-    const user = obj.user ?? obj;
-    const name = [user?.first_name, user?.last_name].filter(Boolean).join(' ').trim();
+    const obj = assignedToNameRaw as Record<string, unknown>;
+    const user = (obj.user ?? obj) as Record<string, unknown> | undefined;
+    const name = [user?.first_name as string | undefined, user?.last_name as string | undefined]
+      .filter(Boolean)
+      .join(' ')
+      .trim();
     if (name) assignedToName = [name];
     else if (user?.name) assignedToName = [user.name];
   }
@@ -44,12 +46,14 @@ function mapApiTaskToTask(apiTask: Record<string, unknown>): Task {
   const creatorRaw = apiTask.creator ?? apiTask.created_by_user ?? undefined;
   let createdByName = (apiTask.created_by_name ?? apiTask.createdByName) as string | undefined;
   if (!createdByName && creatorRaw && typeof creatorRaw === 'object') {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const obj = creatorRaw as any;
-    const user = obj.user ?? obj;
-    const name = [user?.first_name, user?.last_name].filter(Boolean).join(' ').trim();
+    const obj = creatorRaw as Record<string, unknown>;
+    const user = (obj.user ?? obj) as Record<string, unknown> | undefined;
+    const name = [user?.first_name as string | undefined, user?.last_name as string | undefined]
+      .filter(Boolean)
+      .join(' ')
+      .trim();
     if (name) createdByName = name;
-    else if (user?.name) createdByName = user.name;
+    else if (user && typeof user.name === 'string') createdByName = user.name as string;
   }
 
   return {
@@ -64,8 +68,7 @@ function mapApiTaskToTask(apiTask: Record<string, unknown>): Task {
     createdAt: apiTask.created_at ?? apiTask.createdAt ?? new Date().toISOString(),
     deadline: apiTask.deadline ?? apiTask.deadline_at ?? apiTask.due_date ?? undefined,
     updatedAt: apiTask.updated_at ?? apiTask.updatedAt ?? new Date().toISOString(),
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    teamId: ((apiTask.team_id ?? apiTask.teamId ?? (apiTask.team as any)?.id) as string) ?? '',
+    teamId: ((apiTask.team_id ?? apiTask.teamId ?? ((apiTask.team as Record<string, unknown> | undefined)?.id as string | undefined)) as string) ?? '',
   } as Task;
 }
 
@@ -220,8 +223,8 @@ export async function patchTaskStatus(taskId: string, status: string): Promise<T
           const systemEmployeeApi = (await import('./systemEmployeeApi')).default;
           const teamApiLocal = (await import('./teamApi')).default;
           const profile = await systemEmployeeApi.getSystemEmployeeById(String(assigned));
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          const teamId = (profile as any).team || (profile as any).team_id || (profile as any).teamId || undefined;
+          const profileRec = profile as Record<string, unknown> | undefined;
+          const teamId = (profileRec?.team as string | undefined) || (profileRec?.team_id as string | undefined) || (profileRec?.teamId as string | undefined) || undefined;
           if (teamId) {
             try {
               const team = await teamApiLocal.getTeamById(String(teamId));
@@ -265,9 +268,8 @@ export async function patchTaskStatus(taskId: string, status: string): Promise<T
       }
       // Dispatch in-app event with status details
       try {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const actorId = storedUser?.id;
-        (window as any).dispatchEvent(
+        (window as unknown as EventTarget).dispatchEvent(
           new CustomEvent('hrms:notification', {
             detail: {
               title: 'Task Status Updated',

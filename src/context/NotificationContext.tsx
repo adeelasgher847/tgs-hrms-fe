@@ -1,6 +1,5 @@
 /* eslint-disable react-refresh/only-export-components */
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import axiosInstance from '../api/axiosInstance';
 import notificationsApi from '../api/notificationsApi';
 import { getCurrentUser } from '../utils/auth';
 
@@ -20,38 +19,9 @@ export interface Notification {
   raw?: unknown;
 }
 
-interface PendingApproval {
-  id?: string;
-  user_id?: string;
-  employee?: { first_name?: string; last_name?: string; email?: string } | null;
-  check_in_time?: string;
-  approval_status?: string;
-  message?: string;
-  timestamp?: string;
-}
+// Removed unused alert helper types (PendingApproval, AutoCheckout, SalaryIssue)
 
-interface AutoCheckout {
-  id?: string;
-  title?: string;
-  message?: string;
-  reason?: string;
-  timestamp?: string;
-}
-
-interface SalaryIssue {
-  id?: string;
-  title?: string;
-  message?: string;
-  details?: string;
-  timestamp?: string;
-}
-
-interface AlertsResponse {
-  auto_checkouts?: AutoCheckout[];
-  pending_approvals?: PendingApproval[];
-  salary_issues?: SalaryIssue[];
-  timestamp?: string;
-}
+// AlertsResponse type removed; not used in this module
 interface NotificationContextType {
   notifications: Notification[];
   addNotification: (
