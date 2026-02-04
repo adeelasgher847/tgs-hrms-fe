@@ -281,7 +281,9 @@ const LeaveForm: React.FC<LeaveFormProps> = ({
           }
           options={leaveTypes.map(type => ({
             value: type.id,
-            label: type.name,
+            label: type.name
+              ? type.name.charAt(0).toUpperCase() + type.name.slice(1)
+              : type.name,
           }))}
           disabled={loadingLeaveTypes}
           containerSx={{ width: '100%' }}

@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   Box,
   Typography,
@@ -43,8 +43,6 @@ const BenefitList: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [benefits, setBenefits] = useState<Benefit[]>([]);
   const [page, setPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
-  const [totalRecords, setTotalRecords] = useState(0);
   const [filterType, setFilterType] = useState('all');
   const [filterStatus, setFilterStatus] = useState('all');
   const [modalOpen, setModalOpen] = useState(false);
@@ -59,39 +57,15 @@ const BenefitList: React.FC = () => {
   const fetchBenefits = useCallback(async () => {
     setLoading(true);
     try {
-      const resp = await benefitsApi.getBenefits(page);
-      // Handle both array and paginated response
+      const resp = (await benefitsApi.getBenefits(null)) as unknown as
+        | Benefit[]
+        | { items?: Benefit[] };
       const items = Array.isArray(resp) ? resp : resp.items || [];
       const itemsArr = items as Benefit[];
-      // Populate benefits state so the table can render rows
       setBenefits(itemsArr);
-      const paginationInfo = Array.isArray(resp)
-        ? null
-        : 'total' in resp && 'totalPages' in resp
-          ? resp
-          : null;
 
       setTypes(Array.from(new Set(itemsArr.map(b => b.type))));
       setStatuses(Array.from(new Set(itemsArr.map(b => b.status))));
-
-      // Backend returns 25 records per page (fixed page size)
-      // If we get 25 records, there might be more pages
-      // If we get less than 25, it's the last page
-      const hasMorePages = items.length === ITEMS_PER_PAGE;
-
-      // Use backend pagination info if available, otherwise estimate
-      if (paginationInfo && paginationInfo.total && paginationInfo.totalPages) {
-        setTotalPages(paginationInfo.totalPages);
-        setTotalRecords(paginationInfo.total);
-      } else {
-        // Fallback: estimate based on current page and records received
-        setTotalPages(hasMorePages ? page + 1 : page);
-        setTotalRecords(
-          hasMorePages
-            ? page * ITEMS_PER_PAGE
-            : (page - 1) * ITEMS_PER_PAGE + items.length
-        );
-      }
     } catch {
       setBenefits([]);
       setTypes([]);
@@ -99,11 +73,11 @@ const BenefitList: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  }, [page]);
+  }, []);
 
   useEffect(() => {
     fetchBenefits();
-  }, [page, fetchBenefits]);
+  }, [fetchBenefits]);
 
   const handleSaveBenefit = async (data: BenefitFormValues) => {
     try {
@@ -199,20 +173,58 @@ const BenefitList: React.FC = () => {
     URL.revokeObjectURL(url);
   };
 
-  const filteredBenefits = benefits.filter(b => {
-    const typeMatch = filterType === 'all' || b.type === filterType;
-    const statusMatch = filterStatus === 'all' || b.status === filterStatus;
-    return typeMatch && statusMatch;
-  });
+  const filteredBenefits = useMemo(() => {
+    return benefits.filter(b => {
+      const typeMatch = filterType === 'all' || b.type === filterType;
+      const statusMatch = filterStatus === 'all' || b.status === filterStatus;
+      return typeMatch && statusMatch;
+    });
+  }, [benefits, filterType, filterStatus]);
+
+  const totalRecords = filteredBenefits.length;
+  const totalPages = Math.max(1, Math.ceil(totalRecords / ITEMS_PER_PAGE));
+  const paginatedBenefits = useMemo(() => {
+    const start = (page - 1) * ITEMS_PER_PAGE;
+    return filteredBenefits.slice(start, start + ITEMS_PER_PAGE);
+  }, [filteredBenefits, page]);
 
   // Reset to page 1 when filters change
   useEffect(() => {
     setPage(1);
   }, [filterType, filterStatus]);
 
+  // If current page is out of range after filtering, snap back to page 1
+  useEffect(() => {
+    if (page > totalPages) setPage(1);
+  }, [page, totalPages]);
+
   const handlePageChange = (_: React.ChangeEvent<unknown>, value: number) => {
     setPage(value);
   };
+
+  const editingBenefitForModal: BenefitFormValues | undefined = useMemo(() => {
+    if (!editingBenefit) return undefined;
+    const eligibility = editingBenefit
+      .eligibilityCriteria as BenefitFormValues['eligibilityCriteria'];
+    const eligibilitySafe: BenefitFormValues['eligibilityCriteria'] =
+      eligibility === 'All employees' ||
+      eligibility === 'Full time employees only' ||
+      eligibility === 'Part time employees only'
+        ? eligibility
+        : 'All employees';
+
+    const statusLower = (editingBenefit.status || '').toLowerCase();
+    const statusSafe: BenefitFormValues['status'] =
+      statusLower === 'inactive' ? 'Inactive' : 'Active';
+
+    return {
+      name: editingBenefit.name || '',
+      type: editingBenefit.type || '',
+      description: editingBenefit.description || '',
+      eligibilityCriteria: eligibilitySafe,
+      status: statusSafe,
+    };
+  }, [editingBenefit]);
 
   return (
     <Box>
@@ -400,19 +412,37 @@ const BenefitList: React.FC = () => {
               </TableRow>
             </TableHead>
             <TableBody>
-              {filteredBenefits.length === 0 ? (
+              {paginatedBenefits.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={6} align='center'>
                     No benefits found
                   </TableCell>
                 </TableRow>
               ) : (
-                filteredBenefits.map(b => (
+                paginatedBenefits.map(b => (
                   <TableRow key={b.id}>
                     <TableCell>{b.name}</TableCell>
                     <TableCell>{b.type}</TableCell>
-                    <TableCell>{b.description}</TableCell>
-                    <TableCell>{b.eligibilityCriteria}</TableCell>
+                    <TableCell data-truncate='true'>
+                      {b.description ? (
+                        <Tooltip title={b.description} arrow>
+                          <Typography variant='body2'>{b.description}</Typography>
+                        </Tooltip>
+                      ) : (
+                        '—'
+                      )}
+                    </TableCell>
+                    <TableCell data-truncate='true'>
+                      {b.eligibilityCriteria ? (
+                        <Tooltip title={b.eligibilityCriteria} arrow>
+                          <Typography variant='body2'>
+                            {b.eligibilityCriteria}
+                          </Typography>
+                        </Tooltip>
+                      ) : (
+                        '—'
+                      )}
+                    </TableCell>
                     <TableCell align='center'>
                       <Typography
                         sx={{
@@ -525,7 +555,7 @@ const BenefitList: React.FC = () => {
           setEditingBenefit(null);
         }}
         onSubmit={handleSaveBenefit}
-        benefit={editingBenefit || undefined}
+        benefit={editingBenefitForModal}
       />
 
       <ErrorSnackbar
