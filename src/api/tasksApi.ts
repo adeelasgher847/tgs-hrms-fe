@@ -1,5 +1,6 @@
 import axiosInstance from './axiosInstance';
 import { notificationsApi } from './notificationsApi';
+import { getCurrentUser } from '../utils/auth';
 import type { Task, TaskStatus } from '../Data/taskMockData';
 
 // The backend uses snake_case keys; our frontend uses camelCase Task interface.
@@ -21,10 +22,12 @@ function mapApiTaskToTask(apiTask: Record<string, unknown>): Task {
     assignedToName = [assignedToNameRaw];
   } else if (assignedToNameRaw && typeof assignedToNameRaw === 'object') {
     // assignedEmployee may be an object with nested user
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const obj = assignedToNameRaw as any;
-    const user = obj.user ?? obj;
-    const name = [user?.first_name, user?.last_name].filter(Boolean).join(' ').trim();
+    const obj = assignedToNameRaw as Record<string, unknown>;
+    const user = (obj.user ?? obj) as Record<string, unknown> | undefined;
+    const name = [user?.first_name as string | undefined, user?.last_name as string | undefined]
+      .filter(Boolean)
+      .join(' ')
+      .trim();
     if (name) assignedToName = [name];
     else if (user?.name) assignedToName = [user.name];
   }
@@ -43,12 +46,14 @@ function mapApiTaskToTask(apiTask: Record<string, unknown>): Task {
   const creatorRaw = apiTask.creator ?? apiTask.created_by_user ?? undefined;
   let createdByName = (apiTask.created_by_name ?? apiTask.createdByName) as string | undefined;
   if (!createdByName && creatorRaw && typeof creatorRaw === 'object') {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const obj = creatorRaw as any;
-    const user = obj.user ?? obj;
-    const name = [user?.first_name, user?.last_name].filter(Boolean).join(' ').trim();
+    const obj = creatorRaw as Record<string, unknown>;
+    const user = (obj.user ?? obj) as Record<string, unknown> | undefined;
+    const name = [user?.first_name as string | undefined, user?.last_name as string | undefined]
+      .filter(Boolean)
+      .join(' ')
+      .trim();
     if (name) createdByName = name;
-    else if (user?.name) createdByName = user.name;
+    else if (user && typeof user.name === 'string') createdByName = user.name as string;
   }
 
   return {
@@ -63,8 +68,7 @@ function mapApiTaskToTask(apiTask: Record<string, unknown>): Task {
     createdAt: apiTask.created_at ?? apiTask.createdAt ?? new Date().toISOString(),
     deadline: apiTask.deadline ?? apiTask.deadline_at ?? apiTask.due_date ?? undefined,
     updatedAt: apiTask.updated_at ?? apiTask.updatedAt ?? new Date().toISOString(),
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    teamId: ((apiTask.team_id ?? apiTask.teamId ?? (apiTask.team as any)?.id) as string) ?? '',
+    teamId: ((apiTask.team_id ?? apiTask.teamId ?? ((apiTask.team as Record<string, unknown> | undefined)?.id as string | undefined)) as string) ?? '',
   } as Task;
 }
 
@@ -115,14 +119,20 @@ export async function createTask(payload: Record<string, unknown>): Promise<Task
   // Send notification to assigned user (non-blocking). If multiple assigned users, notify all.
   (async () => {
     try {
-      const assigned = Array.isArray(task.assignedTo) ? task.assignedTo : [task.assignedTo];
-      const userIds = assigned.filter(Boolean).map(String);
+        const assigned = Array.isArray(task.assignedTo) ? task.assignedTo : [task.assignedTo];
+        const currentUser = getCurrentUser();
+        const currentUserId = currentUser?.id;
+        // Exclude the actor (creator/manager) from recipients so they don't get the notification
+        const userIds = assigned
+          .filter(Boolean)
+          .map(String)
+          .filter(id => id !== String(currentUserId));
       if (userIds.length > 0) {
         const message = `A new task has been assigned to you`;
         const notif = await notificationsApi.sendNotification({
           user_ids: userIds,
           message,
-          type: 'alert',
+          type: 'task',
         });
         if (!notif.ok) {
           // Notification send failed
@@ -134,6 +144,7 @@ export async function createTask(payload: Record<string, unknown>): Promise<Task
         }
         // Dispatch rich in-app event for immediate UI update in other tabs
         try {
+          const actorId = currentUserId;
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           (window as any).dispatchEvent(
             new CustomEvent('hrms:notification', {
@@ -142,6 +153,7 @@ export async function createTask(payload: Record<string, unknown>): Promise<Task
                 message,
                 taskTitle: task.title,
                 employeeName: undefined,
+                actorId,
                 data: { task },
               },
             })
@@ -211,8 +223,8 @@ export async function patchTaskStatus(taskId: string, status: string): Promise<T
           const systemEmployeeApi = (await import('./systemEmployeeApi')).default;
           const teamApiLocal = (await import('./teamApi')).default;
           const profile = await systemEmployeeApi.getSystemEmployeeById(String(assigned));
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          const teamId = (profile as any).team || (profile as any).team_id || (profile as any).teamId || undefined;
+          const profileRec = profile as Record<string, unknown> | undefined;
+          const teamId = (profileRec?.team as string | undefined) || (profileRec?.team_id as string | undefined) || (profileRec?.teamId as string | undefined) || undefined;
           if (teamId) {
             try {
               const team = await teamApiLocal.getTeamById(String(teamId));
@@ -245,7 +257,7 @@ export async function patchTaskStatus(taskId: string, status: string): Promise<T
       const notif = await notificationsApi.sendNotification({
         user_ids: uniqueRecipients,
         message,
-        type: 'alert',
+        type: 'task',
       });
       if (!notif.ok) {
         console.warn(
@@ -256,8 +268,8 @@ export async function patchTaskStatus(taskId: string, status: string): Promise<T
       }
       // Dispatch in-app event with status details
       try {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        (window as any).dispatchEvent(
+        const actorId = storedUser?.id;
+        (window as unknown as EventTarget).dispatchEvent(
           new CustomEvent('hrms:notification', {
             detail: {
               title: 'Task Status Updated',
@@ -266,6 +278,7 @@ export async function patchTaskStatus(taskId: string, status: string): Promise<T
               employeeName,
               oldStatus: undefined,
               newStatus: updatedTask.status,
+              actorId,
               data: { task: updatedTask },
             },
           })

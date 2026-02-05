@@ -37,7 +37,7 @@ import icon from 'leaflet/dist/images/marker-icon.png';
 import iconShadow from 'leaflet/dist/images/marker-shadow.png';
 import type { Geofence } from '../../types/geofencing';
 import { geofencingApi } from '../../api/geofencingApi';
-import { teamApiService } from '../../api/teamApi';
+import { teamApiService, type Team } from '../../api/teamApi';
 import { UserContext } from '../../context/UserContext';
 import { isManager, isHRAdmin, isAdmin } from '../../utils/roleUtils';
 import AppPageTitle from '../common/AppPageTitle';
@@ -76,7 +76,7 @@ const GeofencingManagement = () => {
   const [deletingGeofence, setDeletingGeofence] = useState<Geofence | null>(
     null
   );
-  const [managerTeams, setManagerTeams] = useState<any[]>([]);
+  const [managerTeams, setManagerTeams] = useState<Team[]>([]);
   const userContext = useContext(UserContext);
   const [formModalOpen, setFormModalOpen] = useState(false);
   const [saving, setSaving] = useState(false);

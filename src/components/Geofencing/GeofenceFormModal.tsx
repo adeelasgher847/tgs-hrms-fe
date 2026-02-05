@@ -275,7 +275,7 @@ interface GeofenceFormModalProps {
   onSubmit: (data: Omit<Geofence, 'id' | 'createdAt' | 'updatedAt'>) => void;
   geofence?: Geofence | null;
   loading?: boolean;
-  availableTeams?: any[];
+  availableTeams?: { id: string; name?: string }[];
 }
 
 const GeofenceFormModal: React.FC<GeofenceFormModalProps> = ({
@@ -441,7 +441,7 @@ const GeofenceFormModal: React.FC<GeofenceFormModalProps> = ({
         );
       }
     }
-  }, [open, geofence]);
+  }, [open, geofence, availableTeams]);
 
   useEffect(() => {
     if (open) {
@@ -527,7 +527,7 @@ const GeofenceFormModal: React.FC<GeofenceFormModalProps> = ({
         });
       }
     }
-  }, [open, geofence]);
+  }, [open, geofence, availableTeams]);
 
   const searchLocation = async (query: string) => {
     if (query.trim().length < 2) {
@@ -578,13 +578,11 @@ const GeofenceFormModal: React.FC<GeofenceFormModalProps> = ({
       const data: LocationSearchResult[] = await response.json();
       // Ensure place_id is a string for consistency
       const normalized = data.map(d => {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const raw = d as any;
+        const raw = d as Record<string, unknown>;
+        const pid = raw.place_id ?? raw.osm_id ?? d.display_name;
         return {
           ...d,
-          place_id: String(
-            raw.place_id || raw.osm_id || d.display_name
-          ),
+          place_id: String(pid),
         };
       });
       setSearchResults(normalized);
