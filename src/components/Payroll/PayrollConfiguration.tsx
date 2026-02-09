@@ -615,9 +615,9 @@ const PayrollConfiguration: React.FC = () => {
               <AppDropdown
                 label='Salary Cycle'
                 value={salaryCycle}
-                onChange={(e: SelectChangeEvent<string | number>) =>
+                onChange={e =>
                   setSalaryCycle(
-                    e.target.value as 'monthly' | 'weekly' | 'biweekly'
+                    (e.target.value as unknown) as 'monthly' | 'weekly' | 'biweekly'
                   )
                 }
                 options={[
@@ -1719,7 +1719,7 @@ const PayrollConfiguration: React.FC = () => {
               value={salaryCycle}
               onChange={e =>
                 setSalaryCycle(
-                  e.target.value as 'monthly' | 'weekly' | 'biweekly'
+                  (e.target.value as unknown) as 'monthly' | 'weekly' | 'biweekly'
                 )
               }
               options={[

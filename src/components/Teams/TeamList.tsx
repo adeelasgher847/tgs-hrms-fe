@@ -37,13 +37,13 @@ import { Icons } from '../../assets/icons';
 import { COLORS } from '../../constants/appConstants';
 
 interface TeamListProps {
-  teams: Team[];
+  teams?: Team[];
   darkMode?: boolean;
   onTeamUpdated?: () => void;
 }
 
 const TeamList: React.FC<TeamListProps> = ({
-  teams,
+  teams = [],
   darkMode = false,
   onTeamUpdated,
 }) => {

@@ -299,6 +299,13 @@ const menuItems: MenuItem[] = [
     ],
   },
   {
+    label: 'Recruitment',
+    icon: <BusinessCenter />,
+    subItems: [
+      { label: 'Job Requisitions', path: 'job-requisitions' },
+    ],
+  },
+  {
     label: 'Audit Logs',
     icon: <History />,
     subItems: [{ label: 'Audit Logs', path: 'audit-logs' }],
@@ -518,89 +525,7 @@ export default function Sidebar({
           {filteredMenuItems.map(item => {
             const isParentActive = openItem === item.label;
             const hasSubMenu = item.subItems && item.subItems.length > 0;
-            const hasSingleSubItem =
-              item.subItems && item.subItems.length === 1;
             const isDirectLink = !hasSubMenu && item.path;
-
-            if (hasSingleSubItem) {
-              const singleSubItem = item.subItems[0];
-              const linkPath =
-                singleSubItem.path === ''
-                  ? '/dashboard'
-                  : `/dashboard/${singleSubItem.path}`;
-              const isActive =
-                location.pathname === linkPath ||
-                (singleSubItem.path === '' &&
-                  location.pathname === '/dashboard');
-
-              return (
-                <Box key={item.label}>
-                  <ListItemButton
-                    component={NavLink}
-                    to={linkPath}
-                    onClick={() => {
-                      setOpenItem(item.label);
-                      setActiveSubItem(singleSubItem.label);
-                      onMenuItemClick?.();
-                    }}
-                    sx={{
-                      color: isActive
-                        ? theme.palette.mode === 'dark'
-                          ? 'var(--primary-light-color)'
-                          : theme.palette.primary.main
-                        : theme.palette.text.primary,
-                      pl: 2,
-                      py: 1.5,
-                      mx: 1.5,
-                      mb: 0.5,
-                      backgroundColor: isActive
-                        ? theme.palette.mode === 'dark'
-                          ? theme.palette.action.selected
-                          : '#efefef'
-                        : 'transparent',
-                      borderRadius: isActive ? 'var(--border-radius-lg)' : 0,
-                      // '&:hover': {
-                      //   backgroundColor: isActive
-                      //     ? 'var(--light-grey-200-color)'
-                      //     : 'var(--white-100-color)',
-                      //   borderRadius: 'var(--border-radius-lg)',
-                      // },
-                    }}
-                    aria-label={`Navigate to ${item.label}`}
-                    aria-current={isActive ? 'page' : undefined}
-                  >
-                    <ListItemIcon
-                      sx={{
-                        minWidth: { xs: '32px', lg: '36px' },
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                      }}
-                      aria-hidden='true'
-                    >
-                      <MenuIcon
-                        icon={item.icon}
-                        iconFill={item.iconFill}
-                        isActive={isActive}
-                        size={{ xs: '18px', lg: '18px' }}
-                      />
-                    </ListItemIcon>
-                    <ListItemText
-                      primary={item.label}
-                      primaryTypographyProps={{
-                        fontSize: { xs: '14px', lg: 'var(--body-font-size)' },
-                        fontWeight: isActive ? 600 : 400,
-                        color: isActive
-                          ? theme.palette.mode === 'dark'
-                            ? 'var(--primary-light-color)'
-                            : theme.palette.primary.main
-                          : theme.palette.text.primary,
-                      }}
-                    />
-                  </ListItemButton>
-                </Box>
-              );
-            }
 
             return (
               <Box key={item.label}>
@@ -740,7 +665,7 @@ export default function Sidebar({
                             : theme.palette.text.primary,
                         }}
                       />
-                      {item.subItems && item.subItems.length > 1 && (
+                      {hasSubMenu && (
                         <Box
                           component='img'
                           src={Icons.arrowUp}
