@@ -64,12 +64,9 @@ const LeaveRequestPage = () => {
   const [viewMode, setViewMode] = useState<'team' | 'you'>('you');
   const previousViewModeRef = useRef<'team' | 'you'>(viewMode);
   const previousPageRef = useRef<number>(1);
-  const [dateFilter, setDateFilter] = useState<string>(() => {
-    const now = new Date();
-    const y = now.getFullYear();
-    const m = String(now.getMonth() + 1).padStart(2, '0');
-    return `${y}-${m}`;
-  });
+  // Default dateFilter is empty so admin users can see ALL leaves by default.
+  // Non-admin users will be initialized to current month below.
+  const [dateFilter, setDateFilter] = useState<string>('');
   const previousDateFilterRef = useRef<string>(dateFilter);
 
   const handleDateFilterChange = (filter: string) => {
@@ -89,6 +86,22 @@ const LeaveRequestPage = () => {
       // Ignore; form components will surface their own errors
     }
   }, []);
+
+  // If user is not admin/HR/system, default date filter to current month
+  useEffect(() => {
+    const adminRoles = [
+      'system-admin',
+      'network-admin',
+      'admin',
+      'hr-admin',
+    ];
+    if (!adminRoles.includes(role) && !dateFilter) {
+      const now = new Date();
+      const y = now.getFullYear();
+      const m = String(now.getMonth() + 1).padStart(2, '0');
+      setDateFilter(`${y}-${m}`);
+    }
+  }, [role, dateFilter]);
 
   const loadLeaves = useCallback(
     async ({
@@ -119,14 +132,25 @@ const LeaveRequestPage = () => {
           const now = new Date();
           queryParams = {
             year: now.getFullYear(),
-            month: now.getMonth() + 1
+            month: now.getMonth() + 1,
           };
         }
 
         if (
-          ['system-admin', 'network-admin', 'admin', 'hr-admin', 'oe-admin'].includes(role)
+          [
+            'system-admin',
+            'network-admin',
+            'admin',
+            'hr-admin',
+            'oe-admin',
+          ].includes(role)
         ) {
-          res = await leaveApi.getAllLeaves(page, queryParams);
+
+          if (filter && /^\d{4}-\d{2}$/.test(filter)) {
+            res = await leaveApi.getAllLeaves(page, queryParams);
+          } else {
+            res = await leaveApi.getAllLeaves(page);
+          }
         } else if (role === 'manager') {
           res =
             view === 'you'
@@ -197,8 +221,8 @@ const LeaveRequestPage = () => {
 
           const leaveTypeName =
             (leave.leaveType &&
-              typeof leave.leaveType === 'object' &&
-              typeof (leave.leaveType as Record<string, unknown>).name ===
+            typeof leave.leaveType === 'object' &&
+            typeof (leave.leaveType as Record<string, unknown>).name ===
               'string'
               ? ((leave.leaveType as Record<string, unknown>).name as string)
               : undefined) || 'Unknown';
@@ -351,6 +375,24 @@ const LeaveRequestPage = () => {
   // Handle approve/reject
   const handleConfirm = async (reason?: string) => {
     if (!selectedId || !actionType) return;
+    // Snapshot current leaves in case we need to revert on error
+    const prevLeavesSnapshot = leaves;
+
+    // If manager approves, optimistically set status to 'processing' immediately
+    if (isManagerAction && actionType === 'approved') {
+      setLeaves(prev =>
+        prev.map(l =>
+          l.id === selectedId
+            ? {
+                ...l,
+                status: 'processing',
+                managerRemarks: reason ?? l.managerRemarks,
+              }
+            : l
+        )
+      );
+    }
+
     try {
       if (isManagerAction) {
         // Manager approval/rejection
@@ -359,14 +401,25 @@ const LeaveRequestPage = () => {
             selectedId,
             reason?.trim() ? { remarks: reason.trim() } : undefined
           );
+          // Keep status as 'processing' for manager approvals (final approval comes from admin)
         } else {
           if (!reason || !reason.trim()) {
+            // revert optimistic update if any
+            setLeaves(prevLeavesSnapshot);
             showError('Rejection remarks are required');
             return;
           }
           await leaveApi.rejectLeaveByManager(selectedId, {
             remarks: reason.trim(),
           });
+          // Update local state for rejection
+          setLeaves(prev =>
+            prev.map(l =>
+              l.id === selectedId
+                ? { ...l, status: 'rejected', managerRemarks: reason }
+                : l
+            )
+          );
         }
       } else {
         // Admin approval/rejection
@@ -375,35 +428,34 @@ const LeaveRequestPage = () => {
         } else {
           await leaveApi.rejectLeave(selectedId, reason);
         }
-      }
 
-      // Update local state
-      setLeaves(prev =>
-        prev.map(l => {
-          if (l.id === selectedId) {
-            const updated: Leave = {
-              ...l,
-              status: actionType === 'approved' ? 'approved' : 'rejected',
-            };
-            // Set remarks based on who performed the action
-            if (isManagerAction && reason) {
-              updated.managerRemarks = reason;
-            } else if (!isManagerAction && reason) {
-              updated.remarks = reason;
+        // Update local state for admin actions
+        setLeaves(prev =>
+          prev.map(l => {
+            if (l.id === selectedId) {
+              const updated: Leave = {
+                ...l,
+                status: actionType === 'approved' ? 'approved' : 'rejected',
+              };
+              if (!isManagerAction && reason) {
+                updated.remarks = reason;
+              }
+              return updated;
             }
-            return updated;
-          }
-          return l;
-        })
-      );
+            return l;
+          })
+        );
+      }
 
       showSuccess(
         actionType === 'approved'
-          ? 'Leave approved successfully!'
+          ? 'Leave action applied successfully!'
           : 'Leave rejected successfully!'
       );
     } catch (error: unknown) {
-      showError(error);
+      // Revert optimistic update on error
+      setLeaves(prevLeavesSnapshot);
+      showError(getErrorMessage(error) || String(error));
     } finally {
       setDialogOpen(false);
       setActionType(null);
@@ -419,7 +471,7 @@ const LeaveRequestPage = () => {
       await leaveApi.cancelLeave(selectedId);
       showSuccess('Leave withdrawn successfully!');
       setLeaves(prev =>
-        prev.map(l => (l.id === selectedId ? { ...l, status: 'withdrawn' } : l))
+        prev.map((l: Leave) => (l.id === selectedId ? { ...l, status: 'withdrawn' } : l))
       );
     } catch (error: unknown) {
       showError(getErrorMessage(error) || 'Failed to withdraw leave');
@@ -491,9 +543,9 @@ const LeaveRequestPage = () => {
             const leaveRec = leave as unknown as Record<string, unknown>;
             const employeeId = String(
               (leaveRec.employee as Record<string, unknown> | undefined)?.id ||
-              (leaveRec.user as Record<string, unknown> | undefined)?.id ||
-              (leaveRec.employeeId as string | undefined) ||
-              ''
+                (leaveRec.user as Record<string, unknown> | undefined)?.id ||
+                (leaveRec.employeeId as string | undefined) ||
+                ''
             );
 
             const r = leaveRec.remarks;
@@ -503,8 +555,10 @@ const LeaveRequestPage = () => {
             const rawStatus = String(leaveRec.status ?? '').toLowerCase();
             let normalizedStatus: import('../../type/levetypes').LeaveStatus =
               'pending';
+            // Accept 'processing' as a valid intermediate status coming from backend
             if (
               rawStatus === 'pending' ||
+              rawStatus === 'processing' ||
               rawStatus === 'approved' ||
               rawStatus === 'rejected' ||
               rawStatus === 'withdrawn'
@@ -656,7 +710,7 @@ const LeaveRequestPage = () => {
 
       <Box sx={{ py: 3 }}>
         {activeTab === 'apply' &&
-          ['employee', 'manager', 'admin', 'hr-admin'].includes(role) ? (
+        ['employee', 'manager', 'admin', 'hr-admin'].includes(role) ? (
           <LeaveForm
             onSubmit={async formData => {
               try {
@@ -800,7 +854,9 @@ const LeaveRequestPage = () => {
         ) : (
           <LeaveHistory
             leaves={leaves}
-            isAdmin={['hr-admin', 'system-admin', 'admin', 'oe-admin'].includes(role)}
+            isAdmin={['hr-admin', 'system-admin', 'admin', 'oe-admin'].includes(
+              role
+            )}
             isManager={false}
             currentUserId={currentUserId || undefined}
             onAction={handleAction}
@@ -830,7 +886,7 @@ const LeaveRequestPage = () => {
         onConfirm={reason => handleConfirm(reason)}
         action={actionType || 'approved'}
         allowComments={true}
-        commentLabel="Remarks (Optional)"
+        commentLabel='Remarks (Optional)'
         showRemarksField={true}
       />
 

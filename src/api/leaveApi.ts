@@ -41,6 +41,7 @@ export interface LeaveResponse {
   approvedAt?: string | null;
   remarks?: string | null;
   managerRemarks?: string | null;
+  documents?: string[];
 }
 
 export interface CreateLeaveForEmployeeRequest {
@@ -124,8 +125,7 @@ class LeaveApiService {
         'Employee';
 
       try {
-        // 1) Notify reporting manager (try to resolve via system profile -> team)
-        // 1) Notify reporting manager (try to resolve via system profile -> team)
+       
         if (employeeId) {
           try {
             const profile = await systemEmployeeApiService.getSystemEmployeeById(String(employeeId));
@@ -140,7 +140,7 @@ class LeaveApiService {
                   const notif = await notificationsApi.sendNotification({
                     user_ids: [String(managerId)],
                     message,
-                    type: 'alert',
+                    type: 'leave',
                   });
                   if (!notif.ok) {
                     console.warn(
@@ -149,7 +149,7 @@ class LeaveApiService {
                       notif.correlationId
                     );
                   }
-                  // notifiedManager = true; // variable removed as it was unused
+                  
                 }
               } catch {
                 // ignore and continue to admin notify
@@ -160,8 +160,7 @@ class LeaveApiService {
           }
         }
 
-        // 2) Notify admin(s) (best-effort). Use search API to find admins.
-        // 2) Notify admin(s) (best-effort). Use search API to find admins.
+        
         try {
           // Dynamic import to avoid circular dependency
           const { searchApiService } = await import('./searchApi');
@@ -174,7 +173,7 @@ class LeaveApiService {
             const notif = await notificationsApi.sendNotification({
               user_ids: adminIds,
               message,
-              type: 'alert',
+              type: 'leave',
             });
             if (!notif.ok) {
               console.warn('Notification send failed for createLeave (admins)', notif.message, notif.correlationId);
@@ -184,22 +183,24 @@ class LeaveApiService {
           console.warn('Failed to fetch/notify admins for leave creation', e);
         }
       } catch (err) {
-        // Do not throw - notification failures should not block leave creation
+
         console.warn('Unexpected error while sending leave creation notification', err);
       }
       // Dispatch an in-app event to update local UI immediately
+      /* 
       try {
         const detail = {
           title: 'Leave Applied',
           message: `${employeeName} has applied for leave`,
           employeeName,
           data: res,
+          actorId: getCurrentUser()?.id ?? undefined,
         };
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        (window as any).dispatchEvent(new CustomEvent('hrms:notification', { detail }));
+        (window as unknown as EventTarget).dispatchEvent(new CustomEvent('hrms:notification', { detail }));
       } catch {
         // ignore
       }
+      */
     })();
 
     return res;
@@ -327,7 +328,7 @@ class LeaveApiService {
           const notif = await notificationsApi.sendNotification({
             user_ids: [String(recipient)],
             message,
-            type: 'alert',
+            type: 'leave',
           });
           if (!notif.ok) {
             // Log for debugging: backend message + correlationId if available
@@ -336,13 +337,13 @@ class LeaveApiService {
           // Dispatch in-app event for immediate UI update
           try {
             const detail = {
-              title: 'Leave Approved',
-              message: `Your leave has been approved`,
+              title: 'Leave Applied',
+              message: `${employeeName} has applied for leave`,
               employeeName,
               data: res,
+              actorId: getCurrentUser()?.id ?? undefined,
             };
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            (window as any).dispatchEvent(new CustomEvent('hrms:notification', { detail }));
+            (window as unknown as EventTarget).dispatchEvent(new CustomEvent('hrms:notification', { detail }));
           } catch {
             // ignore
           }
@@ -376,7 +377,7 @@ class LeaveApiService {
           const notif = await notificationsApi.sendNotification({
             user_ids: [String(recipient)],
             message,
-            type: 'alert',
+            type: 'leave',
           });
           if (!notif.ok) {
             console.warn('Notification send failed for rejectLeave', notif.message, notif.correlationId);
@@ -388,8 +389,8 @@ class LeaveApiService {
               message: `Your leave has been rejected`,
               data: res,
             };
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            (window as any).dispatchEvent(new CustomEvent('hrms:notification', { detail }));
+              detail.actorId = getCurrentUser()?.id ?? undefined;
+            (window as unknown as EventTarget).dispatchEvent(new CustomEvent('hrms:notification', { detail }));
           } catch {
             // ignore
           }
@@ -435,7 +436,7 @@ class LeaveApiService {
           const notif = await notificationsApi.sendNotification({
             user_ids: [String(recipient)],
             message,
-            type: 'alert',
+            type: 'leave',
           });
           if (!notif.ok) {
             console.warn('Notification send failed for approveManagerLeave', notif.message, notif.correlationId);
@@ -446,8 +447,8 @@ class LeaveApiService {
               message,
               data: res,
             };
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            (window as any).dispatchEvent(new CustomEvent('hrms:notification', { detail }));
+              detail.actorId = getCurrentUser()?.id ?? undefined;
+            (window as unknown as EventTarget).dispatchEvent(new CustomEvent('hrms:notification', { detail }));
           } catch {
             // ignore
           }
@@ -487,7 +488,7 @@ class LeaveApiService {
           const notif = await notificationsApi.sendNotification({
             user_ids: [String(recipient)],
             message,
-            type: 'alert',
+            type: 'leave',
           });
           if (!notif.ok) {
             console.warn('Notification send failed for approveLeaveByManager', notif.message, notif.correlationId);
@@ -498,8 +499,8 @@ class LeaveApiService {
               message,
               data: res,
             };
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            (window as any).dispatchEvent(new CustomEvent('hrms:notification', { detail }));
+              detail.actorId = getCurrentUser()?.id ?? undefined;
+            (window as unknown as EventTarget).dispatchEvent(new CustomEvent('hrms:notification', { detail }));
           } catch {
             // ignore
           }
@@ -555,8 +556,8 @@ class LeaveApiService {
               message,
               data: res,
             };
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            (window as any).dispatchEvent(new CustomEvent('hrms:notification', { detail }));
+              detail.actorId = getCurrentUser()?.id ?? undefined;
+            (window as unknown as EventTarget).dispatchEvent(new CustomEvent('hrms:notification', { detail }));
           } catch {
             // ignore
           }
@@ -703,6 +704,7 @@ class LeaveApiService {
       }
 
       // Dispatch an in-app event to update local UI immediately
+      /*
       try {
         const resTyped = res as LeaveResWithRelations;
         const employeeName =
@@ -716,11 +718,12 @@ class LeaveApiService {
           employeeName,
           data: res,
         };
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        (window as any).dispatchEvent(new CustomEvent('hrms:notification', { detail }));
+          detail.actorId = getCurrentUser()?.id ?? undefined;
+        (window as unknown as EventTarget).dispatchEvent(new CustomEvent('hrms:notification', { detail }));
       } catch {
         // ignore
       }
+      */
     })();
 
     return res;
@@ -765,6 +768,23 @@ class LeaveApiService {
       }
     );
 
+    return response.data;
+  }
+
+  async deleteDocument(
+    id: string,
+    documentUrl: string
+  ): Promise<LeaveResponse> {
+    // Pass the document URL in the body as 'documentUrl'
+    const response = await axiosInstance.delete<LeaveResponse>(
+      `${this.baseUrl}/${id}/documents`,
+      {
+        data: { documentUrl },
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      }
+    );
     return response.data;
   }
 }

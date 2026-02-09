@@ -76,12 +76,13 @@ const ResetPassword = () => {
 
   const handleInputChange =
     (field: keyof typeof formData) =>
-    (e: React.ChangeEvent<HTMLInputElement>) => {
-      setFormData(prev => ({ ...prev, [field]: e.target.value }));
-      if (errors[field]) {
-        setErrors(prev => ({ ...prev, [field]: undefined }));
-      }
-    };
+      (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement> | string) => {
+        const value = typeof e === 'string' ? e : e?.target?.value ?? '';
+        setFormData(prev => ({ ...prev, [field]: value }));
+        if (errors[field]) {
+          setErrors(prev => ({ ...prev, [field]: undefined }));
+        }
+      };
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();

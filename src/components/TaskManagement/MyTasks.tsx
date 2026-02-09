@@ -4,7 +4,7 @@ import AppPageTitle from '../common/AppPageTitle';
 import AppCard from '../common/AppCard';
 import AppDropdown from '../common/AppDropdown';
 import * as tasksApi from '../../api/tasksApi';
-import { getStoredUser } from '../../utils/authSession';
+// removed unused getStoredUser
 import { useErrorHandler } from '../../hooks/useErrorHandler';
 import ErrorSnackbar from '../common/ErrorSnackbar';
 // teamApiService not required in this component
@@ -38,10 +38,7 @@ function getStatusColorLocal(status: string) {
       return 'default';
   }
 }
-import { useNotifications } from '../../context/NotificationContext';
-
 const CURRENT_USER_ID = localStorage.getItem('employeeId') ?? undefined;
-
 const statusOptions = [
   { value: 'Pending', label: 'Pending' },
   { value: 'In Progress', label: 'In Progress' },
@@ -49,7 +46,6 @@ const statusOptions = [
 ];
 
 export default function MyTasks() {
-  const { addNotification } = useNotifications();
   const [tasks, setTasks] = useState<Task[]>([]);
 
   useEffect(() => {
@@ -71,10 +67,7 @@ export default function MyTasks() {
   }, []);
 
   const { snackbar, showError, showSuccess, closeSnackbar } = useErrorHandler();
-
-  // Update task status and send notification to manager (optimistic + API)
   const updateStatus = async (taskId: string, newStatus: string) => {
-    // Save previous state for rollback
     let previousTasks: Task[] = [];
     setTasks(prev => {
       previousTasks = prev;

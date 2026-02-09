@@ -29,6 +29,7 @@ import UndoIcon from '@mui/icons-material/Undo';
 import FileDownloadIcon from '@mui/icons-material/FileDownload';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
 import EditIcon from '@mui/icons-material/Edit';
+import DeleteIcon from '@mui/icons-material/Delete';
 import type { Leave } from '../../type/levetypes';
 import { formatDate } from '../../utils/dateUtils';
 import { leaveApi } from '../../api/leaveApi';
@@ -41,6 +42,8 @@ import { IoCloseCircleOutline } from 'react-icons/io5';
 import LeaveForm from './LeaveForm';
 import { env } from '../../config/env';
 import { authService } from '../../api/authService';
+import ErrorSnackbar from '../common/ErrorSnackbar';
+import { useErrorHandler } from '../../hooks/useErrorHandler';
 
 const ITEMS_PER_PAGE = PAGINATION.DEFAULT_PAGE_SIZE;
 
@@ -82,6 +85,10 @@ const statusConfig: Record<
   }
 > = {
   pending: {
+    color: 'warning',
+    icon: <AccessTimeIcon fontSize='small' sx={{ mr: 0.5 }} />,
+  },
+  processing: {
     color: 'warning',
     icon: <AccessTimeIcon fontSize='small' sx={{ mr: 0.5 }} />,
   },
@@ -152,17 +159,32 @@ const LeaveHistory: React.FC<LeaveHistoryProps> = ({
   const [loadingAllLeaves, setLoadingAllLeaves] = useState(false);
   const [openDocs, setOpenDocs] = useState(false);
   const [currentDocs, setCurrentDocs] = useState<string[]>([]);
+  const [currentLeaveId, setCurrentLeaveId] = useState<string>('');
   const [openLeaveForm, setOpenLeaveForm] = useState(false);
   const [editingLeave, setEditingLeave] = useState<Leave | null>(null);
   const [failedImages, setFailedImages] = useState<Set<number>>(new Set());
   const [menuAnchorEl, setMenuAnchorEl] = useState<null | HTMLElement>(null);
   const [selectedLeaveForMenu, setSelectedLeaveForMenu] =
     useState<Leave | null>(null);
+
+  const { snackbar, showSuccess, showError, closeSnackbar } = useErrorHandler();
   const theme = useTheme();
   // Reset page to 1 when employee filter changes
   useEffect(() => {
-    setPage(1);
-  }, [selectedEmployee]);
+    // If server-side pagination is active, tell the parent to reset to page 1.
+    // Otherwise reset local page state.
+    const useServerPagination = !!onPageChange && serverTotalPages > 0;
+    if (selectedEmployee === '') {
+      if (useServerPagination && onPageChange) {
+        onPageChange(1);
+      } else {
+        setPage(1);
+      }
+    } else {
+      // When filtering to a specific employee, always show first page of filtered results
+      setPage(1);
+    }
+  }, [selectedEmployee, onPageChange, serverTotalPages]);
 
   // Fetch all leaves when employee filter is applied (for admin)
   useEffect(() => {
@@ -185,6 +207,30 @@ const LeaveHistory: React.FC<LeaveHistoryProps> = ({
     fetchAllLeavesForFilter();
   }, [selectedEmployee, isAdmin, onExportAll]);
 
+  // Also fetch all leaves once (for admin) to populate the "All Employees" dropdown
+  // so it shows employees from all pages rather than only current page.
+  useEffect(() => {
+    let mounted = true;
+    const fetchAllOnce = async () => {
+      if (isAdmin && onExportAll && allLeavesForFilter.length === 0) {
+        try {
+          setLoadingAllLeaves(true);
+          const allLeaves = await onExportAll();
+          if (mounted) setAllLeavesForFilter(allLeaves);
+        } catch {
+          if (mounted) setAllLeavesForFilter([]);
+        } finally {
+          if (mounted) setLoadingAllLeaves(false);
+        }
+      }
+    };
+
+    fetchAllOnce();
+    return () => {
+      mounted = false;
+    };
+  }, [isAdmin, onExportAll, allLeavesForFilter.length]);
+
   const hideNameColumn = isManager && viewMode === 'you';
   const hideDropdown = isManager && viewMode === 'you';
 
@@ -198,13 +244,17 @@ const LeaveHistory: React.FC<LeaveHistoryProps> = ({
 
   const employeeNames = useMemo(() => {
     const names = new Set<string>();
-    leavesToUse.forEach(l => {
+    const source =
+      isAdmin && allLeavesForFilter && allLeavesForFilter.length > 0
+        ? allLeavesForFilter
+        : leavesToUse;
+    source.forEach(l => {
       const empId = l.employee?.id || l.employeeId;
       const name = l.employee?.first_name;
       if (empId && name && empId !== currentUserId) names.add(name);
     });
     return Array.from(names);
-  }, [leavesToUse, currentUserId]);
+  }, [leavesToUse, allLeavesForFilter, isAdmin, currentUserId]);
 
   const filteredLeaves = useMemo(() => {
     if (isManager && viewMode === 'you') {
@@ -314,10 +364,27 @@ const LeaveHistory: React.FC<LeaveHistoryProps> = ({
     }
   };
 
-  const handleViewDocs = (docs: string[]) => {
+  const handleViewDocs = (leaveId: string, docs: string[]) => {
+    setCurrentLeaveId(leaveId);
     setCurrentDocs(docs);
     setFailedImages(new Set()); // Reset failed images when opening dialog
     setOpenDocs(true);
+  };
+
+  const handleDeleteDocument = async (docUrl: string) => {
+    if (!currentLeaveId) return;
+    if (!window.confirm('Are you sure you want to delete this document?')) return;
+
+    try {
+      await leaveApi.deleteDocument(currentLeaveId, docUrl);
+      // Remove from local state
+      setCurrentDocs(prev => prev.filter(d => d !== docUrl));
+      // Refresh leaves to update the main list
+      refreshLeaves();
+    } catch (error) {
+      console.error('Failed to delete document', error);
+      alert('Failed to delete document');
+    }
   };
 
   const handleMenuClick = (
@@ -423,9 +490,15 @@ const LeaveHistory: React.FC<LeaveHistoryProps> = ({
               label='All Employees'
               showLabel={false}
               value={selectedEmployee || ''}
-              onChange={(e: SelectChangeEvent<string | number>) =>
-                setSelectedEmployee(String(e.target.value || ''))
-              }
+              onChange={(e: SelectChangeEvent<string | number>) => {
+                const val = String(e.target.value || '');
+                setSelectedEmployee(val);
+                // When selecting "All Employees", clear the month filter
+                // so calendar shows no month selected.
+                if (val === '' && onDateFilterChange) {
+                  onDateFilterChange('');
+                }
+              }}
               options={[
                 { value: '', label: 'All Employees' },
                 ...employeeNames.map(name => ({ value: name, label: name })),
@@ -542,7 +615,7 @@ const LeaveHistory: React.FC<LeaveHistoryProps> = ({
                 <TableCell>
                   {leave.documents && leave.documents.length > 0 ? (
                     <IconButton
-                      onClick={() => handleViewDocs(leave.documents || [])}
+                      onClick={() => handleViewDocs(leave.id, leave.documents || [])}
                     >
                       <img
                         src={getIcon('password')}
@@ -563,7 +636,7 @@ const LeaveHistory: React.FC<LeaveHistoryProps> = ({
                     label={
                       leave.status
                         ? leave.status.charAt(0).toUpperCase() +
-                        leave.status.slice(1)
+                          leave.status.slice(1)
                         : 'Unknown'
                     }
                     color={statusConfig[leave.status]?.color}
@@ -573,10 +646,13 @@ const LeaveHistory: React.FC<LeaveHistoryProps> = ({
                 <TableCell>
                   {(() => {
                     const remarksList = [];
-                    if (leave.managerRemarks) remarksList.push(`Manager: ${leave.managerRemarks}`);
-                    if (leave.remarks) remarksList.push(`Admin/HR: ${leave.remarks}`);
+                    if (leave.managerRemarks)
+                      remarksList.push(`Manager: ${leave.managerRemarks}`);
+                    if (leave.remarks)
+                      remarksList.push(`Admin/HR: ${leave.remarks}`);
 
-                    const displayText = leave.managerRemarks || leave.remarks || '';
+                    const displayText =
+                      leave.managerRemarks || leave.remarks || '';
 
                     if (!displayText) {
                       return (
@@ -595,7 +671,11 @@ const LeaveHistory: React.FC<LeaveHistoryProps> = ({
 
                     return (
                       <Tooltip
-                        title={<div style={{ whiteSpace: 'pre-wrap' }}>{remarksList.join('\n')}</div>}
+                        title={
+                          <div style={{ whiteSpace: 'pre-wrap' }}>
+                            {remarksList.join('\n')}
+                          </div>
+                        }
                         arrow
                       >
                         <Typography
@@ -606,7 +686,7 @@ const LeaveHistory: React.FC<LeaveHistoryProps> = ({
                             whiteSpace: 'nowrap',
                             overflow: 'hidden',
                             textOverflow: 'ellipsis',
-                            cursor: 'help'
+                            cursor: 'help',
                           }}
                         >
                           {displayText}
@@ -634,26 +714,31 @@ const LeaveHistory: React.FC<LeaveHistoryProps> = ({
                         (leave.employee?.id === currentUserId ||
                           leave.employeeId === currentUserId);
 
+                      const isPendingOrProcessing = [
+                        'pending',
+                        'processing',
+                      ].includes(leave.status);
+
                       const hasActions =
                         // Admin actions
                         (isAdmin &&
-                          leave.status === 'pending' &&
+                          isPendingOrProcessing &&
                           (onAction || onWithdraw)) ||
                         // Manager team actions
                         (isManager &&
                           viewMode === 'team' &&
-                          leave.status === 'pending' &&
+                          isPendingOrProcessing &&
                           (onManagerAction ||
                             onManagerResponse ||
                             onWithdraw)) ||
                         // Manager own leave actions (edit and withdraw)
                         (isManagerOwnLeave &&
-                          leave.status === 'pending' &&
+                          isPendingOrProcessing &&
                           (onWithdraw || true)) || // Always allow edit for manager's own leaves
                         // Employee actions
                         (!isAdmin &&
                           !isManager &&
-                          leave.status === 'pending' &&
+                          isPendingOrProcessing &&
                           onWithdraw);
 
                       if (!hasActions) return null;
@@ -687,56 +772,52 @@ const LeaveHistory: React.FC<LeaveHistoryProps> = ({
                             onClose={handleMenuClose}
                           >
                             {/* Admin actions for pending leaves */}
-                            {isAdmin &&
-                              leave.status === 'pending' &&
-                              onAction && (
-                                <>
-                                  <MenuItem
-                                    onClick={() => {
-                                      onAction(leave.id, 'approved');
-                                      handleMenuClose();
-                                    }}
-                                  >
-                                    <ListItemIcon>
-                                      <CheckCircleIcon fontSize='small' />
-                                    </ListItemIcon>
-                                    <ListItemText>Approve</ListItemText>
-                                  </MenuItem>
-                                  <MenuItem
-                                    onClick={() => {
-                                      onAction(leave.id, 'rejected');
-                                      handleMenuClose();
-                                    }}
-                                  >
-                                    <ListItemIcon>
-                                      <CancelIcon fontSize='small' />
-                                    </ListItemIcon>
-                                    <ListItemText>Reject</ListItemText>
-                                  </MenuItem>
-                                </>
-                              )}
-
-                            {/* Edit option for admin on pending leaves */}
-                            {isAdmin &&
-                              leave.status === 'pending' &&
-                              onWithdraw && (
+                            {isAdmin && isPendingOrProcessing && onAction && (
+                              <>
                                 <MenuItem
                                   onClick={() => {
-                                    handleEditLeave(leave);
+                                    onAction(leave.id, 'approved');
                                     handleMenuClose();
                                   }}
                                 >
                                   <ListItemIcon>
-                                    <EditIcon fontSize='small' />
+                                    <CheckCircleIcon fontSize='small' />
                                   </ListItemIcon>
-                                  <ListItemText>Edit</ListItemText>
+                                  <ListItemText>Approve</ListItemText>
                                 </MenuItem>
-                              )}
+                                <MenuItem
+                                  onClick={() => {
+                                    onAction(leave.id, 'rejected');
+                                    handleMenuClose();
+                                  }}
+                                >
+                                  <ListItemIcon>
+                                    <CancelIcon fontSize='small' />
+                                  </ListItemIcon>
+                                  <ListItemText>Reject</ListItemText>
+                                </MenuItem>
+                              </>
+                            )}
+
+                            {/* Edit option for admin on pending leaves */}
+                            {isAdmin && isPendingOrProcessing && onWithdraw && (
+                              <MenuItem
+                                onClick={() => {
+                                  handleEditLeave(leave);
+                                  handleMenuClose();
+                                }}
+                              >
+                                <ListItemIcon>
+                                  <EditIcon fontSize='small' />
+                                </ListItemIcon>
+                                <ListItemText>Edit</ListItemText>
+                              </MenuItem>
+                            )}
 
                             {/* Manager team actions */}
                             {isManager &&
                               viewMode === 'team' &&
-                              leave.status === 'pending' &&
+                              isPendingOrProcessing &&
                               onManagerAction && (
                                 <>
                                   <MenuItem
@@ -748,7 +829,7 @@ const LeaveHistory: React.FC<LeaveHistoryProps> = ({
                                     <ListItemIcon>
                                       <CheckCircleIcon fontSize='small' />
                                     </ListItemIcon>
-                                    <ListItemText>Approve</ListItemText>
+                                    <ListItemText>Processing</ListItemText>
                                   </MenuItem>
                                   <MenuItem
                                     onClick={() => {
@@ -767,7 +848,7 @@ const LeaveHistory: React.FC<LeaveHistoryProps> = ({
                             {/* Manager response option */}
                             {isManager &&
                               viewMode === 'team' &&
-                              leave.status === 'pending' &&
+                              isPendingOrProcessing &&
                               !onManagerAction &&
                               !leave.managerRemarks &&
                               onManagerResponse && (
@@ -787,7 +868,7 @@ const LeaveHistory: React.FC<LeaveHistoryProps> = ({
                             {/* Edit option for manager's own pending leaves */}
                             {isManager &&
                               viewMode === 'you' &&
-                              leave.status === 'pending' &&
+                              isPendingOrProcessing &&
                               (leave.employee?.id === currentUserId ||
                                 leave.employeeId === currentUserId) && (
                                 <MenuItem
@@ -805,35 +886,35 @@ const LeaveHistory: React.FC<LeaveHistoryProps> = ({
 
                             {/* Withdraw option for pending leaves */}
                             {((isAdmin &&
-                              leave.status === 'pending' &&
+                              isPendingOrProcessing &&
                               onWithdraw) ||
                               (isManager &&
                                 viewMode === 'you' &&
-                                leave.status === 'pending' &&
+                                isPendingOrProcessing &&
                                 onWithdraw) ||
                               (!isAdmin &&
                                 !isManager &&
-                                leave.status === 'pending' &&
+                                isPendingOrProcessing &&
                                 onWithdraw)) && (
-                                <MenuItem
-                                  onClick={() => {
-                                    if (onWithdraw) {
-                                      onWithdraw(leave.id);
-                                    }
-                                    handleMenuClose();
-                                  }}
-                                >
-                                  <ListItemIcon>
-                                    <UndoIcon fontSize='small' />
-                                  </ListItemIcon>
-                                  <ListItemText>Withdraw</ListItemText>
-                                </MenuItem>
-                              )}
+                              <MenuItem
+                                onClick={() => {
+                                  if (onWithdraw) {
+                                    onWithdraw(leave.id);
+                                  }
+                                  handleMenuClose();
+                                }}
+                              >
+                                <ListItemIcon>
+                                  <UndoIcon fontSize='small' />
+                                </ListItemIcon>
+                                <ListItemText>Withdraw</ListItemText>
+                              </MenuItem>
+                            )}
 
                             {/* Edit option for employees on pending leaves */}
                             {!isAdmin &&
                               !isManager &&
-                              leave.status === 'pending' &&
+                              isPendingOrProcessing &&
                               onWithdraw && (
                                 <MenuItem
                                   onClick={() => {
@@ -965,52 +1046,73 @@ const LeaveHistory: React.FC<LeaveHistoryProps> = ({
                   return (
                     <Box
                       key={idx}
-                      sx={{
-                        width: { xs: 120, sm: 150, md: 180 },
-                        height: { xs: 120, sm: 150, md: 180 },
-                        border: '1px solid #ccc',
-                        borderRadius: 2,
-                        overflow: 'hidden',
-                        cursor: 'pointer',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        flexDirection: 'column',
-                        '&:hover': { boxShadow: 2 },
-                        transition: 'all 0.2s',
-                      }}
-                      onClick={() => window.open(fullDocUrl, '_blank')}
+                      sx={{ position: 'relative' }}
                     >
-                      {imageFailed ? (
-                        <>
-                          <Typography
-                            variant='body2'
-                            sx={{ mb: 1, textAlign: 'center', fontSize: 12 }}
-                          >
-                            Image failed to load
-                          </Typography>
-                          <Typography
-                            variant='caption'
-                            sx={{ color: '#1976d2', fontWeight: 'bold' }}
-                          >
-                            Click to view
-                          </Typography>
-                        </>
-                      ) : (
-                        <img
-                          src={fullDocUrl}
-                          alt={`Document ${idx + 1}`}
-                          style={{
-                            maxWidth: '100%',
-                            maxHeight: '100%',
-                            objectFit: 'contain',
-                            transition: 'transform 0.2s',
-                          }}
-                          onError={() => {
-                            setFailedImages(prev => new Set(prev).add(idx));
-                          }}
-                        />
-                      )}
+                      <Box
+                        sx={{
+                          width: { xs: 120, sm: 150, md: 180 },
+                          height: { xs: 120, sm: 150, md: 180 },
+                          border: '1px solid #ccc',
+                          borderRadius: 2,
+                          overflow: 'hidden',
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          flexDirection: 'column',
+                          '&:hover': { boxShadow: 2 },
+                          transition: 'all 0.2s',
+                        }}
+                        onClick={() => window.open(fullDocUrl, '_blank')}
+                      >
+                        {imageFailed ? (
+                          <>
+                            <Typography
+                              variant='body2'
+                              sx={{ mb: 1, textAlign: 'center', fontSize: 12 }}
+                            >
+                              Image failed to load
+                            </Typography>
+                            <Typography
+                              variant='caption'
+                              sx={{ color: '#1976d2', fontWeight: 'bold' }}
+                            >
+                              Click to view
+                            </Typography>
+                          </>
+                        ) : (
+                          <img
+                            src={fullDocUrl}
+                            alt={`Document ${idx + 1}`}
+                            style={{
+                              maxWidth: '100%',
+                              maxHeight: '100%',
+                              objectFit: 'contain',
+                              transition: 'transform 0.2s',
+                            }}
+                            onError={() => {
+                              setFailedImages(prev => new Set(prev).add(idx));
+                            }}
+                          />
+                        )}
+                      </Box>
+                      <IconButton
+                        size='small'
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDeleteDocument(doc);
+                        }}
+                        sx={{
+                          position: 'absolute',
+                          top: 4,
+                          right: 4,
+                          bgcolor: 'background.paper',
+                          boxShadow: 1,
+                          '&:hover': { bgcolor: 'error.light', color: 'white' },
+                        }}
+                      >
+                        <DeleteIcon fontSize='small' />
+                      </IconButton>
                     </Box>
                   );
                 }
@@ -1020,32 +1122,55 @@ const LeaveHistory: React.FC<LeaveHistoryProps> = ({
                   <Box
                     key={idx}
                     sx={{
-                      width: { xs: 120, sm: 150, md: 180 },
-                      height: { xs: 120, sm: 150, md: 180 },
-                      border: '1px solid #ccc',
-                      borderRadius: 2,
-                      p: 1,
-                      textAlign: 'center',
-                      cursor: 'pointer',
-                      display: 'flex',
-                      flexDirection: 'column',
-                      justifyContent: 'center',
-                      '&:hover': { boxShadow: 3 },
+                      position: 'relative',
                     }}
-                    onClick={() => window.open(fullDocUrl, '_blank')}
                   >
-                    <Typography
-                      variant='body2'
-                      sx={{ mb: 1, wordBreak: 'break-word', fontWeight: 500 }}
+                    <Box
+                      sx={{
+                        width: { xs: 120, sm: 150, md: 180 },
+                        height: { xs: 120, sm: 150, md: 180 },
+                        border: '1px solid #ccc',
+                        borderRadius: 2,
+                        p: 1,
+                        textAlign: 'center',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        justifyContent: 'center',
+                        '&:hover': { boxShadow: 3 },
+                      }}
+                      onClick={() => window.open(fullDocUrl, '_blank')}
                     >
-                      {doc.split('/').pop()}
-                    </Typography>
-                    <Typography
-                      variant='caption'
-                      sx={{ color: '#1976d2', fontWeight: 'bold' }}
+                      <Typography
+                        variant='body2'
+                        sx={{ mb: 1, wordBreak: 'break-word', fontWeight: 500 }}
+                      >
+                        {doc.split('/').pop()}
+                      </Typography>
+                      <Typography
+                        variant='caption'
+                        sx={{ color: '#1976d2', fontWeight: 'bold' }}
+                      >
+                        View / Download
+                      </Typography>
+                    </Box>
+                    <IconButton
+                      size='small'
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleDeleteDocument(doc);
+                      }}
+                      sx={{
+                        position: 'absolute',
+                        top: 4,
+                        right: 4,
+                        bgcolor: 'background.paper',
+                        boxShadow: 1,
+                        '&:hover': { bgcolor: 'error.light', color: 'white' },
+                      }}
                     >
-                      View / Download
-                    </Typography>
+                      <DeleteIcon fontSize='small' />
+                    </IconButton>
                   </Box>
                 );
               })}
@@ -1065,13 +1190,20 @@ const LeaveHistory: React.FC<LeaveHistoryProps> = ({
             leaveId={editingLeave.id}
             initialData={editingLeave}
             onSuccess={() => {
+              showSuccess('Leave updated successfully');
               refreshLeaves();
               handleCloseLeaveForm();
             }}
-            onError={msg => alert(msg)}
+            onError={msg => showError(msg)}
           />
         </Dialog>
       )}
+      <ErrorSnackbar
+        open={snackbar.open}
+        message={snackbar.message}
+        severity={snackbar.severity}
+        onClose={closeSnackbar}
+      />
     </Box>
   );
 };
