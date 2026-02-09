@@ -15,6 +15,7 @@ import {
   CircularProgress,
   Stack,
   Pagination,
+  Tooltip,
 } from '@mui/material';
 import {
   Add as AddIcon,
@@ -644,11 +645,11 @@ const AssetInventory: React.FC = () => {
     () =>
       hasActiveFilters
         ? {
-            total: filteredAssets.length,
-            totalPages: 1,
-            page: 1,
-            limit: pagination.limit,
-          }
+          total: filteredAssets.length,
+          totalPages: 1,
+          page: 1,
+          limit: pagination.limit,
+        }
         : pagination,
     [
       hasActiveFilters,
@@ -1101,9 +1102,21 @@ const AssetInventory: React.FC = () => {
                 <TableRow key={asset.id} hover>
                   <TableCell>
                     <Box>
-                      <Typography variant='body2' fontWeight={500}>
-                        {asset.name}
-                      </Typography>
+                      <Box sx={{ maxWidth: 200 }}>
+                        <Tooltip title={asset.name} placement='top'>
+                          <Typography
+                            variant='body2'
+                            fontWeight={500}
+                            sx={{
+                              whiteSpace: 'nowrap',
+                              overflow: 'hidden',
+                              textOverflow: 'ellipsis',
+                            }}
+                          >
+                            {asset.name}
+                          </Typography>
+                        </Tooltip>
+                      </Box>
                       {asset.description && (
                         <Typography variant='caption' color='text.secondary'>
                           {asset.description}
@@ -1157,50 +1170,20 @@ const AssetInventory: React.FC = () => {
                       <Box
                         sx={{
                           display: 'flex',
-                          gap: { xs: 0.5, sm: 1 },
+                          gap: 0,
                           justifyContent: 'center',
                         }}
                       >
-                        <IconButton
-                          size='small'
-                          onClick={() => handleEditAsset(asset)}
-                          title={`Edit ${asset.name}`}
-                          aria-label={`Edit asset ${asset.name}`}
-                          sx={{ p: { xs: 0.5, sm: 1 } }}
-                        >
-                          {roleIsManager() ? (
-                            <Icon
-                              name='edit'
-                              sx={{
-                                width: { xs: 16, sm: 20 },
-                                height: { xs: 16, sm: 20 },
-                              }}
-                            />
-                          ) : (
-                            <Box
-                              component='img'
-                              src={Icons.edit}
-                              alt='Edit'
-                              sx={{
-                                width: { xs: 16, sm: 20 },
-                                height: { xs: 16, sm: 20 },
-                              }}
-                            />
-                          )}
-                        </IconButton>
-
-                        {/** Only show delete when the user is not HR admin (match Designation behaviour) */}
-                        {!isHRAdmin(userRole) && (
+                        <Tooltip title='Edit' arrow>
                           <IconButton
                             size='small'
-                            onClick={() => handleDeleteAsset(asset)}
-                            title={`Delete ${asset.name}`}
-                            aria-label={`Delete asset ${asset.name}`}
+                            onClick={() => handleEditAsset(asset)}
+                            aria-label={`Edit asset ${asset.name}`}
                             sx={{ p: { xs: 0.5, sm: 1 } }}
                           >
                             {roleIsManager() ? (
                               <Icon
-                                name='delete'
+                                name='edit'
                                 sx={{
                                   width: { xs: 16, sm: 20 },
                                   height: { xs: 16, sm: 20 },
@@ -1209,8 +1192,8 @@ const AssetInventory: React.FC = () => {
                             ) : (
                               <Box
                                 component='img'
-                                src={Icons.delete}
-                                alt='Delete'
+                                src={Icons.edit}
+                                alt='Edit'
                                 sx={{
                                   width: { xs: 16, sm: 20 },
                                   height: { xs: 16, sm: 20 },
@@ -1218,6 +1201,38 @@ const AssetInventory: React.FC = () => {
                               />
                             )}
                           </IconButton>
+                        </Tooltip>
+
+                        {/** Only show delete when the user is not HR admin (match Designation behaviour) */}
+                        {!isHRAdmin(userRole) && (
+                          <Tooltip title='Delete' arrow>
+                            <IconButton
+                              size='small'
+                              onClick={() => handleDeleteAsset(asset)}
+                              aria-label={`Delete asset ${asset.name}`}
+                              sx={{ p: { xs: 0.5, sm: 1 } }}
+                            >
+                              {roleIsManager() ? (
+                                <Icon
+                                  name='delete'
+                                  sx={{
+                                    width: { xs: 16, sm: 20 },
+                                    height: { xs: 16, sm: 20 },
+                                  }}
+                                />
+                              ) : (
+                                <Box
+                                  component='img'
+                                  src={Icons.delete}
+                                  alt='Delete'
+                                  sx={{
+                                    width: { xs: 16, sm: 20 },
+                                    height: { xs: 16, sm: 20 },
+                                  }}
+                                />
+                              )}
+                            </IconButton>
+                          </Tooltip>
                         )}
                       </Box>
                     </TableCell>

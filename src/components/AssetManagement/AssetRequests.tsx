@@ -1360,7 +1360,14 @@ const AssetRequests: React.FC = () => {
         <Box display='flex' justifyContent='center' mt={1}>
           <Typography variant='body2' color='textSecondary'>
             Showing page {pagination.page} of {pagination.totalPages} (
-            {pagination.total} total records)
+            {tabValue === 0
+              ? displayCounts.all
+              : tabValue === 1
+                ? displayCounts.pending
+                : tabValue === 2
+                  ? displayCounts.approved
+                  : displayCounts.rejected}{' '}
+            total records)
           </Typography>
         </Box>
       )}
