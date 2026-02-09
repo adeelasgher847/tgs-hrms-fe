@@ -227,13 +227,13 @@ function normalizeEmployee(raw: unknown): BackendEmployee {
       cnic_back_picture: data.cnic_back_picture as string,
       department: department
         ? {
-            id: department.id,
-            name: department.name,
-            description: department.description ?? '',
-            tenantId: department.tenant_id,
-            createdAt: department.created_at,
-            updatedAt: department.updated_at ?? department.created_at,
-          }
+          id: department.id,
+          name: department.name,
+          description: department.description ?? '',
+          tenantId: department.tenant_id,
+          createdAt: department.created_at,
+          updatedAt: department.updated_at ?? department.created_at,
+        }
         : null,
       designation: {
         id: designation.id,
@@ -639,6 +639,14 @@ class EmployeeApiService {
   async deleteEmployee(id: string): Promise<{ deleted: true; id: string }> {
     const response = await axiosInstance.delete<{ deleted: true; id: string }>(
       `${this.baseUrl}/${id}`
+    );
+    return response.data;
+  }
+
+  async deleteDocument(id: string, documentUrl: string): Promise<{ success: boolean }> {
+    const response = await axiosInstance.delete<{ success: boolean }>(
+      `${this.baseUrl}/${id}/documents`,
+      { data: { documentUrl } }
     );
     return response.data;
   }
