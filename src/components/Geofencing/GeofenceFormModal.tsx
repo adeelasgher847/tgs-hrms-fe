@@ -441,7 +441,7 @@ const GeofenceFormModal: React.FC<GeofenceFormModalProps> = ({
         );
       }
     }
-  }, [open, geofence]);
+  }, [open, geofence, availableTeams]);
 
   useEffect(() => {
     if (open) {

@@ -19,23 +19,7 @@ export interface Notification {
   raw?: unknown;
 }
 
-interface PendingApproval {
-  id?: string;
-  user_id?: string;
-  employee?: { first_name?: string; last_name?: string; email?: string } | null;
-  check_in_time?: string;
-  approval_status?: string;
-  message?: string;
-  timestamp?: string;
-}
-
-interface AutoCheckout {
-  id?: string;
-  title?: string;
-  message?: string;
-  reason?: string;
-  timestamp?: string;
-}
+// Removed unused alert helper types (PendingApproval, AutoCheckout, SalaryIssue)
 
 interface SalaryIssue {
   id?: string;

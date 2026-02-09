@@ -1,14 +1,21 @@
 import React, { useState, useEffect } from 'react';
-import { Box, Typography, Chip } from '@mui/material';
+import { Box, Typography, Chip, Tooltip } from '@mui/material';
 import AppPageTitle from '../common/AppPageTitle';
 import AppCard from '../common/AppCard';
 import AppDropdown from '../common/AppDropdown';
 import * as tasksApi from '../../api/tasksApi';
-import { getStoredUser } from '../../utils/authSession';
+// removed unused getStoredUser
 import { useErrorHandler } from '../../hooks/useErrorHandler';
 import ErrorSnackbar from '../common/ErrorSnackbar';
 // teamApiService not required in this component
 import type { Task, TaskStatus } from '../../Data/taskMockData';
+import { TASK_CARD_CONFIG } from '../../theme/themeConfig';
+
+function truncateText(text: string, limit: number) {
+  if (!text) return '';
+  if (text.length <= limit) return text;
+  return text.substring(0, limit) + '...';
+}
 
 function formatDateLocal(isoDate?: string) {
   if (!isoDate) return '';
@@ -31,10 +38,7 @@ function getStatusColorLocal(status: string) {
       return 'default';
   }
 }
-import { useNotifications } from '../../context/NotificationContext';
-
 const CURRENT_USER_ID = localStorage.getItem('employeeId') ?? undefined;
-
 const statusOptions = [
   { value: 'Pending', label: 'Pending' },
   { value: 'In Progress', label: 'In Progress' },
@@ -42,7 +46,6 @@ const statusOptions = [
 ];
 
 export default function MyTasks() {
-  const { addNotification } = useNotifications();
   const [tasks, setTasks] = useState<Task[]>([]);
 
   useEffect(() => {
@@ -51,7 +54,7 @@ export default function MyTasks() {
       try {
         const all = await tasksApi.getTasks();
         const filtered = all.filter(t =>
-          (t.assignedTo || []).includes(CURRENT_USER_ID)
+          (t.assignedTo || []).includes(CURRENT_USER_ID || '')
         );
         if (mounted) setTasks(filtered as Task[]);
       } catch (err) {
@@ -64,20 +67,17 @@ export default function MyTasks() {
   }, []);
 
   const { snackbar, showError, showSuccess, closeSnackbar } = useErrorHandler();
-
-  // Update task status and send notification to manager (optimistic + API)
   const updateStatus = async (taskId: string, newStatus: string) => {
-    // Save previous state for rollback
     let previousTasks: Task[] = [];
     setTasks(prev => {
       previousTasks = prev;
       return prev.map(task =>
         task.id === taskId
           ? {
-              ...task,
-              status: newStatus as TaskStatus,
-              updatedAt: new Date().toISOString(),
-            }
+            ...task,
+            status: newStatus as TaskStatus,
+            updatedAt: new Date().toISOString(),
+          }
           : task
       );
     });
@@ -94,14 +94,15 @@ export default function MyTasks() {
         const employeeName =
           storedUser && storedUser.first_name
             ? `${String(storedUser.first_name)} ${String(
-                storedUser.last_name ?? ''
-              )}`.trim()
+              storedUser.last_name ?? ''
+            )}`.trim()
             : String(
-                (storedUser as Record<string, unknown> | null)?.name ??
-                  'Employee'
-              );
+              (storedUser as Record<string, unknown> | null)?.name ??
+              'Employee'
+            );
         addNotification({
-          taskId: updated.id,
+          title: 'Task Status Updated',
+          text: `Task "${updated.title}" updated to ${updated.status}`,
           taskTitle: updated.title,
           employeeName,
           oldStatus: oldTask.status,
@@ -157,22 +158,27 @@ export default function MyTasks() {
                   alignItems='flex-start'
                   gap={1}
                 >
-                  <Typography
-                    variant='h6'
-                    sx={{
-                      fontSize: '1rem',
-                      fontWeight: 600,
-                      textDecoration:
-                        task.status === 'Completed' ? 'line-through' : 'none',
-                      color:
-                        task.status === 'Completed'
-                          ? 'text.disabled'
-                          : 'text.primary',
-                      flex: 1,
-                    }}
+                  <Tooltip
+                    title={task.title.length > TASK_CARD_CONFIG.TITLE_LIMIT ? task.title : ''}
+                    arrow
                   >
-                    {task.title}
-                  </Typography>
+                    <Typography
+                      variant='h6'
+                      sx={{
+                        fontSize: '1rem',
+                        fontWeight: 600,
+                        textDecoration:
+                          task.status === 'Completed' ? 'line-through' : 'none',
+                        color:
+                          task.status === 'Completed'
+                            ? 'text.disabled'
+                            : 'text.primary',
+                        flex: 1,
+                      }}
+                    >
+                      {truncateText(task.title, TASK_CARD_CONFIG.TITLE_LIMIT)}
+                    </Typography>
+                  </Tooltip>
                   <Chip
                     label={task.status}
                     color={getStatusColorLocal(task.status)}
@@ -182,19 +188,32 @@ export default function MyTasks() {
                 </Box>
 
                 {/* Description */}
-                <Typography
-                  variant='body2'
-                  color='text.secondary'
-                  sx={{
-                    overflow: 'hidden',
-                    textOverflow: 'ellipsis',
-                    display: '-webkit-box',
-                    WebkitLineClamp: 3,
-                    WebkitBoxOrient: 'vertical',
-                  }}
+                <Tooltip
+                  title={
+                    task.description &&
+                      task.description.length > TASK_CARD_CONFIG.DESCRIPTION_LIMIT
+                      ? task.description
+                      : ''
+                  }
+                  arrow
                 >
-                  {task.description}
-                </Typography>
+                  <Typography
+                    variant='body2'
+                    color='text.secondary'
+                    sx={{
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      display: '-webkit-box',
+                      WebkitLineClamp: 3,
+                      WebkitBoxOrient: 'vertical',
+                    }}
+                  >
+                    {truncateText(
+                      task.description || '',
+                      TASK_CARD_CONFIG.DESCRIPTION_LIMIT
+                    )}
+                  </Typography>
+                </Tooltip>
 
                 {/* Assigned To */}
                 <Box>

@@ -17,6 +17,7 @@ import {
   Stack,
   Pagination,
   Button,
+  Tooltip,
 } from '@mui/material';
 import {
   Add as AddIcon,
@@ -961,11 +962,13 @@ const AssetRequests: React.FC = () => {
           </Box>
         </Box>
       </TableCell>
-      <TableCell>
+      <TableCell data-truncate='true'>
         {request.remarks && (
-          <Typography variant='body2' color='text.secondary'>
-            {request.remarks}
-          </Typography>
+          <Tooltip title={request.remarks} arrow>
+            <Typography variant='body2' color='text.secondary'>
+              {request.remarks}
+            </Typography>
+          </Tooltip>
         )}
       </TableCell>
       <TableCell>
@@ -975,13 +978,15 @@ const AssetRequests: React.FC = () => {
       <TableCell>
         {request.processedDate && formatDate(request.processedDate)}
       </TableCell>
-      <TableCell>
+      <TableCell data-truncate='true'>
         {request.rejectionReason &&
           request.rejectionReason !== null &&
           request.rejectionReason.trim() !== '' && (
-            <Typography variant='body2' color='text.primary'>
-              {request.rejectionReason}
-            </Typography>
+            <Tooltip title={request.rejectionReason} arrow>
+              <Typography variant='body2' color='text.primary'>
+                {request.rejectionReason}
+              </Typography>
+            </Tooltip>
           )}
       </TableCell>
       {viewMode === 'team_requests' && roleIsManager() && (
@@ -1355,7 +1360,14 @@ const AssetRequests: React.FC = () => {
         <Box display='flex' justifyContent='center' mt={1}>
           <Typography variant='body2' color='textSecondary'>
             Showing page {pagination.page} of {pagination.totalPages} (
-            {pagination.total} total records)
+            {tabValue === 0
+              ? displayCounts.all
+              : tabValue === 1
+                ? displayCounts.pending
+                : tabValue === 2
+                  ? displayCounts.approved
+                  : displayCounts.rejected}{' '}
+            total records)
           </Typography>
         </Box>
       )}

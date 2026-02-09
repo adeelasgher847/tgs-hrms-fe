@@ -120,6 +120,9 @@ const TenantBasedEmployeeManager = lazy(
   () => import('./components/Employee/TenantBasedEmployeeManager')
 );
 const AuditLogs = lazy(() => import('./components/Audits/AuditLogs'));
+const AnnouncementsPage = lazy(
+  () => import('./components/Announcements/AnnouncementsPage')
+);
 const PerformanceDashboard = lazy(
   () => import('./components/Performance/PerformanceManager')
 );
@@ -313,6 +316,7 @@ function App() {
                     element={<PerformanceDashboard />}
                   />
                   <Route path='audit-logs' element={<AuditLogs />} />
+                  <Route path='announcements' element={<AnnouncementsPage />} />
 
                   <Route
                     path='payroll-configuration'

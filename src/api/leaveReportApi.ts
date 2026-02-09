@@ -64,14 +64,14 @@ export interface AllLeaveReportsResponse {
     rejectedRequests: number;
   };
   employeeReports:
-    | EmployeeReport[]
-    | {
-        items: EmployeeReport[];
-        total?: number;
-        page?: number;
-        limit?: number;
-        totalPages?: number;
-      };
+  | EmployeeReport[]
+  | {
+    items: EmployeeReport[];
+    total?: number;
+    page?: number;
+    limit?: number;
+    totalPages?: number;
+  };
   total?: number;
   page?: number;
   limit?: number;
@@ -90,7 +90,7 @@ export interface LeaveRecord {
   startDate: string;
   endDate: string;
   totalDays: number | null;
-  status: 'approved' | 'pending' | 'rejected';
+  status: 'approved' | 'pending' | 'rejected' | 'processing';
   reason?: string;
   appliedDate: string;
   approvedBy?: string | null;
@@ -247,11 +247,18 @@ class LeaveReportApiService {
   async getAllLeaveReports(
     page: number = 1,
     month?: number,
-    year?: number
+    year?: number,
+    employeeName?: string
   ): Promise<AllLeaveReportsResponse> {
-    const params: { page: number; month?: number; year?: number } = { page };
+    const params: {
+      page: number;
+      month?: number;
+      year?: number;
+      employeeName?: string;
+    } = { page };
     if (month) params.month = month;
     if (year) params.year = year;
+    if (employeeName) params.employeeName = employeeName;
 
     const response = await axiosInstance.get<AllLeaveReportsResponse>(
       `${this.baseUrl}/all-leave-reports`,
@@ -356,7 +363,7 @@ class LeaveReportApiService {
             if (
               summary.leaveTypeName === record.leaveTypeName ||
               summary.leaveTypeName.toLowerCase() ===
-                record.leaveTypeName?.toLowerCase()
+              record.leaveTypeName?.toLowerCase()
             ) {
               leaveTypeId = id;
               break;

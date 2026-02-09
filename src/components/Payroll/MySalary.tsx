@@ -397,7 +397,18 @@ const MySalary: React.FC = () => {
             <Typography variant='subtitle1' sx={{ fontWeight: 600, mb: 1 }}>
               Remarks
             </Typography>
-            <Typography variant='body2'>{detailRecord.remarks}</Typography>
+            <Tooltip title={detailRecord.remarks} arrow placement='top'>
+              <Typography
+                variant='body2'
+                sx={{
+                  cursor: 'help',
+                  whiteSpace: 'normal',
+                  wordBreak: 'break-word',
+                }}
+              >
+                {detailRecord.remarks}
+              </Typography>
+            </Tooltip>
           </Box>
         )}
       </Stack>

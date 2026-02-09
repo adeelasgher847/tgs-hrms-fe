@@ -48,6 +48,7 @@ export const getDefaultDashboardRoute = (role?: string): string => {
 const ROLE_MENU_ALLOWLIST: Record<NormalizedRole, readonly string[]> = {
   'system-admin': [
     'dashboard',
+    'announcements',
     'tenant',
     'department',
     'employees',
@@ -63,6 +64,7 @@ const ROLE_MENU_ALLOWLIST: Record<NormalizedRole, readonly string[]> = {
   ],
   'network-admin': [
     'dashboard',
+    'announcements',
     'department',
     'employees',
     'teams',
@@ -72,6 +74,7 @@ const ROLE_MENU_ALLOWLIST: Record<NormalizedRole, readonly string[]> = {
   ],
   'hr-admin': [
     'attendance',
+    'announcements',
     'department',
     'teams',
     'assets',
@@ -82,6 +85,7 @@ const ROLE_MENU_ALLOWLIST: Record<NormalizedRole, readonly string[]> = {
   ],
   admin: [
     'dashboard',
+    'announcements',
     'department',
     'employees',
     'teams',
@@ -100,9 +104,17 @@ const ROLE_MENU_ALLOWLIST: Record<NormalizedRole, readonly string[]> = {
     'leave-analytics',
     'payroll',
     'benefits',
+    'announcements',
   ],
-  employee: ['attendance', 'assets', 'benefits', 'leave-analytics', 'payroll', 'teams'],
-  user: ['attendance', 'assets', 'benefits', 'payroll', 'teams'],
+  employee: [
+    'attendance',
+    'assets',
+    'benefits',
+    'leave-analytics',
+    'payroll',
+    'teams',
+  ],
+  user: ['attendance', 'assets', 'benefits', 'payroll', 'teams', 'announcements'],
   unknown: ['benefits'],
 };
 
@@ -110,6 +122,7 @@ const normalizeLabel = (value: string) => (value || '').toLowerCase().trim();
 
 const MENU_KEY_MATCHERS: Array<{ key: string; patterns: string[] }> = [
   { key: 'dashboard', patterns: ['dashboard'] },
+  { key: 'announcements', patterns: ['announcement', 'announcements'] },
   { key: 'tenant', patterns: ['tenant'] },
   { key: 'department', patterns: ['department'] },
   { key: 'employees', patterns: ['employee'] },
@@ -313,6 +326,7 @@ export const isSubMenuVisibleForRole = (
 const DASHBOARD_ALLOWLIST_ENTRIES: Record<NormalizedRole, readonly string[]> = {
   'system-admin': [
     '',
+    'announcements',
     'tenant',
     'departments',
     'Designations',
@@ -344,6 +358,7 @@ const DASHBOARD_ALLOWLIST_ENTRIES: Record<NormalizedRole, readonly string[]> = {
   ],
   'network-admin': [
     '',
+    'announcements',
     'departments',
     'Designations',
     'EmployeeManager',
@@ -366,6 +381,7 @@ const DASHBOARD_ALLOWLIST_ENTRIES: Record<NormalizedRole, readonly string[]> = {
     'employee-benefit',
   ],
   'hr-admin': [
+    'departments',
     'EmployeeManager',
     'departments',
     'Designations',
@@ -374,6 +390,7 @@ const DASHBOARD_ALLOWLIST_ENTRIES: Record<NormalizedRole, readonly string[]> = {
     'AttendanceTable',
     'AttendanceCheck/TimesheetLayout',
     'UserProfile',
+    'announcements',
     'assets',
     'assets/request-management',
     'settings',
@@ -405,6 +422,7 @@ const DASHBOARD_ALLOWLIST_ENTRIES: Record<NormalizedRole, readonly string[]> = {
     'leaves',
     'CrossTenantLeaveManagement',
     'cross-tenant-leaves',
+    'announcements',
     'AttendanceCheck',
     'AttendanceTable',
     'AttendanceCheck/TimesheetLayout',
@@ -436,6 +454,7 @@ const DASHBOARD_ALLOWLIST_ENTRIES: Record<NormalizedRole, readonly string[]> = {
     'AttendanceTable',
     'Reports',
     'AttendanceCheck/TimesheetLayout',
+    'announcements',
     'teams',
     'geofencing',
     'teams/list',
@@ -474,6 +493,7 @@ const DASHBOARD_ALLOWLIST_ENTRIES: Record<NormalizedRole, readonly string[]> = {
     'AttendanceTable',
     'AttendanceCheck/TimesheetLayout',
     'leaves',
+    'announcements',
     'my-tasks',
     'UserProfile',
     'assets/requests',
