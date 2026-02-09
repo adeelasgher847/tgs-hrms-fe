@@ -37,6 +37,13 @@ import { getStoredUser } from '../../utils/authSession';
 import { isSystemAdmin as roleIsSystemAdmin } from '../../utils/auth';
 import { teamApiService } from '../../api/teamApi';
 import * as tasksApi from '../../api/tasksApi';
+import { TASK_CARD_CONFIG } from '../../theme/themeConfig';
+
+function truncateText(text: string, limit: number) {
+  if (!text) return '';
+  if (text.length <= limit) return text;
+  return text.substring(0, limit) + '...';
+}
 
 // Determine current employee id from stored session
 // (not currently used — kept for future reference)
@@ -831,12 +838,14 @@ export default function ManagerTaskBoard() {
                                   >
                                     {et.title}
                                   </Typography>
-                                  <Typography
-                                    variant='caption'
-                                    color='text.secondary'
-                                  >
-                                    {et.description}
-                                  </Typography>
+                                  <Tooltip title={et.description} arrow>
+                                    <Typography
+                                      variant='caption'
+                                      color='text.secondary'
+                                    >
+                                      {et.description}
+                                    </Typography>
+                                  </Tooltip>
                                 </Box>
                                 <Box display='flex' alignItems='center' gap={1}>
                                   <Chip
@@ -1158,9 +1167,14 @@ export default function ManagerTaskBoard() {
                       justifyContent='space-between'
                       alignItems='center'
                     >
-                      <Typography variant='subtitle1' sx={{ fontWeight: 600 }}>
-                        {t.title}
-                      </Typography>
+                      <Tooltip
+                        title={t.title.length > TASK_CARD_CONFIG.TITLE_LIMIT ? t.title : ''}
+                        arrow
+                      >
+                        <Typography variant='subtitle1' sx={{ fontWeight: 600 }}>
+                          {truncateText(t.title, TASK_CARD_CONFIG.TITLE_LIMIT)}
+                        </Typography>
+                      </Tooltip>
                       <Box display='flex' alignItems='center' gap={1}>
                         <Chip
                           label={t.status}
@@ -1169,9 +1183,14 @@ export default function ManagerTaskBoard() {
                         />
                       </Box>
                     </Box>
-                    <Typography variant='body2' color='text.secondary'>
-                      {t.description}
-                    </Typography>
+                    <Tooltip
+                      title={t.description && t.description.length > TASK_CARD_CONFIG.DESCRIPTION_LIMIT ? t.description : ''}
+                      arrow
+                    >
+                      <Typography variant='body2' color='text.secondary' sx={{ wordBreak: 'break-word' }}>
+                        {truncateText(t.description || '', TASK_CARD_CONFIG.DESCRIPTION_LIMIT)}
+                      </Typography>
+                    </Tooltip>
                     {t.deadline && (
                       <Typography variant='caption' color='text.secondary'>
                         Deadline: {formatDate(t.deadline)}

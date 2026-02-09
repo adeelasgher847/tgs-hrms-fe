@@ -155,31 +155,27 @@ const EmployeeBenefits: React.FC = () => {
           ? resp
           : null;
 
-      const filtered = items.filter(
-        emp => emp.benefits && emp.benefits.length > 0
-      );
-      setEmployees(filtered);
+      setEmployees(items);
 
       // Backend returns 25 records per page (fixed page size)
       // If we get 25 records, there might be more pages
       // If we get less than 25, it's the last page
       const hasMorePages = items.length === ITEMS_PER_PAGE;
-      const employeesWithBenefitsCount = filtered.length;
+      const employeesCount = items.length;
 
       // Use backend pagination info if available, otherwise estimate
       if (paginationInfo && paginationInfo.total && paginationInfo.totalPages) {
         setTotalPages(paginationInfo.totalPages);
-        // Count only employees with benefits (non-empty benefits array)
-        // If pagination info is available, use it; otherwise count filtered employees
+        // Use total from backend
         setTotalRecords(paginationInfo.total);
       } else {
         // Fallback: estimate based on current page and records received
         setTotalPages(hasMorePages ? pageNum + 1 : pageNum);
-        // Count employees with benefits across all pages
+        // Count employees across all pages
         setTotalRecords(
           hasMorePages
             ? pageNum * ITEMS_PER_PAGE
-            : (pageNum - 1) * ITEMS_PER_PAGE + employeesWithBenefitsCount
+            : (pageNum - 1) * ITEMS_PER_PAGE + employeesCount
         );
       }
     } catch {
@@ -273,7 +269,7 @@ const EmployeeBenefits: React.FC = () => {
           ? emp.benefits
           : emp.benefits.filter(b => b.statusOfAssignment === selectedStatus),
     }))
-    .filter(emp => emp.benefits.length > 0);
+    .filter(emp => selectedStatus === 'all' || emp.benefits.length > 0);
 
   // Reset to page 1 when status filter changes
   useEffect(() => {
@@ -564,10 +560,10 @@ const EmployeeBenefits: React.FC = () => {
         </Box>
       )}
 
-      {totalRecords > 0 && (
+      {(selectedStatus === 'all' ? totalRecords : filteredEmployees.length) > 0 && (
         <Box display='flex' justifyContent='center' my={1}>
           <Typography variant='body2' color='textSecondary'>
-            Showing page {page} of {totalPages} ({totalRecords} total records)
+            Showing page {page} of {totalPages} ({selectedStatus === 'all' ? totalRecords : filteredEmployees.length} total records)
           </Typography>
         </Box>
       )}

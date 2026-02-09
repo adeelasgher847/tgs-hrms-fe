@@ -310,3 +310,8 @@ export const createAppTheme = (mode: 'light' | 'dark') => {
 
 export type AppTheme = ReturnType<typeof createAppTheme>;
 export type AppPalette = typeof lightPalette | typeof darkPalette;
+
+export const TASK_CARD_CONFIG = {
+  TITLE_LIMIT: 20,
+  DESCRIPTION_LIMIT: 40,
+};

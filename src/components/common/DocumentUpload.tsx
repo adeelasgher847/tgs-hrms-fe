@@ -9,7 +9,6 @@ import {
 } from '@mui/material';
 import {
   Delete as DeleteIcon,
-  Edit as EditIcon,
 } from '@mui/icons-material';
 import { env } from '../../config/env';
 import { authService } from '../../api/authService';
@@ -28,7 +27,7 @@ interface DocumentUploadProps {
   newDocuments?: File[]; // Array of new File objects
   onDocumentsChange?: (documents: { existing: string[]; new: File[] }) => void;
   onDocumentRemove?: (type: 'existing' | 'new', index: number) => void;
-  onDocumentReplace?: (type: 'existing' | 'new', index: number, file: File) => void;
+
   multiple?: boolean;
   accept?: string;
   maxSize?: number; // in bytes
@@ -41,7 +40,6 @@ const DocumentUpload: React.FC<DocumentUploadProps> = ({
   newDocuments = [],
   onDocumentsChange,
   onDocumentRemove,
-  onDocumentReplace,
   multiple = true,
   accept,
   maxSize = 10 * 1024 * 1024, // 10MB default
@@ -70,7 +68,7 @@ const DocumentUpload: React.FC<DocumentUploadProps> = ({
       const response = await axiosInstance.get(baseUrl, {
         responseType: 'blob',
       });
-      
+
       const blob = new Blob([response.data], {
         type: response.data.type || 'image/jpeg',
       });
@@ -86,7 +84,7 @@ const DocumentUpload: React.FC<DocumentUploadProps> = ({
   useEffect(() => {
     const loadImages = async () => {
       const newBlobUrls = new Map<string, string>();
-      
+
       for (const docUrl of existingDocuments) {
         if (!imageBlobUrls.has(docUrl)) {
           const blobUrl = await fetchImageAsBlob(docUrl);
@@ -95,7 +93,7 @@ const DocumentUpload: React.FC<DocumentUploadProps> = ({
           }
         }
       }
-      
+
       if (newBlobUrls.size > 0) {
         setImageBlobUrls(prev => {
           const updated = new Map(prev);
@@ -180,44 +178,6 @@ const DocumentUpload: React.FC<DocumentUploadProps> = ({
     }
   };
 
-  // Handle document replacement
-  const handleReplace = (type: 'existing' | 'new', index: number) => {
-    if (disabled) return;
-    const input = document.createElement('input');
-    input.type = 'file';
-    input.accept = accept || 'image/*';
-    input.multiple = false;
-    input.onchange = (e: Event) => {
-      const target = e.target as HTMLInputElement;
-      if (target.files && target.files[0]) {
-        const file = target.files[0];
-        // Only allow image files
-        if (!validateImageFile(file)) {
-          return;
-        }
-        if (file.size > maxSize) {
-          // Could show error here
-          return;
-        }
-        if (onDocumentReplace) {
-          onDocumentReplace(type, index, file);
-        } else if (onDocumentsChange) {
-          if (type === 'existing') {
-            // Remove existing and add as new
-            const updatedExisting = existingDocuments.filter((_, i) => i !== index);
-            onDocumentsChange({
-              existing: updatedExisting,
-              new: [...newDocuments, file],
-            });
-          } else {
-            const updated = newDocuments.map((f, i) => (i === index ? file : f));
-            onDocumentsChange({ existing: existingDocuments, new: updated });
-          }
-        }
-      }
-    };
-    input.click();
-  };
 
 
   // Render document preview
@@ -229,7 +189,7 @@ const DocumentUpload: React.FC<DocumentUploadProps> = ({
     const fileName = getFileName(doc);
     const isExisting = type === 'existing';
     const docUrlString = isExisting ? (doc as string) : '';
-    
+
     // For existing documents, use blob URL if available, otherwise try direct URL
     let imageUrl = '';
     if (isExisting && docUrlString) {
@@ -248,7 +208,7 @@ const DocumentUpload: React.FC<DocumentUploadProps> = ({
       // For new files, create object URL
       imageUrl = URL.createObjectURL(doc as File);
     }
-    
+
     if (!imageUrl || imageUrl === '') return null;
 
     return (
@@ -331,20 +291,6 @@ const DocumentUpload: React.FC<DocumentUploadProps> = ({
         >
           {!disabled && (
             <>
-              <IconButton
-                size='small'
-                onClick={() => handleReplace(type, index)}
-                sx={{
-                  color: theme.palette.info.main,
-                  '&:hover': {
-                    backgroundColor: theme.palette.info.light,
-                    color: theme.palette.info.dark,
-                  },
-                }}
-                title='Replace document'
-              >
-                <EditIcon fontSize='small' />
-              </IconButton>
               <IconButton
                 size='small'
                 onClick={() => handleRemove(type, index)}
