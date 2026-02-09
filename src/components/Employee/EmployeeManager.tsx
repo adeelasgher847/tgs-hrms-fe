@@ -281,37 +281,28 @@ const EmployeeManager: React.FC = () => {
     profile_picture: member.user.profile_pic || undefined,
     department: member.department
       ? {
-        id: member.department.id,
-        name: member.department.name,
-        description: '',
-        tenantId: '',
-        createdAt: '',
-        updatedAt: '',
-        ...member.department,
-      }
+          id: member.department.id,
+          name: member.department.name,
+          description: '',
+          tenantId: '',
+          createdAt: '',
+          updatedAt: '',
+        }
       : member.designation.department
-        ? {
+      ? {
           id: member.designation.department.id,
           name: member.designation.department.name,
           description: '',
           tenantId: '',
           createdAt: '',
           updatedAt: '',
-          ...member.designation.department,
         }
-        : {
-          id: '',
-          name: 'Unknown',
-          description: '',
-          tenantId: '',
-          createdAt: '',
-          updatedAt: '',
-        },
+      : null,
     designation: {
       id: member.designation.id,
       title: member.designation.title,
       tenantId: '', // Not available
-      departmentId: member.department?.id || '',
+      departmentId: member.department?.id || member.designation.department?.id || '',
       createdAt: '',
       updatedAt: '',
     },
