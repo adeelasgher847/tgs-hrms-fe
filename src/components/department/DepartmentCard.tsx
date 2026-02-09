@@ -35,9 +35,10 @@ export const DepartmentCard: React.FC<DepartmentCardProps> = ({
         direction: isRtl ? 'rtl' : 'ltr',
         backgroundColor: theme.palette.background.paper,
         borderRadius: '20px',
-        boxShadow: theme.palette.mode === 'dark' 
-          ? '0 1px 3px rgba(0,0,0,0.3)' 
-          : '0 1px 3px rgba(0,0,0,0.1)',
+        boxShadow:
+          theme.palette.mode === 'dark'
+            ? '0 1px 3px rgba(0,0,0,0.3)'
+            : '0 1px 3px rgba(0,0,0,0.1)',
         p: '20px',
         gap: '32px',
       }}
@@ -98,9 +99,6 @@ export const DepartmentCard: React.FC<DepartmentCardProps> = ({
                 sx={{
                   width: { xs: 16, sm: 20 },
                   height: { xs: 16, sm: 20 },
-                  // filter: theme.palette.mode === 'dark'
-                  //   ? 'brightness(0) saturate(100%) invert(48%) sepia(95%) saturate(2476%) hue-rotate(195deg) brightness(98%) contrast(101%)'
-                  //   : 'none',
                 }}
               />
             </IconButton>
@@ -125,9 +123,10 @@ export const DepartmentCard: React.FC<DepartmentCardProps> = ({
                 sx={{
                   width: { xs: 16, sm: 20 },
                   height: { xs: 16, sm: 20 },
-                  filter: theme.palette.mode === 'dark'
-                    ? 'brightness(0) saturate(100%) invert(27%) sepia(95%) saturate(7151%) hue-rotate(348deg) brightness(95%) contrast(89%)'
-                    : 'none',
+                  filter:
+                    theme.palette.mode === 'dark'
+                      ? 'brightness(0) saturate(100%) invert(27%) sepia(95%) saturate(7151%) hue-rotate(348deg) brightness(95%) contrast(89%)'
+                      : 'none',
                 }}
               />
             </IconButton>

@@ -275,7 +275,7 @@ interface GeofenceFormModalProps {
   onSubmit: (data: Omit<Geofence, 'id' | 'createdAt' | 'updatedAt'>) => void;
   geofence?: Geofence | null;
   loading?: boolean;
-  availableTeams?: any[];
+  availableTeams?: Array<{ id: string; name?: string }>;
 }
 
 const GeofenceFormModal: React.FC<GeofenceFormModalProps> = ({
@@ -527,7 +527,7 @@ const GeofenceFormModal: React.FC<GeofenceFormModalProps> = ({
         });
       }
     }
-  }, [open, geofence]);
+  }, [open, geofence, availableTeams]);
 
   const searchLocation = async (query: string) => {
     if (query.trim().length < 2) {
@@ -578,13 +578,10 @@ const GeofenceFormModal: React.FC<GeofenceFormModalProps> = ({
       const data: LocationSearchResult[] = await response.json();
       // Ensure place_id is a string for consistency
       const normalized = data.map(d => {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const raw = d as any;
+        const raw = d as Record<string, unknown> | undefined;
         return {
           ...d,
-          place_id: String(
-            raw.place_id || raw.osm_id || d.display_name
-          ),
+          place_id: String(raw?.place_id ?? raw?.osm_id ?? d.display_name),
         };
       });
       setSearchResults(normalized);
@@ -622,20 +619,37 @@ const GeofenceFormModal: React.FC<GeofenceFormModalProps> = ({
       isGoogleLoaded && result.place_id && result.place_id.length > 0;
     if (useGoogle && getPlaceDetails) {
       getPlaceDetails(result.place_id)
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        .then((place: any) => {
-          const loc = place?.geometry?.location;
-          if (loc && typeof loc.lat === 'function') {
-            const lat = loc.lat();
-            const lon = loc.lng();
+        .then((place: Record<string, unknown>) => {
+          const geometry = place?.['geometry'] as
+            | Record<string, unknown>
+            | undefined;
+          const loc = geometry?.['location'] as
+            | Record<string, unknown>
+            | undefined;
+          const latFn =
+            loc && (loc['lat'] as unknown as (() => number) | undefined);
+          const lngFn =
+            loc && (loc['lng'] as unknown as (() => number) | undefined);
+          if (
+            latFn &&
+            typeof latFn === 'function' &&
+            lngFn &&
+            typeof lngFn === 'function'
+          ) {
+            const lat = latFn();
+            const lon = lngFn();
             setSelectedLocation([lat, lon]);
             setSelectedLocationName(
-              place.formatted_address || place.name || result.display_name
+              (place['formatted_address'] as string) ||
+                (place['name'] as string) ||
+                result.display_name
             );
             setMapCenter([lat, lon]);
             setMapZoom(15);
             setSearchQuery(
-              place.formatted_address || place.name || result.display_name
+              (place['formatted_address'] as string) ||
+                (place['name'] as string) ||
+                result.display_name
             );
             setShowSearchResults(false);
             setManualCoordinates({
@@ -701,8 +715,6 @@ const GeofenceFormModal: React.FC<GeofenceFormModalProps> = ({
       }
     }
   };
-
-
 
   const handleMarkerDrag = (e: L.DragEndEvent) => {
     const marker = e.target;
@@ -1041,9 +1053,9 @@ const GeofenceFormModal: React.FC<GeofenceFormModalProps> = ({
                                 result.display_name.length > 50
                                   ? result.display_name.substring(50)
                                   : result.display_name
-                                    .split(',')
-                                    .slice(2)
-                                    .join(',')
+                                      .split(',')
+                                      .slice(2)
+                                      .join(',')
                               }
                               primaryTypographyProps={{
                                 style: { fontWeight: 500 },
@@ -1091,8 +1103,6 @@ const GeofenceFormModal: React.FC<GeofenceFormModalProps> = ({
                   setFormData({ ...formData, description: e.target.value })
                 }
               />
-
-
 
               <Box sx={{ display: 'flex', gap: 1 }}>
                 <TextField

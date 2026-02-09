@@ -25,7 +25,10 @@ import {
 } from '../../api/departmentApi';
 import { useErrorHandler } from '../../hooks/useErrorHandler';
 import ErrorSnackbar from '../common/ErrorSnackbar';
-import { isSystemAdmin as isSystemAdminFn } from '../../utils/roleUtils';
+import {
+  isSystemAdmin as isSystemAdminFn,
+  isHRAdmin as isHrAdminFn,
+} from '../../utils/roleUtils';
 import type { SystemTenant } from '../../api/systemTenantApi';
 // COLORS not required here
 import AppDropdown from '../common/AppDropdown';
@@ -66,6 +69,7 @@ export const DepartmentList: React.FC = () => {
   }, []);
   const userRoleValue = user?.role;
   const isSystemAdmin = isSystemAdminFn(userRoleValue);
+  const isHrAdmin = isHrAdminFn(userRoleValue);
 
   const [departments, setDepartments] = useState<FrontendDepartment[]>([]);
   const [loading, setLoading] = useState(true);
@@ -428,7 +432,7 @@ export const DepartmentList: React.FC = () => {
           }}
         >
           {isSystemAdmin && (
-            <AppDropdown 
+            <AppDropdown
               value={selectedTenantId}
               onChange={handleTenantChange}
               options={[
@@ -454,7 +458,7 @@ export const DepartmentList: React.FC = () => {
               }}
             />
           )}
-          {!isSystemAdmin && (
+          {!isSystemAdmin && !isHrAdmin && (
             <AppButton
               variantType='primary'
               startIcon={<AddIcon />}
@@ -555,7 +559,7 @@ export const DepartmentList: React.FC = () => {
           >
             {lang.description}
           </Typography>
-          {!isSystemAdmin && (
+          {!isSystemAdmin && !isHrAdmin && (
             <AppButton
               variantType='primary'
               startIcon={<AddIcon />}
@@ -589,7 +593,7 @@ export const DepartmentList: React.FC = () => {
               key={d.id}
               department={d}
               onEdit={
-                isSystemAdmin
+                isSystemAdmin || isHrAdmin
                   ? undefined
                   : dept => {
                       setSelectedDepartment(dept);
@@ -597,7 +601,7 @@ export const DepartmentList: React.FC = () => {
                     }
               }
               onDelete={
-                isSystemAdmin
+                isSystemAdmin || isHrAdmin
                   ? undefined
                   : dept => {
                       setSelectedDepartment(dept);

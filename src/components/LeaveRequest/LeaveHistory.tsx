@@ -223,7 +223,7 @@ const LeaveHistory: React.FC<LeaveHistoryProps> = ({
     return () => {
       mounted = false;
     };
-  }, [isAdmin, onExportAll]);
+  }, [isAdmin, onExportAll, allLeavesForFilter.length]);
 
   const hideNameColumn = isManager && viewMode === 'you';
   const hideDropdown = isManager && viewMode === 'you';

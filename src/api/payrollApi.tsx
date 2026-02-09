@@ -456,6 +456,7 @@ class PayrollApiService {
     year: number;
     tenant_id?: string;
     employee_id?: string;
+    status?: PayrollStatus;
     page?: number;
     limit?: number;
   }): Promise<{
@@ -473,6 +474,9 @@ class PayrollApiService {
     }
     if (params.employee_id) {
       query.employee_id = params.employee_id;
+    }
+    if (params.status) {
+      query.status = params.status;
     }
     if (params.page !== undefined && params.page !== null) {
       query.page = params.page;

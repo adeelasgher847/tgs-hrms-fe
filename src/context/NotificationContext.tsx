@@ -1,6 +1,5 @@
 /* eslint-disable react-refresh/only-export-components */
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import axiosInstance from '../api/axiosInstance';
 import notificationsApi from '../api/notificationsApi';
 import { getCurrentUser } from '../utils/auth';
 
@@ -45,13 +44,7 @@ interface SalaryIssue {
   details?: string;
   timestamp?: string;
 }
-
-interface AlertsResponse {
-  auto_checkouts?: AutoCheckout[];
-  pending_approvals?: PendingApproval[];
-  salary_issues?: SalaryIssue[];
-  timestamp?: string;
-}
+// AlertsResponse not used — removed to satisfy lint rules
 interface NotificationContextType {
   notifications: Notification[];
   addNotification: (
@@ -102,8 +95,7 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
             return s || undefined;
           };
 
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          const cleanMessage = (m?: any) =>
+          const cleanMessage = (m?: unknown) =>
             String(m ?? '')
               // remove UUIDs
               .replace(

@@ -230,7 +230,7 @@ const AssignEmployeeBenefit: React.FC<{
               name: 'assign',
               label: '',
               value: '',
-              onChange: () => { },
+              onChange: () => {},
               component: fetching ? (
                 <Box
                   display='flex'
@@ -271,16 +271,25 @@ const AssignEmployeeBenefit: React.FC<{
                     control={control}
                     render={({ field }) => (
                       <FormControl fullWidth error={!!errors.benefitIds}>
-                        <InputLabel>Select Benefits</InputLabel>
+                        <InputLabel shrink={field.value?.length > 0}>
+                          Select Benefits
+                        </InputLabel>
                         <Select
                           {...field}
                           multiple
+                          label='Select Benefits'
+                          notched={field.value?.length > 0}
                           renderValue={selected =>
                             benefits
                               .filter(b => selected.includes(b.id))
                               .map(b => b.name)
                               .join(', ')
                           }
+                          sx={{
+                            '& .MuiSelect-select': {
+                              pt: field.value?.length > 0 ? 1.5 : 1,
+                            },
+                          }}
                         >
                           {benefits.map(b => (
                             <MenuItem key={b.id} value={b.id}>

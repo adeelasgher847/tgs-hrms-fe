@@ -89,19 +89,14 @@ const LeaveRequestPage = () => {
 
   // If user is not admin/HR/system, default date filter to current month
   useEffect(() => {
-    const adminRoles = [
-      'system-admin',
-      'network-admin',
-      'admin',
-      'hr-admin',
-    ];
+    const adminRoles = ['system-admin', 'network-admin', 'admin', 'hr-admin'];
     if (!adminRoles.includes(role) && !dateFilter) {
       const now = new Date();
       const y = now.getFullYear();
       const m = String(now.getMonth() + 1).padStart(2, '0');
       setDateFilter(`${y}-${m}`);
     }
-  }, [role]);
+  }, [role, dateFilter]);
 
   const loadLeaves = useCallback(
     async ({
@@ -145,7 +140,6 @@ const LeaveRequestPage = () => {
             'oe-admin',
           ].includes(role)
         ) {
-
           if (filter && /^\d{4}-\d{2}$/.test(filter)) {
             res = await leaveApi.getAllLeaves(page, queryParams);
           } else {

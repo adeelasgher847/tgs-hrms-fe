@@ -72,7 +72,7 @@ const statusOptions: UIStatus[] = ['unpaid', 'paid'];
 
 const mapStatusToBackend = (uiStatus: UIStatus): PayrollStatus => {
   if (uiStatus === 'paid') return 'paid';
-  return 'unpaid';
+  return 'pending';
 };
 
 const mapStatusFromBackend = (backendStatus: string): UIStatus => {
@@ -318,28 +318,83 @@ const PayrollRecords: React.FC = () => {
         typeof year === 'string' && year === ''
           ? dayjs().year()
           : year || dayjs().year();
-      const response = await payrollApi.getPayrollRecords({
-        month,
-        year: yearNum,
-        page: currentPage,
-        limit: itemsPerPage,
-        employee_id: employeeFilter || undefined,
-        status: statusFilter
-          ? mapStatusToBackend(statusFilter as UIStatus)
-          : undefined,
-      });
-      setRecords(response.items || []);
-      if (response.totalPages !== undefined) {
-        setTotalPages(response.totalPages);
-      } else if (response.total !== undefined) {
-        setTotalPages(Math.ceil(response.total / itemsPerPage));
-      } else {
-        const itemsCount = response.items?.length || 0;
-        setTotalPages(
-          itemsCount > itemsPerPage ? Math.ceil(itemsCount / itemsPerPage) : 1
+      if (statusFilter === 'unpaid') {
+        // Fetch first page to learn totalPages
+        const first = await payrollApi.getPayrollRecords({
+          month,
+          year: yearNum,
+          page: 1,
+          limit: itemsPerPage,
+          employee_id: employeeFilter || undefined,
+        });
+
+        let allItems = first.items || [];
+        const totalPagesFromBackend = first.totalPages || 1;
+
+        if (totalPagesFromBackend > 1) {
+          const pages: Promise<{
+            items: PayrollRecord[];
+            total?: number;
+            page?: number;
+            totalPages?: number;
+          }>[] = [];
+          for (let p = 2; p <= totalPagesFromBackend; p++) {
+            pages.push(
+              payrollApi.getPayrollRecords({
+                month,
+                year: yearNum,
+                page: p,
+                limit: itemsPerPage,
+                employee_id: employeeFilter || undefined,
+              })
+            );
+          }
+          try {
+            const more = await Promise.all(pages);
+            more.forEach(m => {
+              allItems = [...allItems, ...(m.items || [])];
+            });
+          } catch {
+            // swallow and continue with what we have
+          }
+        }
+
+        // Keep records that are not 'paid' according to mapping
+        const filtered = allItems.filter(
+          r => mapStatusFromBackend(r.status) !== 'paid'
         );
+
+        const start = (currentPage - 1) * itemsPerPage;
+        const paginated = filtered.slice(start, start + itemsPerPage);
+
+        setRecords(paginated);
+        const total = filtered.length;
+        setTotalRecords(total);
+        setTotalPages(total > 0 ? Math.ceil(total / itemsPerPage) : 1);
+      } else {
+        const response = await payrollApi.getPayrollRecords({
+          month,
+          year: yearNum,
+          page: currentPage,
+          limit: itemsPerPage,
+          employee_id: employeeFilter || undefined,
+          status: statusFilter
+            ? mapStatusToBackend(statusFilter as UIStatus)
+            : undefined,
+        });
+        setRecords(response.items || []);
+        if (response.totalPages !== undefined) {
+          setTotalPages(response.totalPages);
+        } else if (response.total !== undefined) {
+          setTotalPages(Math.ceil(response.total / itemsPerPage));
+        } else {
+          const itemsCount = response.items?.length || 0;
+          setTotalPages(
+            itemsCount > itemsPerPage ? Math.ceil(itemsCount / itemsPerPage) : 1
+          );
+        }
+        setTotalRecords(response.total || response.items?.length || 0);
       }
-      setTotalRecords(response.total || response.items?.length || 0);
     } catch {
       snackbar.error('Failed to load payroll records');
       setRecords([]);
@@ -366,6 +421,9 @@ const PayrollRecords: React.FC = () => {
   useEffect(() => {
     setCurrentPage(1);
   }, [employeeFilter]);
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [statusFilter, searchQuery]);
 
   const openDetails = (record: PayrollRecord) => {
     setSelectedRecord(record);
@@ -620,11 +678,12 @@ const PayrollRecords: React.FC = () => {
     generateMonth,
     generateYear,
     generateEmployeeId,
-    currentPage,
-    itemsPerPage,
     employeesForGenerateDialog,
-    records,
+    itemsPerPage,
     employeeFilter,
+    statusFilter,
+    records,
+    currentPage,
   ]);
 
   const openGenerateDialog = useCallback(() => {
@@ -863,12 +922,12 @@ const PayrollRecords: React.FC = () => {
               recordEmployees.length === 0
                 ? [{ value: '', label: 'No employees for this period' }]
                 : [
-                  { value: '', label: 'All employees' },
-                  ...recordEmployees.map(emp => ({
-                    value: emp.id,
-                    label: emp.name,
-                  })),
-                ]
+                    { value: '', label: 'All employees' },
+                    ...recordEmployees.map(emp => ({
+                      value: emp.id,
+                      label: emp.name,
+                    })),
+                  ]
             }
             label='Employee'
             showLabel={false}
@@ -938,9 +997,9 @@ const PayrollRecords: React.FC = () => {
               <TableRow>
                 <TableCell>Employee</TableCell>
                 <TableCell>Period</TableCell>
-                <TableCell align='right'>Gross</TableCell>
-                <TableCell align='right'>Deductions</TableCell>
-                <TableCell align='right'>Net</TableCell>
+                <TableCell align='center'>Gross</TableCell>
+                <TableCell align='center'>Deductions</TableCell>
+                <TableCell align='center'>Net</TableCell>
                 <TableCell align='center'>Status</TableCell>
                 <TableCell align='center'>Actions</TableCell>
               </TableRow>
@@ -967,13 +1026,13 @@ const PayrollRecords: React.FC = () => {
                   <TableCell>
                     {record.month}/{record.year}
                   </TableCell>
-                  <TableCell align='right'>
+                  <TableCell align='center'>
                     {formatCurrency(record.grossSalary)}
                   </TableCell>
-                  <TableCell align='right'>
+                  <TableCell align='center'>
                     {formatCurrency(record.totalDeductions)}
                   </TableCell>
-                  <TableCell align='right'>
+                  <TableCell align='center'>
                     {formatCurrency(record.netSalary)}
                   </TableCell>
                   <TableCell align='center'>
@@ -1038,7 +1097,7 @@ const PayrollRecords: React.FC = () => {
             </TableBody>
           </AppTable>
         )}
-        {!loading && totalPages > 1 && (
+        {!loading && displayedRecords.length > 0 && totalPages > 1 && (
           <Box display='flex' justifyContent='center' p={2}>
             <Pagination
               count={totalPages}
@@ -1050,7 +1109,7 @@ const PayrollRecords: React.FC = () => {
             />
           </Box>
         )}
-        {!loading && totalRecords > 0 && (
+        {!loading && displayedRecords.length > 0 && totalRecords > 0 && (
           <Box display='flex' justifyContent='center' pb={2}>
             <Typography variant='body2' color='textSecondary'>
               Showing page {currentPage} of {totalPages} ({totalRecords} total
@@ -1063,7 +1122,7 @@ const PayrollRecords: React.FC = () => {
       <AppFormModal
         open={detailsOpen && !!selectedRecord}
         onClose={closeDetails}
-        onSubmit={() => { }}
+        onSubmit={() => {}}
         title='Payroll Breakdown'
         cancelLabel='Close'
         showSubmitButton={false}
@@ -1221,7 +1280,7 @@ const PayrollRecords: React.FC = () => {
                       <TableCell align='right'>
                         {formatCurrency(
                           selectedRecord.deductionsBreakdown.leaveDeductions ||
-                          0
+                            0
                         )}
                       </TableCell>
                       <TableCell align='right'>—</TableCell>
@@ -1474,21 +1533,21 @@ const PayrollRecords: React.FC = () => {
             options={
               employeesForGenerateDialog.length === 0
                 ? [
-                  {
-                    value: '',
-                    label:
-                      employees.length === 0
-                        ? 'No employees with salary configuration'
-                        : 'All employees are already processed',
-                  },
-                ]
+                    {
+                      value: '',
+                      label:
+                        employees.length === 0
+                          ? 'No employees with salary configuration'
+                          : 'All employees are already processed',
+                    },
+                  ]
                 : [
-                  { value: '', label: 'All employees' },
-                  ...employeesForGenerateDialog.map(emp => ({
-                    value: emp.id,
-                    label: emp.name,
-                  })),
-                ]
+                    { value: '', label: 'All employees' },
+                    ...employeesForGenerateDialog.map(emp => ({
+                      value: emp.id,
+                      label: emp.name,
+                    })),
+                  ]
             }
             placeholder={
               employeesForGenerateDialog.length === 0

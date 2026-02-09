@@ -20,11 +20,11 @@ import {
   type LeaveSummaryItem,
   type TeamMember,
 } from '../../api/leaveReportApi';
-import employeeApi from '../../api/employeeApi';
 import { useIsDarkMode } from '../../theme';
 import AppCard from '../common/AppCard';
 import AppTable from '../common/AppTable';
 import AppPageTitle from '../common/AppPageTitle';
+// AppDropdown removed — employee filter removed
 
 const getCardStyle = (darkMode: boolean) => ({
   flex: '1 1 calc(33.33% - 16px)',
@@ -57,10 +57,7 @@ const Reports: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [loadingTab, setLoadingTab] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [selectedEmployee, setSelectedEmployee] = useState<string | null>(null);
-  const [, setAllEmployees] = useState<Array<{ id: string; name: string }>>([]);
   const [, setTeamSummary] = useState<TeamMember[]>([]);
-  const [, setLoadingEmployees] = useState(false);
   const [userInfo, setUserInfo] = useState<{
     userId: string | null;
     isManager: boolean;
@@ -99,32 +96,7 @@ const Reports: React.FC = () => {
 
   // Fetch all employees for admin/HR admin view
   useEffect(() => {
-    const fetchAllEmployees = async () => {
-      if (!isAdminView) {
-        setAllEmployees([]);
-        return;
-      }
-
-      try {
-        setLoadingEmployees(true);
-        const employees = await employeeApi.getAllEmployeesWithoutPagination();
-        setAllEmployees(
-          employees.map(emp => ({
-            id: emp.id,
-            name: emp.name,
-          }))
-        );
-      } catch (err) {
-        console.error('Error fetching all employees:', err);
-        setAllEmployees([]);
-      } finally {
-        setLoadingEmployees(false);
-      }
-    };
-
-    if (userInfo) {
-      fetchAllEmployees();
-    }
+    // Employee dropdown removed — no need to fetch all employees
   }, [isAdminView, userInfo]);
 
   // handleTabChange removed — `tab` is not dynamically changed in this component
@@ -167,15 +139,7 @@ const Reports: React.FC = () => {
       }
     };
 
-    // First filter by employee name if selected
-    let employeesToProcess = allLeaveReports;
-    if (selectedEmployee) {
-      employeesToProcess = allLeaveReports.filter(
-        emp => emp.employeeName === selectedEmployee
-      );
-    }
-
-    return employeesToProcess
+    return allLeaveReports
       .map(emp => {
         const leaveRecords = emp.leaveRecords || [];
 
@@ -300,7 +264,7 @@ const Reports: React.FC = () => {
         };
       })
       .filter((emp): emp is EmployeeReport => emp !== null);
-  }, [allLeaveReports, selectedMonth, selectedYear, selectedEmployee]);
+  }, [allLeaveReports, selectedMonth, selectedYear]);
 
   const handleExport = async () => {
     try {
@@ -449,12 +413,7 @@ const Reports: React.FC = () => {
 
       // Store all fetched records
       setAllLeaveReports(allEmployeeReports);
-
-      // Store the limit in state so it can be used in pagination rendering
       setPaginationLimit(paginationLimit);
-
-      // Calculate total leave type rows from all fetched employees
-      // Each employee can have multiple leave types, so we count all leave type rows
       const totalLeaveTypeRows = allEmployeeReports.reduce((total, emp) => {
         return (
           total +
@@ -463,18 +422,14 @@ const Reports: React.FC = () => {
             : 1)
         );
       }, 0);
-
-      // Calculate total pages based on leave type rows for frontend pagination
-      // We'll use the backend limit for frontend pagination
       const ITEMS_PER_PAGE_LEAVE_ROWS = paginationLimit || 25;
       const finalTotalPages = Math.ceil(
         totalLeaveTypeRows / ITEMS_PER_PAGE_LEAVE_ROWS
       );
 
-      // Store pagination info for frontend pagination
       setTotalPages(Math.max(1, finalTotalPages));
       setTotalRecords(totalLeaveTypeRows);
-      // Reset page to 1 when new data is loaded from backend (for client-side pagination)
+
       setPage(1);
 
       setError(null);
@@ -529,7 +484,6 @@ const Reports: React.FC = () => {
 
   // Reset employee filter when month/year changes
   useEffect(() => {
-    setSelectedEmployee(null);
     setPage(1);
   }, [selectedMonth, selectedYear]);
 
@@ -625,6 +579,8 @@ const Reports: React.FC = () => {
               })}
             />
           )}
+
+          {/* Employee filter removed per request */}
 
           {(isAdminView || isManager) && (
             <Tooltip title='Export CSV'>
@@ -801,16 +757,24 @@ const Reports: React.FC = () => {
                             },
                           }}
                         >
-                          <TableCell sx={{ color: theme.palette.text.secondary }}>
+                          <TableCell
+                            sx={{ color: theme.palette.text.secondary }}
+                          >
                             {row.employeeName}
                           </TableCell>
-                          <TableCell sx={{ color: theme.palette.text.secondary }}>
+                          <TableCell
+                            sx={{ color: theme.palette.text.secondary }}
+                          >
                             {row.department}
                           </TableCell>
-                          <TableCell sx={{ color: theme.palette.text.secondary }}>
+                          <TableCell
+                            sx={{ color: theme.palette.text.secondary }}
+                          >
                             {row.designation}
                           </TableCell>
-                          <TableCell sx={{ color: theme.palette.text.secondary }}>
+                          <TableCell
+                            sx={{ color: theme.palette.text.secondary }}
+                          >
                             {row.summary.leaveTypeName}
                           </TableCell>
                           <TableCell
@@ -861,13 +825,19 @@ const Reports: React.FC = () => {
                             backgroundColor: darkMode ? '#1e1e1e' : '#ffffff',
                           }}
                         >
-                          <TableCell sx={{ color: theme.palette.text.secondary }}>
+                          <TableCell
+                            sx={{ color: theme.palette.text.secondary }}
+                          >
                             {row.employeeName}
                           </TableCell>
-                          <TableCell sx={{ color: theme.palette.text.secondary }}>
+                          <TableCell
+                            sx={{ color: theme.palette.text.secondary }}
+                          >
                             {row.department}
                           </TableCell>
-                          <TableCell sx={{ color: theme.palette.text.secondary }}>
+                          <TableCell
+                            sx={{ color: theme.palette.text.secondary }}
+                          >
                             {row.designation}
                           </TableCell>
                           <TableCell

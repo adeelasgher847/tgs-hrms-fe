@@ -129,8 +129,9 @@ class LeaveApiService {
         if (employeeId) {
           try {
             const profile = await systemEmployeeApiService.getSystemEmployeeById(String(employeeId));
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            const teamId = (profile as any).team || (profile as any).team_id || (profile as any).teamId || undefined;
+            const prof = profile as Record<string, unknown> | undefined;
+            const teamIdRaw = prof?.team ?? prof?.team_id ?? prof?.teamId ?? undefined;
+            const teamId = teamIdRaw ?? undefined;
             if (teamId) {
               try {
                 const team = await teamApi.getTeamById(String(teamId));
@@ -167,8 +168,7 @@ class LeaveApiService {
           const { searchApiService } = await import('./searchApi');
           const adminsResp = await searchApiService.searchAdmin({ limit: 10 });
           const adminItems = adminsResp?.results?.employees ?? [];
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          const adminIds = adminItems.map((it: any) => it.id).filter(Boolean).slice(0, 5);
+          const adminIds = (adminItems as Array<Record<string, unknown>>).map(it => String(it.id)).filter(Boolean).slice(0, 5);
           if (adminIds.length > 0) {
             const message = `${employeeName} has applied for leave`;
             const notif = await notificationsApi.sendNotification({
@@ -195,8 +195,8 @@ class LeaveApiService {
           employeeName,
           data: res,
         };
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        (window as any).dispatchEvent(new CustomEvent('hrms:notification', { detail }));
+        const ev = new CustomEvent<Record<string, unknown>>('hrms:notification', { detail });
+        window.dispatchEvent(ev);
       } catch {
         // ignore
       }
@@ -341,8 +341,8 @@ class LeaveApiService {
               employeeName,
               data: res,
             };
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            (window as any).dispatchEvent(new CustomEvent('hrms:notification', { detail }));
+            const ev = new CustomEvent<Record<string, unknown>>('hrms:notification', { detail });
+            window.dispatchEvent(ev);
           } catch {
             // ignore
           }
@@ -388,8 +388,8 @@ class LeaveApiService {
               message: `Your leave has been rejected`,
               data: res,
             };
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            (window as any).dispatchEvent(new CustomEvent('hrms:notification', { detail }));
+            const ev = new CustomEvent<Record<string, unknown>>('hrms:notification', { detail });
+            window.dispatchEvent(ev);
           } catch {
             // ignore
           }
@@ -446,8 +446,8 @@ class LeaveApiService {
               message,
               data: res,
             };
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            (window as any).dispatchEvent(new CustomEvent('hrms:notification', { detail }));
+            const ev = new CustomEvent<Record<string, unknown>>('hrms:notification', { detail });
+            window.dispatchEvent(ev);
           } catch {
             // ignore
           }
@@ -498,8 +498,8 @@ class LeaveApiService {
               message,
               data: res,
             };
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            (window as any).dispatchEvent(new CustomEvent('hrms:notification', { detail }));
+            const ev = new CustomEvent<Record<string, unknown>>('hrms:notification', { detail });
+            window.dispatchEvent(ev);
           } catch {
             // ignore
           }
@@ -555,8 +555,8 @@ class LeaveApiService {
               message,
               data: res,
             };
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            (window as any).dispatchEvent(new CustomEvent('hrms:notification', { detail }));
+            const ev = new CustomEvent<Record<string, unknown>>('hrms:notification', { detail });
+            window.dispatchEvent(ev);
           } catch {
             // ignore
           }
@@ -652,9 +652,9 @@ class LeaveApiService {
             const profile = await systemEmployeeApiService.getSystemEmployeeById(
               String(employeeId)
             );
-
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            const teamId = (profile as any).team || (profile as any).team_id || (profile as any).teamId || undefined;
+            const prof = profile as Record<string, unknown> | undefined;
+            const teamIdRaw = prof?.team ?? prof?.team_id ?? prof?.teamId ?? undefined;
+            const teamId = teamIdRaw ?? undefined;
             if (teamId) {
               try {
                 const team = await teamApi.getTeamById(String(teamId));
@@ -715,9 +715,9 @@ class LeaveApiService {
           message: `${employeeName} has applied for leave`,
           employeeName,
           data: res,
-        };
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        (window as any).dispatchEvent(new CustomEvent('hrms:notification', { detail }));
+        } as Record<string, unknown>;
+        const ev = new CustomEvent<Record<string, unknown>>('hrms:notification', { detail });
+        window.dispatchEvent(ev);
       } catch {
         // ignore
       }

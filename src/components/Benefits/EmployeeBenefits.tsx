@@ -548,9 +548,9 @@ const EmployeeBenefits: React.FC = () => {
                       <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
                         {emp.benefits.map(b => {
                           const effectiveStatus =
-                            (b as any).status === 'inactive'
+                            b.status === 'inactive'
                               ? 'inactive'
-                              : b.statusOfAssignment || (b as any).status || '';
+                              : b.statusOfAssignment || b.status || '';
                           return (
                             <Chip
                               key={b.benefitAssignmentId}
