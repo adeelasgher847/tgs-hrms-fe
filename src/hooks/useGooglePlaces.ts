@@ -6,6 +6,26 @@ type Prediction = {
   place_id: string;
 };
 
+type GooglePlacesTypes = {
+  maps?: {
+    places?: {
+      AutocompleteService?: new () => {
+        getPlacePredictions: (
+          req: { input: string },
+          cb: (predictions: Array<Record<string, unknown>> | null, status: unknown) => void
+        ) => void;
+      };
+      PlacesService?: new (el: HTMLElement) => {
+        getDetails: (
+          req: { placeId: string; fields: string[] },
+          cb: (place: Record<string, unknown> | null, status: unknown) => void
+        ) => void;
+      };
+      PlacesServiceStatus?: { OK: unknown };
+    };
+  };
+};
+
 export function useGooglePlaces() {
   const [isLoaded, setIsLoaded] = useState<boolean>(false);
 
@@ -20,15 +40,9 @@ export function useGooglePlaces() {
       'script[src*="maps.googleapis.com/maps/api/js"]'
     );
 
+    const gw = window as unknown as { google?: GooglePlacesTypes };
     if (existing) {
-      if (
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        (window as any).google &&
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        (window as any).google.maps &&
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        (window as any).google.maps.places
-      ) {
+      if (gw.google?.maps?.places) {
         setIsLoaded(true);
       } else {
         existing.addEventListener('load', () => setIsLoaded(true), {
@@ -49,52 +63,53 @@ export function useGooglePlaces() {
 
   const getPredictions = (input: string): Promise<Prediction[]> => {
     return new Promise((resolve, reject) => {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      if (!(window as any).google || !(window as any).google.maps) {
+      const gw = window as unknown as { google?: GooglePlacesTypes };
+      if (!gw.google || !gw.google.maps) {
         reject(new Error('Google Maps script not loaded'));
         return;
       }
 
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const svc = new (window as any).google.maps.places.AutocompleteService();
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      svc.getPlacePredictions({ input }, (predictions: any[], status: any) => {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const okStatus = (window as any).google.maps.places.PlacesServiceStatus
-          .OK;
+      const AutocompleteCtor = gw.google.maps.places?.AutocompleteService;
+      if (!AutocompleteCtor) {
+        reject(new Error('AutocompleteService not available'));
+        return;
+      }
+
+      const svc = new AutocompleteCtor();
+      svc.getPlacePredictions({ input }, (predictions, status) => {
+        const okStatus = gw.google?.maps?.places?.PlacesServiceStatus?.OK;
         if (status !== okStatus) {
           resolve([]);
           return;
         }
-        resolve(
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          (predictions || []).map((p: any) => ({
-            description: p.description,
-            place_id: p.place_id,
-          }))
-        );
+        resolve((predictions || []).map(p => ({
+          description: String(p.description),
+          place_id: String(p.place_id),
+        })));
       });
     });
   };
 
   const getPlaceDetails = (placeId: string): Promise<unknown> => {
     return new Promise((resolve, reject) => {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      if (!(window as any).google || !(window as any).google.maps) {
+      const gw = window as unknown as { google?: GooglePlacesTypes };
+      if (!gw.google || !gw.google.maps) {
         reject(new Error('Google Maps script not loaded'));
         return;
       }
 
       const element = document.createElement('div');
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const ps = new (window as any).google.maps.places.PlacesService(element);
+      const PlacesCtor = gw.google.maps.places?.PlacesService;
+      if (!PlacesCtor) {
+        reject(new Error('PlacesService not available'));
+        return;
+      }
+
+      const ps = new PlacesCtor(element);
       ps.getDetails(
         { placeId, fields: ['geometry', 'formatted_address', 'name'] },
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        (place: any, status: any) => {
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          const okStatus = (window as any).google.maps.places
-            .PlacesServiceStatus.OK;
+        (place, status) => {
+          const okStatus = gw.google?.maps?.places?.PlacesServiceStatus?.OK;
           if (status !== okStatus) {
             reject(new Error('Place details fetch failed'));
             return;

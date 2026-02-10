@@ -21,7 +21,14 @@ export interface Notification {
 
 // Removed unused alert helper types (PendingApproval, AutoCheckout, SalaryIssue)
 
-// AlertsResponse type removed; not used in this module
+interface SalaryIssue {
+  id?: string;
+  title?: string;
+  message?: string;
+  details?: string;
+  timestamp?: string;
+}
+// AlertsResponse not used — removed to satisfy lint rules
 interface NotificationContextType {
   notifications: Notification[];
   addNotification: (
@@ -72,8 +79,7 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
             return s || undefined;
           };
 
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          const cleanMessage = (m?: any) =>
+          const cleanMessage = (m?: unknown) =>
             String(m ?? '')
               // remove UUIDs
               .replace(

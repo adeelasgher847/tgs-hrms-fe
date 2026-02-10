@@ -62,7 +62,9 @@ const TeamCheckInView: React.FC<TeamCheckInViewProps> = ({ onBack }) => {
 
   // Menu state
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
-  const [selectedCheckInId, setSelectedCheckInId] = useState<string | null>(null);
+  const [selectedCheckInId, setSelectedCheckInId] = useState<string | null>(
+    null
+  );
 
   const fetchTodayAttendance = useCallback(async () => {
     setLoading(true);
@@ -80,7 +82,10 @@ const TeamCheckInView: React.FC<TeamCheckInViewProps> = ({ onBack }) => {
     fetchTodayAttendance();
   }, [fetchTodayAttendance]);
 
-  const handleMenuClick = (event: React.MouseEvent<HTMLElement>, checkInId: string) => {
+  const handleMenuClick = (
+    event: React.MouseEvent<HTMLElement>,
+    checkInId: string
+  ) => {
     setAnchorEl(event.currentTarget);
     setSelectedCheckInId(checkInId);
   };
@@ -147,7 +152,9 @@ const TeamCheckInView: React.FC<TeamCheckInViewProps> = ({ onBack }) => {
     member => member.attendance && member.attendance.length > 0
   );
   const hasPending = checkedInMembers.some(m =>
-    m.attendance.some(a => !['approved', 'rejected', 'disapproved'].includes(a.approvalStatus))
+    m.attendance.some(
+      a => !['approved', 'rejected', 'disapproved'].includes(a.approvalStatus)
+    )
   );
 
   return (
@@ -173,7 +180,7 @@ const TeamCheckInView: React.FC<TeamCheckInViewProps> = ({ onBack }) => {
         <Tooltip title="Approve all today's pending check-ins">
           <span>
             <AppButton
-              variantType="primary"
+              variantType='primary'
               onClick={handleApproveAll}
               disabled={loading || !hasPending}
               sx={{
@@ -188,7 +195,7 @@ const TeamCheckInView: React.FC<TeamCheckInViewProps> = ({ onBack }) => {
         <Tooltip title="Disapprove all today's pending check-ins">
           <span>
             <AppButton
-              variantType="danger"
+              variantType='danger'
               onClick={handleDisapproveAll}
               disabled={loading || !hasPending}
               sx={{
@@ -228,8 +235,11 @@ const TeamCheckInView: React.FC<TeamCheckInViewProps> = ({ onBack }) => {
               </TableCell>
             </TableRow>
           ) : (
-            teamData.map((member) => {
-              const attendanceList = member.attendance && member.attendance.length > 0 ? member.attendance : [];
+            teamData.map(member => {
+              const attendanceList =
+                member.attendance && member.attendance.length > 0
+                  ? member.attendance
+                  : [];
 
               if (attendanceList.length > 0) {
                 return attendanceList.map((att, index) => (
@@ -251,30 +261,45 @@ const TeamCheckInView: React.FC<TeamCheckInViewProps> = ({ onBack }) => {
                         : '--'}
                     </TableCell>
                     <TableCell>
-                      {att.workedHours ? `${att.workedHours.toFixed(2)} hrs` : '--'}
+                      {att.workedHours
+                        ? `${att.workedHours.toFixed(2)} hrs`
+                        : '--'}
                     </TableCell>
                     <TableCell>
                       <Box sx={{ display: 'flex', gap: 1 }}>
                         <Chip
                           label={
-                            att.approvalStatus === 'approved' ? 'Approved' :
-                              ['rejected', 'disapproved'].includes(att.approvalStatus) ? 'Disapproved' :
-                                'Pending'
+                            att.approvalStatus === 'approved'
+                              ? 'Approved'
+                              : att.approvalStatus === 'rejected'
+                                ? 'Rejected'
+                                : att.approvalStatus === 'disapproved'
+                                  ? 'Disapproved'
+                                  : 'Pending'
                           }
                           color={
-                            att.approvalStatus === 'approved' ? 'success' :
-                              ['rejected', 'disapproved'].includes(att.approvalStatus) ? 'error' : 'warning'
+                            att.approvalStatus === 'approved'
+                              ? 'success'
+                              : att.approvalStatus === 'rejected'
+                                ? 'error'
+                                : att.approvalStatus === 'disapproved'
+                                  ? 'error'
+                                  : 'warning'
                           }
-                          size="small"
-                          variant="filled"
+                          size='small'
+                          variant='filled'
                         />
                       </Box>
                     </TableCell>
                     <TableCell>
                       <IconButton
                         size='small'
-                        onClick={(e) => handleMenuClick(e, att.checkInId)}
-                        disabled={['approved', 'rejected', 'disapproved'].includes(att.approvalStatus)}
+                        onClick={e => handleMenuClick(e, att.checkInId)}
+                        disabled={[
+                          'approved',
+                          'rejected',
+                          'disapproved',
+                        ].includes(att.approvalStatus)}
                       >
                         <MoreVertIcon />
                       </IconButton>
@@ -293,7 +318,12 @@ const TeamCheckInView: React.FC<TeamCheckInViewProps> = ({ onBack }) => {
                     <TableCell>--</TableCell>
                     <TableCell>--</TableCell>
                     <TableCell>
-                      <Chip label="Absent" color="default" size="small" variant="filled" />
+                      <Chip
+                        label='Absent'
+                        color='default'
+                        size='small'
+                        variant='filled'
+                      />
                     </TableCell>
                     <TableCell>
                       <IconButton size='small' disabled>
@@ -317,13 +347,13 @@ const TeamCheckInView: React.FC<TeamCheckInViewProps> = ({ onBack }) => {
       >
         <MenuItem onClick={handleApprove}>
           <ListItemIcon>
-            <CheckCircleOutlineIcon fontSize="small" color="success" />
+            <CheckCircleOutlineIcon fontSize='small' color='success' />
           </ListItemIcon>
           <ListItemText>Approve</ListItemText>
         </MenuItem>
         <MenuItem onClick={handleDisapprove}>
           <ListItemIcon>
-            <HighlightOffIcon fontSize="small" color="error" />
+            <HighlightOffIcon fontSize='small' color='error' />
           </ListItemIcon>
           <ListItemText>Disapprove</ListItemText>
         </MenuItem>
