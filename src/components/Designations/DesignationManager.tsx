@@ -318,8 +318,8 @@ export default function DesignationManager() {
 
   const hasChanges = editingDesignation
     ? title !== originalTitle ||
-    titleAr !== originalTitleAr ||
-    departmentId !== originalDepartmentId
+      titleAr !== originalTitleAr ||
+      departmentId !== originalDepartmentId
     : title.trim() !== '' || titleAr.trim() !== '' || departmentId !== '';
 
   // Disable Create/Update until required fields are present (and basic validation passes)
@@ -534,24 +534,24 @@ export default function DesignationManager() {
                 options={
                   loadingTenants
                     ? [
-                      {
-                        value: '',
-                        label: getText(
-                          'Loading tenants...',
-                          'جاري تحميل المستأجرين...'
-                        ),
-                      },
-                    ]
+                        {
+                          value: '',
+                          label: getText(
+                            'Loading tenants...',
+                            'جاري تحميل المستأجرين...'
+                          ),
+                        },
+                      ]
                     : [
-                      {
-                        value: 'all',
-                        label: getText('All Tenants', 'جميع المستأجرين'),
-                      },
-                      ...allTenants.map((tenant: SystemTenant) => ({
-                        value: tenant.id,
-                        label: tenant.name,
-                      })),
-                    ]
+                        {
+                          value: 'all',
+                          label: getText('All Tenants', 'جميع المستأجرين'),
+                        },
+                        ...allTenants.map((tenant: SystemTenant) => ({
+                          value: tenant.id,
+                          label: tenant.name,
+                        })),
+                      ]
                 }
                 value={selectedTenantId}
                 onChange={e => {
@@ -575,12 +575,12 @@ export default function DesignationManager() {
                     paddingRight: '44px !important',
                   },
                   '& .MuiSelect-select.MuiSelect-outlined.MuiInputBase-input.MuiOutlinedInput-input':
-                  {
-                    justifyContent: 'flex-start',
-                    textAlign: 'left',
-                    paddingLeft: '16px !important',
-                    paddingRight: '44px !important',
-                  },
+                    {
+                      justifyContent: 'flex-start',
+                      textAlign: 'left',
+                      paddingLeft: '16px !important',
+                      paddingRight: '44px !important',
+                    },
                 }}
               />
               <AppDropdown
@@ -618,16 +618,16 @@ export default function DesignationManager() {
                     paddingRight: '44px !important',
                   },
                   '& .MuiSelect-select.MuiSelect-outlined.MuiInputBase-input.MuiOutlinedInput-input':
-                  {
-                    justifyContent: 'flex-start',
-                    textAlign: 'left',
-                    paddingLeft: '16px !important',
-                    paddingRight: '44px !important',
-                  },
+                    {
+                      justifyContent: 'flex-start',
+                      textAlign: 'left',
+                      paddingLeft: '16px !important',
+                      paddingRight: '44px !important',
+                    },
                 }}
               />
             </>
-          ) : (
+          ) : !isHRAdmin ? (
             <>
               <AppButton
                 variantType='primary'
@@ -667,7 +667,7 @@ export default function DesignationManager() {
                 </Box>
               </AppButton>
             </>
-          )}
+          ) : null}
         </Box>
       </Box>
 
@@ -681,9 +681,9 @@ export default function DesignationManager() {
               ...(departmentsLoading
                 ? []
                 : departments.map(d => ({
-                  value: d.id,
-                  label: getText(d.name, d.nameAr),
-                }))),
+                    value: d.id,
+                    label: getText(d.name, d.nameAr),
+                  }))),
             ]}
             value={selectedDepartmentId}
             onChange={e => {
@@ -707,12 +707,12 @@ export default function DesignationManager() {
                 paddingRight: '44px !important',
               },
               '& .MuiSelect-select.MuiSelect-outlined.MuiInputBase-input.MuiOutlinedInput-input':
-              {
-                justifyContent: 'flex-start',
-                textAlign: 'left',
-                paddingLeft: '16px !important',
-                paddingRight: '44px !important',
-              },
+                {
+                  justifyContent: 'flex-start',
+                  textAlign: 'left',
+                  paddingLeft: '16px !important',
+                  paddingRight: '44px !important',
+                },
             }}
           />
 
@@ -819,9 +819,9 @@ export default function DesignationManager() {
                 {selectedDepartmentId === 'all'
                   ? getText('No designations found', 'لا توجد مسميات وظيفية')
                   : getText(
-                    'No designations found for this department',
-                    'لا توجد مسميات وظيفية لهذا القسم'
-                  )}
+                      'No designations found for this department',
+                      'لا توجد مسميات وظيفية لهذا القسم'
+                    )}
               </TableCell>
             </TableRow>
           ) : (
@@ -879,11 +879,17 @@ export default function DesignationManager() {
                         <IconButton
                           size='small'
                           onClick={() => {
+                            if (isHRAdmin) return;
                             setEditingDesignation(designation);
                             setModalOpen(true);
                           }}
-                          title={getText('Edit', 'تعديل')}
+                          title={
+                            isHRAdmin
+                              ? getText('Edit (disabled)', 'تعديل (معطل)')
+                              : getText('Edit', 'تعديل')
+                          }
                           aria-label={`Edit designation ${getText(designation.title, designation.titleAr)}`}
+                          disabled={isHRAdmin}
                           sx={{
                             p: { xs: 0.5, sm: 1 },
                             color: theme.palette.primary.main,
@@ -899,10 +905,6 @@ export default function DesignationManager() {
                             sx={{
                               width: { xs: 16, sm: 20 },
                               height: { xs: 16, sm: 20 },
-                              // filter:
-                              //   theme.palette.mode === 'dark'
-                              //     ? 'brightness(0) saturate(100%) invert(48%) sepia(95%) saturate(2476%) hue-rotate(195deg) brightness(98%) contrast(101%)'
-                              //     : 'none',
                             }}
                           />
                         </IconButton>
@@ -950,16 +952,18 @@ export default function DesignationManager() {
 
       {(() => {
         // Calculate pagination based on current view (server-side vs client-side)
-        const currentTotalItems = isServerSidePagination ? totalRecords : filteredDesignations.length;
-        
+        const currentTotalItems = isServerSidePagination
+          ? totalRecords
+          : filteredDesignations.length;
+
         // Calculate exact total pages
-        const exactTotalPages = 
+        const exactTotalPages =
           currentTotalItems > 0 && itemsPerPage > 0
             ? Math.ceil(currentTotalItems / itemsPerPage)
             : 1;
-            
+
         const finalTotalPages = exactTotalPages;
-        
+
         // Get current page record count for visibility logic
         const currentPageRowsCount = paginatedData.length;
 
@@ -988,7 +992,8 @@ export default function DesignationManager() {
         ) : null;
       })()}
 
-      {(isServerSidePagination ? totalRecords : filteredDesignations.length) > 0 && (
+      {(isServerSidePagination ? totalRecords : filteredDesignations.length) >
+        0 && (
         <Box display='flex' justifyContent='center' mt={1}>
           <Typography variant='body2' color='textSecondary'>
             {getText(
@@ -1030,9 +1035,9 @@ export default function DesignationManager() {
         message={
           designationToDelete
             ? getText(
-              `Are you sure you want to delete "${getText(designationToDelete.title, designationToDelete.titleAr)}"? This action cannot be undone.`,
-              `هل أنت متأكد أنك تريد حذف "${getText(designationToDelete.title, designationToDelete.titleAr)}"؟ لا يمكن التراجع عن هذا الإجراء.`
-            )
+                `Are you sure you want to delete "${getText(designationToDelete.title, designationToDelete.titleAr)}"? This action cannot be undone.`,
+                `هل أنت متأكد أنك تريد حذف "${getText(designationToDelete.title, designationToDelete.titleAr)}"؟ لا يمكن التراجع عن هذا الإجراء.`
+              )
             : ''
         }
         itemName={

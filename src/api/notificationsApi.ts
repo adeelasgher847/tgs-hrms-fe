@@ -85,14 +85,9 @@ class NotificationsApi {
           data: result.data,
           correlationId: result.correlationId,
           type: payload.type ?? 'alert',
-          // include actor id so consumers can filter out self-originated events
-          actorId: getCurrentUser()?.id ?? undefined,
-          // include recipients for additional client-side filtering if needed
-          recipientIds: Array.isArray(payload.user_ids) ? payload.user_ids : undefined,
-        };
-        (window as unknown as EventTarget).dispatchEvent(
-          new CustomEvent('hrms:notification', { detail: eventDetail })
-        );
+        } as Record<string, unknown>;
+        const event = new CustomEvent<Record<string, unknown>>('hrms:notification', { detail: eventDetail });
+        window.dispatchEvent(event);
       } catch {
         // ignore
       }
@@ -102,17 +97,15 @@ class NotificationsApi {
     } catch (err: unknown) {
       // Try to extract useful info from axios error shape
       // Keep normalized error shape so callers can log/show friendly info
-      const axiosErr = err as unknown as { response?: unknown };
+      const axiosErr = err as { response?: { status?: number; data?: Record<string, unknown>; headers?: Record<string, unknown> } };
       result.error = err;
 
       if (axiosErr?.response) {
-        const respObj = axiosErr.response as Record<string, unknown>;
-        result.status = (respObj?.status as number) ?? 0;
-        const respData = respObj?.data as Record<string, unknown> | undefined;
-        result.message = (respData?.message as string | undefined) ?? (respData?.error as string | undefined) ?? undefined;
-        result.data = respData ?? undefined;
-        const headers = respObj?.headers as Record<string, string> | undefined;
-        result.correlationId = (headers?.['x-correlation-id'] as string | undefined) ?? (respData?.correlationId as string | undefined) ?? null;
+        result.status = axiosErr.response.status ?? 0;
+        const data = axiosErr.response.data as Record<string, unknown> | undefined;
+        result.message = (data && (data.message as string)) ?? (data && (data.error as string)) ?? undefined;
+        result.data = data ?? undefined;
+        result.correlationId = (axiosErr.response.headers && (String(axiosErr.response.headers['x-correlation-id']) || undefined)) ?? (data && (data.correlationId as string)) ?? null;
       }
 
       return result;
@@ -131,13 +124,12 @@ class NotificationsApi {
       res.message = data.message ?? undefined;
       return res;
     } catch (err: unknown) {
-      const axiosErr = err as unknown as { response?: unknown };
+      const axiosErr = err as { response?: { status?: number; data?: Record<string, unknown> } };
       res.error = err;
       if (axiosErr?.response) {
-        const respObj = axiosErr.response as Record<string, unknown>;
-        res.status = (respObj?.status as number) ?? 0;
-        const respData = respObj?.data as Record<string, unknown> | undefined;
-        res.message = (respData?.message as string | undefined) ?? undefined;
+        res.status = axiosErr.response.status ?? 0;
+        const data = axiosErr.response.data as Record<string, unknown> | undefined;
+        res.message = data?.message as string | undefined;
       }
       return res;
     }
@@ -153,13 +145,12 @@ class NotificationsApi {
       res.message = resp.data?.message ?? undefined;
       return res;
     } catch (err: unknown) {
-      const axiosErr = err as unknown as { response?: unknown };
+      const axiosErr = err as { response?: { status?: number; data?: Record<string, unknown> } };
       res.error = err;
       if (axiosErr?.response) {
-        const respObj = axiosErr.response as Record<string, unknown>;
-        res.status = (respObj?.status as number) ?? 0;
-        const respData = respObj?.data as Record<string, unknown> | undefined;
-        res.message = (respData?.message as string | undefined) ?? undefined;
+        res.status = axiosErr.response.status ?? 0;
+        const data = axiosErr.response.data as Record<string, unknown> | undefined;
+        res.message = data?.message as string | undefined;
       }
       return res;
     }
@@ -175,12 +166,12 @@ class NotificationsApi {
       res.message = resp.data?.message ?? undefined;
       return res;
     } catch (err: unknown) {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const axiosErr = err as any;
+      const axiosErr = err as { response?: { status?: number; data?: Record<string, unknown> } };
       res.error = err;
       if (axiosErr?.response) {
         res.status = axiosErr.response.status ?? 0;
-        res.message = axiosErr.response.data?.message ?? undefined;
+        const data = axiosErr.response.data as Record<string, unknown> | undefined;
+        res.message = data?.message as string | undefined;
       }
       return res;
     }

@@ -65,9 +65,7 @@ function FitGeofence({ geofence }: { geofence: Geofence }) {
       (geofence.type === 'polygon' || geofence.type === 'rectangle') &&
       geofence.coordinates
     ) {
-      const bounds = L.latLngBounds(
-        geofence.coordinates as LatLngTuple[]
-      );
+      const bounds = L.latLngBounds(geofence.coordinates as LatLngTuple[]);
       map.fitBounds(bounds, { padding: [40, 40] });
     }
   }, [geofence, map]);
@@ -165,7 +163,10 @@ const EmployeeGeofenceStatus = () => {
           let inside = false;
 
           if (active.type === 'circle' && active.radius) {
-            const distToCenter = haversineDistanceMeters(current, active.center);
+            const distToCenter = haversineDistanceMeters(
+              current,
+              active.center
+            );
             inside = distToCenter <= active.radius;
             dist = inside ? 0 : distToCenter - active.radius;
           } else if (active.coordinates && active.coordinates.length >= 3) {
@@ -241,38 +242,43 @@ const EmployeeGeofenceStatus = () => {
   /* -------- Derived state -------- */
 
   const threshold = geofence?.threshold_enabled
-    ? (Number(geofence.threshold_distance))
+    ? Number(geofence.threshold_distance)
     : 0;
 
-  const canCheckIn = isInside || (geofence?.threshold_enabled && threshold > 0 && distance <= threshold);
+  const canCheckIn =
+    isInside ||
+    (geofence?.threshold_enabled && threshold > 0 && distance <= threshold);
 
-  const progress = threshold > 0
-    ? Math.min(100, Math.max(0, ((threshold - distance) / threshold) * 100))
-    : 0;
+  const progress =
+    threshold > 0
+      ? Math.min(100, Math.max(0, ((threshold - distance) / threshold) * 100))
+      : 0;
 
   /* ---------------- UI ---------------- */
 
   return (
     <Card sx={{ mt: 2, borderRadius: 2 }}>
       <CardContent sx={{ p: 3 }}>
-        <Typography variant="h5" fontWeight={700} mb={0.5}>
+        <Typography variant='h5' fontWeight={700} mb={0.5}>
           Live Geofence Tracking
         </Typography>
-        <Typography variant="body2" color="text.secondary" mb={2}>
-          {geofence?.name ? `Geofence: ${geofence.name}` : 'Live location tracking is active automatically'}
+        <Typography variant='body2' color='text.secondary' mb={2}>
+          {geofence?.name
+            ? `Geofence: ${geofence.name}`
+            : 'Live location tracking is active automatically'}
         </Typography>
 
         {error && (
-          <Alert severity="warning" sx={{ mb: 2 }}>
+          <Alert severity='warning' sx={{ mb: 2 }}>
             {error}
           </Alert>
         )}
 
         {loading && (
           <Box
-            display="flex"
-            justifyContent="center"
-            alignItems="center"
+            display='flex'
+            justifyContent='center'
+            alignItems='center'
             minHeight={300}
           >
             <CircularProgress />
@@ -281,20 +287,26 @@ const EmployeeGeofenceStatus = () => {
 
         {!loading && position && geofence && (
           <Box
-            display="flex"
+            display='flex'
             flexDirection={{ xs: 'column', lg: 'row' }}
             gap={3}
           >
             {/* LEFT */}
-            <Box width={{ xs: '100%', lg: '40%' }} display="flex" flexDirection="column" gap={2}>
+            <Box
+              width={{ xs: '100%', lg: '40%' }}
+              display='flex'
+              flexDirection='column'
+              gap={2}
+            >
               <Card
                 sx={{
                   p: 2.5,
                   borderRadius: 2,
-                  border: `2px solid ${canCheckIn
-                    ? theme.palette.success.main
-                    : theme.palette.warning.main
-                    }`,
+                  border: `2px solid ${
+                    canCheckIn
+                      ? theme.palette.success.main
+                      : theme.palette.warning.main
+                  }`,
                   background: alpha(
                     canCheckIn
                       ? theme.palette.success.main
@@ -303,20 +315,16 @@ const EmployeeGeofenceStatus = () => {
                   ),
                 }}
               >
-                <Box display="flex" gap={1.5} alignItems="center">
+                <Box display='flex' gap={1.5} alignItems='center'>
                   {canCheckIn ? (
-                    <CheckCircleIcon color="success" />
+                    <CheckCircleIcon color='success' />
                   ) : (
-                    <WarningIcon color="warning" />
+                    <WarningIcon color='warning' />
                   )}
                   <Box>
-                    <Typography variant="caption">
-                      Check-in Status
-                    </Typography>
-                    <Typography variant="h6" fontWeight={700}>
-                      {canCheckIn
-                        ? 'You Can Check In'
-                        : 'Too Far to Check In'}
+                    <Typography variant='caption'>Check-in Status</Typography>
+                    <Typography variant='h6' fontWeight={700}>
+                      {canCheckIn ? 'You Can Check In' : 'Too Far to Check In'}
                     </Typography>
                   </Box>
                 </Box>
@@ -324,7 +332,7 @@ const EmployeeGeofenceStatus = () => {
                 {!canCheckIn && (
                   <Box mt={2}>
                     <LinearProgress
-                      variant="determinate"
+                      variant='determinate'
                       value={progress}
                       sx={{ height: 8, borderRadius: 4 }}
                     />
@@ -333,14 +341,12 @@ const EmployeeGeofenceStatus = () => {
               </Card>
 
               <Card sx={{ p: 2.5 }}>
-                <Typography variant="caption">
-                  Distance to Geofence
-                </Typography>
-                <Box display="flex" gap={1} alignItems="center">
+                <Typography variant='caption'>Distance to Geofence</Typography>
+                <Box display='flex' gap={1} alignItems='center'>
                   <RadioButtonCheckedIcon
                     color={canCheckIn ? 'success' : 'disabled'}
                   />
-                  <Typography variant="h4" fontWeight={800}>
+                  <Typography variant='h4' fontWeight={800}>
                     {isInside ? 'Inside' : formatDistance(distance)}
                   </Typography>
                 </Box>
@@ -352,12 +358,12 @@ const EmployeeGeofenceStatus = () => {
               width={{ xs: '100%', lg: '60%' }}
               height={420}
               borderRadius={2}
-              overflow="hidden"
-              border="1px solid"
-              borderColor="divider"
+              overflow='hidden'
+              border='1px solid'
+              borderColor='divider'
             >
               <MapContainer style={{ height: '100%' }} zoom={16}>
-                <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
+                <TileLayer url='https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png' />
                 <FitGeofence geofence={geofence} />
 
                 <Marker position={position}>

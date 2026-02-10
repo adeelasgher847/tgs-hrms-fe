@@ -22,14 +22,13 @@ function mapApiTaskToTask(apiTask: Record<string, unknown>): Task {
     assignedToName = [assignedToNameRaw];
   } else if (assignedToNameRaw && typeof assignedToNameRaw === 'object') {
     // assignedEmployee may be an object with nested user
-    const obj = assignedToNameRaw as Record<string, unknown>;
-    const user = (obj.user ?? obj) as Record<string, unknown> | undefined;
-    const name = [user?.first_name as string | undefined, user?.last_name as string | undefined]
-      .filter(Boolean)
-      .join(' ')
-      .trim();
+    const obj = assignedToNameRaw as Record<string, unknown> | undefined;
+    const user = (obj?.user ?? obj) as Record<string, unknown> | undefined;
+    const first = user?.['first_name'] ?? user?.['firstName'] ?? user?.['name'];
+    const last = user?.['last_name'] ?? user?.['lastName'];
+    const name = [first, last].filter(Boolean).map(String).join(' ').trim();
     if (name) assignedToName = [name];
-    else if (user?.name) assignedToName = [user.name];
+    else if (typeof user?.['name'] === 'string') assignedToName = [String(user?.['name'])];
   }
 
   // Normalize status: API may return lowercase 'pending' etc. Convert to Title Case used by frontend
@@ -46,14 +45,13 @@ function mapApiTaskToTask(apiTask: Record<string, unknown>): Task {
   const creatorRaw = apiTask.creator ?? apiTask.created_by_user ?? undefined;
   let createdByName = (apiTask.created_by_name ?? apiTask.createdByName) as string | undefined;
   if (!createdByName && creatorRaw && typeof creatorRaw === 'object') {
-    const obj = creatorRaw as Record<string, unknown>;
+      const obj = creatorRaw as Record<string, unknown>;
     const user = (obj.user ?? obj) as Record<string, unknown> | undefined;
-    const name = [user?.first_name as string | undefined, user?.last_name as string | undefined]
-      .filter(Boolean)
-      .join(' ')
-      .trim();
+    const first = user?.['first_name'] ?? user?.['firstName'] ?? user?.['name'];
+    const last = user?.['last_name'] ?? user?.['lastName'];
+    const name = [first, last].filter(Boolean).map(String).join(' ').trim();
     if (name) createdByName = name;
-    else if (user && typeof user.name === 'string') createdByName = user.name as string;
+    else if (typeof user?.['name'] === 'string') createdByName = String(user?.['name']);
   }
 
   return {
@@ -68,7 +66,9 @@ function mapApiTaskToTask(apiTask: Record<string, unknown>): Task {
     createdAt: apiTask.created_at ?? apiTask.createdAt ?? new Date().toISOString(),
     deadline: apiTask.deadline ?? apiTask.deadline_at ?? apiTask.due_date ?? undefined,
     updatedAt: apiTask.updated_at ?? apiTask.updatedAt ?? new Date().toISOString(),
-    teamId: ((apiTask.team_id ?? apiTask.teamId ?? ((apiTask.team as Record<string, unknown> | undefined)?.id as string | undefined)) as string) ?? '',
+    teamId: String(
+      apiTask.team_id ?? apiTask.teamId ?? (apiTask.team as Record<string, unknown> | undefined)?.id ?? ''
+    ),
   } as Task;
 }
 
@@ -145,19 +145,17 @@ export async function createTask(payload: Record<string, unknown>): Promise<Task
         // Dispatch rich in-app event for immediate UI update in other tabs
         try {
           const actorId = currentUserId;
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          (window as any).dispatchEvent(
-            new CustomEvent('hrms:notification', {
-              detail: {
-                title: 'Task Assigned',
-                message,
-                taskTitle: task.title,
-                employeeName: undefined,
-                actorId,
-                data: { task },
-              },
-            })
-          );
+          const event = new CustomEvent<Record<string, unknown>>('hrms:notification', {
+            detail: {
+              title: 'Task Assigned',
+              message,
+              taskTitle: task.title,
+              employeeName: undefined,
+              actorId,
+              data: { task },
+            },
+          });
+          window.dispatchEvent(event);
         } catch {
           // ignore
         }
@@ -223,8 +221,9 @@ export async function patchTaskStatus(taskId: string, status: string): Promise<T
           const systemEmployeeApi = (await import('./systemEmployeeApi')).default;
           const teamApiLocal = (await import('./teamApi')).default;
           const profile = await systemEmployeeApi.getSystemEmployeeById(String(assigned));
-          const profileRec = profile as Record<string, unknown> | undefined;
-          const teamId = (profileRec?.team as string | undefined) || (profileRec?.team_id as string | undefined) || (profileRec?.teamId as string | undefined) || undefined;
+          const prof = profile as Record<string, unknown> | undefined;
+          const teamIdRaw = prof?.team ?? prof?.team_id ?? prof?.teamId ?? undefined;
+          const teamId = teamIdRaw ?? undefined;
           if (teamId) {
             try {
               const team = await teamApiLocal.getTeamById(String(teamId));
@@ -269,20 +268,19 @@ export async function patchTaskStatus(taskId: string, status: string): Promise<T
       // Dispatch in-app event with status details
       try {
         const actorId = storedUser?.id;
-        (window as unknown as EventTarget).dispatchEvent(
-          new CustomEvent('hrms:notification', {
-            detail: {
-              title: 'Task Status Updated',
-              message,
-              taskTitle: updatedTask.title,
-              employeeName,
-              oldStatus: undefined,
-              newStatus: updatedTask.status,
-              actorId,
-              data: { task: updatedTask },
-            },
-          })
-        );
+        const event = new CustomEvent<Record<string, unknown>>('hrms:notification', {
+          detail: {
+            title: 'Task Status Updated',
+            message,
+            taskTitle: updatedTask.title,
+            employeeName,
+            oldStatus: undefined,
+            newStatus: updatedTask.status,
+            actorId,
+            data: { task: updatedTask },
+          },
+        });
+        window.dispatchEvent(event);
       } catch {
         // ignore
       }

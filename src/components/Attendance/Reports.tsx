@@ -20,7 +20,6 @@ import {
   type LeaveSummaryItem,
   type TeamMember,
 } from '../../api/leaveReportApi';
-import employeeApi from '../../api/employeeApi';
 import { useIsDarkMode } from '../../theme';
 import AppCard from '../common/AppCard';
 import AppTable from '../common/AppTable';
@@ -300,12 +299,7 @@ const Reports: React.FC = () => {
 
       // Store all fetched records
       setAllLeaveReports(allEmployeeReports);
-
-      // Store the limit in state so it can be used in pagination rendering
       setPaginationLimit(paginationLimit);
-
-      // Calculate total leave type rows from all fetched employees
-      // Each employee can have multiple leave types, so we count all leave type rows
       const totalLeaveTypeRows = allEmployeeReports.reduce((total, emp) => {
         return (
           total +
@@ -314,18 +308,14 @@ const Reports: React.FC = () => {
             : 1)
         );
       }, 0);
-
-      // Calculate total pages based on leave type rows for frontend pagination
-      // We'll use the backend limit for frontend pagination
       const ITEMS_PER_PAGE_LEAVE_ROWS = paginationLimit || 25;
       const finalTotalPages = Math.ceil(
         totalLeaveTypeRows / ITEMS_PER_PAGE_LEAVE_ROWS
       );
 
-      // Store pagination info for frontend pagination
       setTotalPages(Math.max(1, finalTotalPages));
       setTotalRecords(totalLeaveTypeRows);
-      // Reset page to 1 when new data is loaded from backend (for client-side pagination)
+
       setPage(1);
 
       setError(null);
@@ -387,7 +377,6 @@ const Reports: React.FC = () => {
 
   // Reset employee filter when month/year changes
   useEffect(() => {
-    setSelectedEmployee(null);
     setPage(1);
   }, [selectedYear]);
 
@@ -487,6 +476,8 @@ const Reports: React.FC = () => {
               inputBackgroundColor={darkMode ? '#1e1e1e' : '#fff'}
             />
           )}
+
+          {/* Employee filter removed per request */}
 
           {(isAdminView || isManager) && (
             <Tooltip title='Export CSV'>
@@ -662,16 +653,24 @@ const Reports: React.FC = () => {
                             },
                           }}
                         >
-                          <TableCell sx={{ color: theme.palette.text.secondary }}>
+                          <TableCell
+                            sx={{ color: theme.palette.text.secondary }}
+                          >
                             {row.employeeName}
                           </TableCell>
-                          <TableCell sx={{ color: theme.palette.text.secondary }}>
+                          <TableCell
+                            sx={{ color: theme.palette.text.secondary }}
+                          >
                             {row.department}
                           </TableCell>
-                          <TableCell sx={{ color: theme.palette.text.secondary }}>
+                          <TableCell
+                            sx={{ color: theme.palette.text.secondary }}
+                          >
                             {row.designation}
                           </TableCell>
-                          <TableCell sx={{ color: theme.palette.text.secondary }}>
+                          <TableCell
+                            sx={{ color: theme.palette.text.secondary }}
+                          >
                             {row.summary.leaveTypeName}
                           </TableCell>
                           <TableCell
@@ -718,13 +717,19 @@ const Reports: React.FC = () => {
                             backgroundColor: darkMode ? '#1e1e1e' : '#ffffff',
                           }}
                         >
-                          <TableCell sx={{ color: theme.palette.text.secondary }}>
+                          <TableCell
+                            sx={{ color: theme.palette.text.secondary }}
+                          >
                             {row.employeeName}
                           </TableCell>
-                          <TableCell sx={{ color: theme.palette.text.secondary }}>
+                          <TableCell
+                            sx={{ color: theme.palette.text.secondary }}
+                          >
                             {row.department}
                           </TableCell>
-                          <TableCell sx={{ color: theme.palette.text.secondary }}>
+                          <TableCell
+                            sx={{ color: theme.palette.text.secondary }}
+                          >
                             {row.designation}
                           </TableCell>
                           <TableCell
