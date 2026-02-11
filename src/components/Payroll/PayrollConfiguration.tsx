@@ -249,21 +249,24 @@ const PayrollConfiguration: React.FC = () => {
       if (allowance.amount < 0) {
         return false;
       }
-      if (allowance.percentage < 0) {
+      // ensure percentage not negative or greater than 100 (handle fractional values)
+      const p = Number(allowance.percentage || 0);
+      const ppercent = Math.abs(p) <= 1 ? p * 100 : p;
+      if (ppercent < 0 || ppercent > 100) {
         return false;
       }
     }
 
     // Check deductions - all must be >= 0
-    if (deductions.taxPercentage < 0) {
-      return false;
-    }
-    if (deductions.insurancePercentage < 0) {
-      return false;
-    }
-    if (deductions.providentFundPercentage < 0) {
-      return false;
-    }
+    const td = Number(deductions.taxPercentage || 0);
+    const id = Number(deductions.insurancePercentage || 0);
+    const pd = Number(deductions.providentFundPercentage || 0);
+    const tdPct = Math.abs(td) <= 1 ? td * 100 : td;
+    const idPct = Math.abs(id) <= 1 ? id * 100 : id;
+    const pdPct = Math.abs(pd) <= 1 ? pd * 100 : pd;
+    if (tdPct < 0 || tdPct > 100) return false;
+    if (idPct < 0 || idPct > 100) return false;
+    if (pdPct < 0 || pdPct > 100) return false;
 
     // Check overtime policy if enabled
     if (overtimePolicy.enabled) {
@@ -405,7 +408,7 @@ const PayrollConfiguration: React.FC = () => {
       const errorMessage =
         err && typeof err === 'object' && 'response' in err
           ? (err as { response?: { data?: { message?: string } } }).response
-            ?.data?.message || 'Failed to save payroll configuration'
+              ?.data?.message || 'Failed to save payroll configuration'
           : 'Failed to save payroll configuration';
       setError(errorMessage);
       snackbar.error(errorMessage);
@@ -423,7 +426,13 @@ const PayrollConfiguration: React.FC = () => {
   };
 
   const formatPercentage = (value: number) => {
-    return `${value}%`;
+    if (value === null || value === undefined || Number.isNaN(Number(value)))
+      return '0%';
+    const num = Number(value);
+    const percent = Math.abs(num) <= 1 ? num * 100 : num;
+    const clamped = Math.min(percent, 100);
+    const rounded = Math.round(clamped * 100) / 100;
+    return `${rounded % 1 === 0 ? rounded.toFixed(0) : rounded.toFixed(2)}%`;
   };
 
   // Check if form has changes
@@ -449,9 +458,9 @@ const PayrollConfiguration: React.FC = () => {
     if (
       config.deductions.taxPercentage !== deductions.taxPercentage ||
       config.deductions.insurancePercentage !==
-      deductions.insurancePercentage ||
+        deductions.insurancePercentage ||
       config.deductions.providentFundPercentage !==
-      deductions.providentFundPercentage
+        deductions.providentFundPercentage
     )
       return true;
 
@@ -465,9 +474,9 @@ const PayrollConfiguration: React.FC = () => {
     // Check leave deduction policy
     if (
       config.leaveDeductionPolicy.unpaidLeaveDeduction !==
-      leaveDeductionPolicy.unpaidLeaveDeduction ||
+        leaveDeductionPolicy.unpaidLeaveDeduction ||
       config.leaveDeductionPolicy.halfDayDeduction !==
-      leaveDeductionPolicy.halfDayDeduction
+        leaveDeductionPolicy.halfDayDeduction
     )
       return true;
 
@@ -857,7 +866,7 @@ const PayrollConfiguration: React.FC = () => {
                             fullWidth
                             label='Percentage (%)'
                             type='number'
-                            inputProps={{ min: 0 }}
+                            inputProps={{ min: 0, max: 100 }}
                             value={
                               allowance.percentage === 0
                                 ? ''
@@ -865,10 +874,12 @@ const PayrollConfiguration: React.FC = () => {
                             }
                             onChange={e => {
                               const value = e.target.value;
-                              const numValue =
-                                value === ''
-                                  ? ''
-                                  : Math.max(0, parseFloat(value) || 0);
+                              if (value === '') {
+                                handleAllowanceChange(index, 'percentage', '');
+                                return;
+                              }
+                              let numValue = parseFloat(value) || 0;
+                              numValue = Math.max(0, Math.min(100, numValue));
                               handleAllowanceChange(
                                 index,
                                 'percentage',
@@ -923,14 +934,19 @@ const PayrollConfiguration: React.FC = () => {
                         .replace(/^./, str => str.toUpperCase())
                         .replace('Percentage', ' (%)')}
                       type='number'
-                      inputProps={{ min: 0 }}
+                      inputProps={{ min: 0, max: 100 }}
                       value={value === 0 ? '' : value}
                       onChange={e => {
                         const inputValue = e.target.value;
-                        const numValue =
-                          inputValue === ''
-                            ? ''
-                            : Math.max(0, parseFloat(inputValue) || 0);
+                        if (inputValue === '') {
+                          handleDeductionChange(
+                            key as keyof typeof deductions,
+                            ''
+                          );
+                          return;
+                        }
+                        let numValue = parseFloat(inputValue) || 0;
+                        numValue = Math.max(0, Math.min(100, numValue));
                         handleDeductionChange(
                           key as keyof typeof deductions,
                           numValue
@@ -977,9 +993,9 @@ const PayrollConfiguration: React.FC = () => {
                             color: theme.palette.primary.main,
                           },
                           '& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track':
-                          {
-                            backgroundColor: theme.palette.primary.main,
-                          },
+                            {
+                              backgroundColor: theme.palette.primary.main,
+                            },
                         }}
                       />
                     }
@@ -1091,9 +1107,9 @@ const PayrollConfiguration: React.FC = () => {
                             color: theme.palette.primary.main,
                           },
                           '& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track':
-                          {
-                            backgroundColor: theme.palette.primary.main,
-                          },
+                            {
+                              backgroundColor: theme.palette.primary.main,
+                            },
                         }}
                       />
                     }
@@ -1551,9 +1567,9 @@ const PayrollConfiguration: React.FC = () => {
                         color: theme.palette.primary.main,
                       },
                       '& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track':
-                      {
-                        backgroundColor: theme.palette.primary.main,
-                      },
+                        {
+                          backgroundColor: theme.palette.primary.main,
+                        },
                     }}
                   />
                 }
@@ -1647,9 +1663,9 @@ const PayrollConfiguration: React.FC = () => {
                         color: theme.palette.primary.main,
                       },
                       '& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track':
-                      {
-                        backgroundColor: theme.palette.primary.main,
-                      },
+                        {
+                          backgroundColor: theme.palette.primary.main,
+                        },
                     }}
                   />
                 }

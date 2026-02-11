@@ -20,11 +20,13 @@ import {
   type LeaveSummaryItem,
   type TeamMember,
 } from '../../api/leaveReportApi';
-import employeeApi from '../../api/employeeApi';
 import { useIsDarkMode } from '../../theme';
 import AppCard from '../common/AppCard';
 import AppTable from '../common/AppTable';
 import AppPageTitle from '../common/AppPageTitle';
+import AppDropdown from '../common/AppDropdown';
+import dayjs from 'dayjs';
+import type { SelectChangeEvent } from '@mui/material/Select';
 
 const getCardStyle = (darkMode: boolean) => ({
   flex: '1 1 calc(33.33% - 16px)',
@@ -42,11 +44,15 @@ interface LeaveBalance {
   carryForward: boolean;
 }
 
+const yearOptions = Array.from({ length: 11 }, (_, i) => {
+  const year = dayjs().year() - 5 + i;
+  return { label: year.toString(), value: year };
+}).reverse();
+
 const Reports: React.FC = () => {
   const darkMode = useIsDarkMode();
   const [tab] = useState(0);
   const now = new Date();
-  const [selectedMonth, setSelectedMonth] = useState(now.getMonth() + 1);
   const [selectedYear, setSelectedYear] = useState(now.getFullYear());
   const [leaveBalance, setLeaveBalance] = useState<LeaveBalance[]>([]);
   const [allLeaveReports, setAllLeaveReports] = useState<EmployeeReport[]>([]);
@@ -58,9 +64,11 @@ const Reports: React.FC = () => {
   const [loadingTab, setLoadingTab] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [selectedEmployee, setSelectedEmployee] = useState<string | null>(null);
-  const [, setAllEmployees] = useState<Array<{ id: string; name: string }>>([]);
+  const [allEmployees, setAllEmployees] = useState<
+    Array<{ id: string; name: string }>
+  >([]);
   const [, setTeamSummary] = useState<TeamMember[]>([]);
-  const [, setLoadingEmployees] = useState(false);
+  const [loadingEmployees, setLoadingEmployees] = useState(false);
   const [userInfo, setUserInfo] = useState<{
     userId: string | null;
     isManager: boolean;
@@ -112,6 +120,7 @@ const Reports: React.FC = () => {
           employees.map(emp => ({
             id: emp.id,
             name: emp.name,
+            firstName: emp.firstName || emp.name.split(' ')[0],
           }))
         );
       } catch (err) {
@@ -129,178 +138,18 @@ const Reports: React.FC = () => {
 
   // handleTabChange removed — `tab` is not dynamically changed in this component
 
-  const handleMonthChange = (
-    event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
-  ) => {
-    const value = event.target.value; // format: "YYYY-MM"
-    if (!value) return;
-    const [yearStr, monthStr] = value.split('-');
-    const parsedYear = parseInt(yearStr, 10);
-    const parsedMonth = parseInt(monthStr, 10);
-
-    if (!Number.isNaN(parsedYear) && !Number.isNaN(parsedMonth)) {
-      setSelectedYear(parsedYear);
-      setSelectedMonth(parsedMonth);
-    }
+  const handleYearChange = (event: SelectChangeEvent<string | number>) => {
+    setSelectedYear(Number(event.target.value));
   };
 
-  // Extract employee names from fetched allEmployees for the filter dropdown
-  // availableEmployees not used — derived list removed
+  const handleEmployeeChange = (event: SelectChangeEvent<string | number>) => {
+    const value = event.target.value;
+    setSelectedEmployee(value === 'all' ? null : String(value));
+  };
 
   const filteredEmployeeReports = useMemo(() => {
-    if (!allLeaveReports || allLeaveReports.length === 0) return [];
-
-    const monthStart = new Date(selectedYear, selectedMonth - 1, 1);
-    const monthEnd = new Date(selectedYear, selectedMonth, 0, 23, 59, 59, 999);
-    const yearStart = new Date(selectedYear, 0, 1);
-
-    const calculateDays = (startDate: string, endDate: string): number => {
-      try {
-        const start = new Date(startDate);
-        const end = new Date(endDate);
-        const diff = Math.floor(
-          (end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)
-        );
-        return diff >= 0 ? diff + 1 : 0;
-      } catch {
-        return 0;
-      }
-    };
-
-    // First filter by employee name if selected
-    let employeesToProcess = allLeaveReports;
-    if (selectedEmployee) {
-      employeesToProcess = allLeaveReports.filter(
-        emp => emp.employeeName === selectedEmployee
-      );
-    }
-
-    return employeesToProcess
-      .map(emp => {
-        const leaveRecords = emp.leaveRecords || [];
-
-        // Records that overlap the selected month (for monthly stats)
-        const filteredRecords = leaveRecords.filter(record => {
-          if (!record.startDate || !record.endDate) return false;
-          const start = new Date(record.startDate);
-          const end = new Date(record.endDate);
-          if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) {
-            return false;
-          }
-          return start <= monthEnd && end >= monthStart;
-        });
-
-        if (filteredRecords.length === 0) {
-          return null;
-        }
-
-        // Year‑to‑date approved days (from start of year up to end of selected month)
-        const ytdApprovedMap = new Map<string, number>();
-
-        leaveRecords.forEach(record => {
-          if (!record.startDate || !record.endDate) return;
-          const start = new Date(record.startDate);
-          const end = new Date(record.endDate);
-          if (
-            Number.isNaN(start.getTime()) ||
-            Number.isNaN(end.getTime()) ||
-            end < yearStart ||
-            start > monthEnd
-          ) {
-            return;
-          }
-
-          if (record.status !== 'approved') return;
-
-          let days = record.totalDays;
-          if (days === null || days === undefined) {
-            days = calculateDays(record.startDate, record.endDate);
-          }
-
-          const key = record.leaveTypeName?.toLowerCase() || 'unknown';
-          const current = ytdApprovedMap.get(key) ?? 0;
-          ytdApprovedMap.set(key, current + days);
-        });
-
-        const statsMap = new Map<
-          string,
-          {
-            approvedDays: number;
-            pendingDays: number;
-            rejectedDays: number;
-            totalDays: number;
-          }
-        >();
-
-        filteredRecords.forEach(record => {
-          const key = record.leaveTypeName?.toLowerCase() || 'unknown';
-          let days = record.totalDays;
-          if (days === null || days === undefined) {
-            days = calculateDays(record.startDate, record.endDate);
-          }
-
-          const current = statsMap.get(key) || {
-            approvedDays: 0,
-            pendingDays: 0,
-            rejectedDays: 0,
-            totalDays: 0,
-          };
-
-          if (record.status === 'approved') {
-            current.approvedDays += days;
-          } else if (record.status === 'pending') {
-            current.pendingDays += days;
-          } else if (record.status === 'rejected') {
-            current.rejectedDays += days;
-          }
-          current.totalDays += days;
-
-          statsMap.set(key, current);
-        });
-
-        const newLeaveSummary: LeaveSummaryItem[] = Array.from(
-          statsMap.entries()
-        ).map(([key, stats]) => {
-          const base = emp.leaveSummary?.find(
-            s => s.leaveTypeName.toLowerCase() === key
-          );
-
-          const matchingRecord = filteredRecords.find(
-            r => r.leaveTypeName?.toLowerCase() === key
-          );
-
-          const approvedYtd = ytdApprovedMap.get(key) ?? stats.approvedDays;
-          const maxPerYear = base?.maxDaysPerYear ?? 0;
-          // Allow negative remaining when over-used, to reflect backend behaviour
-          const remaining = maxPerYear - approvedYtd;
-
-          return {
-            leaveTypeId: base?.leaveTypeId ?? key,
-            leaveTypeName:
-              base?.leaveTypeName ?? matchingRecord?.leaveTypeName ?? 'Unknown',
-            maxDaysPerYear: base?.maxDaysPerYear ?? 0,
-            approvedDays: stats.approvedDays,
-            pendingDays: stats.pendingDays,
-            rejectedDays: stats.rejectedDays,
-            totalDays: stats.totalDays,
-            // Yearly-style remaining days
-            remainingDays: remaining,
-            // Fields from the simpler LeaveSummaryItem interface
-            type:
-              base?.leaveTypeName ?? matchingRecord?.leaveTypeName ?? 'Unknown',
-            used: approvedYtd,
-            remaining,
-          };
-        });
-
-        return {
-          ...emp,
-          leaveSummary: newLeaveSummary,
-          leaveRecords: filteredRecords,
-        };
-      })
-      .filter((emp): emp is EmployeeReport => emp !== null);
-  }, [allLeaveReports, selectedMonth, selectedYear, selectedEmployee]);
+    return allLeaveReports || [];
+  }, [allLeaveReports]);
 
   const handleExport = async () => {
     try {
@@ -327,9 +176,8 @@ const Reports: React.FC = () => {
             emp.designation,
             summary.leaveTypeName,
             summary.maxDaysPerYear,
-            summary.used ??
-              (summary.approvedDays ?? 0) + (summary.pendingDays ?? 0),
-            summary.remaining ?? summary.remainingDays ?? 0,
+            summary.totalDays ?? 0,
+            summary.remainingDays ?? 0,
             summary.approvedDays ?? 0,
             summary.pendingDays ?? 0,
             summary.rejectedDays ?? 0,
@@ -354,7 +202,7 @@ const Reports: React.FC = () => {
         if (tab === 0) blob = await leaveReportApi.exportLeaveBalanceCSV();
         if (isManager && tab === 1)
           blob = await leaveReportApi.exportTeamLeaveSummaryCSV(
-            selectedMonth,
+            undefined as unknown as number,
             selectedYear
           );
       }
@@ -380,8 +228,9 @@ const Reports: React.FC = () => {
       let totalPagesFromBackend = 1;
       const firstPageData = await leaveReportApi.getAllLeaveReports(
         1,
-        selectedMonth,
-        selectedYear
+        undefined,
+        selectedYear,
+        selectedEmployee || undefined
       );
 
       // Extract limit and total pages from first page
@@ -417,8 +266,9 @@ const Reports: React.FC = () => {
           try {
             const pageData = await leaveReportApi.getAllLeaveReports(
               page,
-              selectedMonth,
-              selectedYear
+              undefined,
+              selectedYear,
+              selectedEmployee || undefined
             );
 
             let pageEmployeeReports: EmployeeReport[] = [];
@@ -449,12 +299,7 @@ const Reports: React.FC = () => {
 
       // Store all fetched records
       setAllLeaveReports(allEmployeeReports);
-
-      // Store the limit in state so it can be used in pagination rendering
       setPaginationLimit(paginationLimit);
-
-      // Calculate total leave type rows from all fetched employees
-      // Each employee can have multiple leave types, so we count all leave type rows
       const totalLeaveTypeRows = allEmployeeReports.reduce((total, emp) => {
         return (
           total +
@@ -463,18 +308,14 @@ const Reports: React.FC = () => {
             : 1)
         );
       }, 0);
-
-      // Calculate total pages based on leave type rows for frontend pagination
-      // We'll use the backend limit for frontend pagination
       const ITEMS_PER_PAGE_LEAVE_ROWS = paginationLimit || 25;
       const finalTotalPages = Math.ceil(
         totalLeaveTypeRows / ITEMS_PER_PAGE_LEAVE_ROWS
       );
 
-      // Store pagination info for frontend pagination
       setTotalPages(Math.max(1, finalTotalPages));
       setTotalRecords(totalLeaveTypeRows);
-      // Reset page to 1 when new data is loaded from backend (for client-side pagination)
+
       setPage(1);
 
       setError(null);
@@ -507,7 +348,7 @@ const Reports: React.FC = () => {
             setLeaveBalance(data.balances || []);
           } else if (isManager && tab === 1) {
             const data = await leaveReportApi.getTeamLeaveSummary(
-              selectedMonth,
+              undefined as unknown as number,
               selectedYear
             );
             setTeamSummary(data.teamMembers || []);
@@ -525,13 +366,19 @@ const Reports: React.FC = () => {
     fetchData();
     // Remove 'page' from dependencies - we use client-side pagination for leave type rows
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [tab, userInfo, isAdminView, isManager, selectedMonth, selectedYear]);
+  }, [
+    tab,
+    userInfo,
+    isAdminView,
+    isManager,
+    selectedYear,
+    selectedEmployee,
+  ]);
 
   // Reset employee filter when month/year changes
   useEffect(() => {
-    setSelectedEmployee(null);
     setPage(1);
-  }, [selectedMonth, selectedYear]);
+  }, [selectedYear]);
 
   if (!userInfo) {
     return (
@@ -597,34 +444,40 @@ const Reports: React.FC = () => {
             justifyContent: { xs: 'space-between', sm: 'flex-end' },
           }}
         >
-          {/* Month picker should be visible only to admin roles (hide for managers and employees) */}
           {isAdminView && (
-            <TextField
-              type='month'
-              size='small'
-              value={`${selectedYear}-${String(selectedMonth).padStart(2, '0')}`}
-              onChange={handleMonthChange}
-              InputLabelProps={{ shrink: true }}
-              sx={theme => ({
-                minWidth: { xs: '100%', sm: 180 },
-
-                '& input': {
-                  color: theme.palette.text.primary,
-                },
-
-                '& label': {
-                  color: theme.palette.text.secondary,
-                },
-
-                '& input::-webkit-calendar-picker-indicator': {
-                  filter:
-                    theme.palette.mode === 'dark' ? 'invert(1)' : 'invert(0)',
-                  opacity: theme.palette.mode === 'dark' ? 0.5 : 1,
-                  cursor: 'pointer',
-                },
-              })}
+            <AppDropdown
+              label='Employee'
+              showLabel={false}
+              value={selectedEmployee || 'all'}
+              onChange={handleEmployeeChange}
+              options={[
+                { label: 'All Employees', value: 'all' },
+                ...allEmployees.map(emp => ({
+                  label: emp.name,
+                  value: emp.firstName,
+                })),
+              ]}
+              placeholder='Select Employee'
+              containerSx={{ minWidth: { xs: '100%', sm: 200 } }}
+              inputBackgroundColor={darkMode ? '#1e1e1e' : '#fff'}
+              loading={loadingEmployees}
             />
           )}
+
+          {isAdminView && (
+            <AppDropdown
+              label='Year'
+              showLabel={false}
+              value={selectedYear}
+              onChange={handleYearChange}
+              options={yearOptions}
+              placeholder='Select Year'
+              containerSx={{ minWidth: { xs: '100%', sm: 150 } }}
+              inputBackgroundColor={darkMode ? '#1e1e1e' : '#fff'}
+            />
+          )}
+
+          {/* Employee filter removed per request */}
 
           {(isAdminView || isManager) && (
             <Tooltip title='Export CSV'>
@@ -652,10 +505,9 @@ const Reports: React.FC = () => {
             sx={{
               padding: 0,
               backgroundColor: darkMode ? '#1e1e1e' : '#ffffff',
-              overflowX: 'auto',
             }}
           >
-            <AppTable sx={{ minWidth: 1100 }}>
+            <AppTable tableProps={{ sx: { minWidth: 1100 } }}>
               <TableHead
                 sx={{ backgroundColor: darkMode ? '#2a2a2a' : '#f5f5f5' }}
               >
@@ -801,16 +653,24 @@ const Reports: React.FC = () => {
                             },
                           }}
                         >
-                          <TableCell sx={{ color: theme.palette.text.secondary }}>
+                          <TableCell
+                            sx={{ color: theme.palette.text.secondary }}
+                          >
                             {row.employeeName}
                           </TableCell>
-                          <TableCell sx={{ color: theme.palette.text.secondary }}>
+                          <TableCell
+                            sx={{ color: theme.palette.text.secondary }}
+                          >
                             {row.department}
                           </TableCell>
-                          <TableCell sx={{ color: theme.palette.text.secondary }}>
+                          <TableCell
+                            sx={{ color: theme.palette.text.secondary }}
+                          >
                             {row.designation}
                           </TableCell>
-                          <TableCell sx={{ color: theme.palette.text.secondary }}>
+                          <TableCell
+                            sx={{ color: theme.palette.text.secondary }}
+                          >
                             {row.summary.leaveTypeName}
                           </TableCell>
                           <TableCell
@@ -823,17 +683,13 @@ const Reports: React.FC = () => {
                             align='center'
                             sx={{ color: theme.palette.text.secondary }}
                           >
-                            {row.summary.used ??
-                              (row.summary.approvedDays ?? 0) +
-                                (row.summary.pendingDays ?? 0)}
+                            {row.summary.totalDays ?? 0}
                           </TableCell>
                           <TableCell
                             align='center'
                             sx={{ color: theme.palette.text.secondary }}
                           >
-                            {row.summary.remaining ??
-                              row.summary.remainingDays ??
-                              0}
+                            {row.summary.remainingDays ?? 0}
                           </TableCell>
                           <TableCell
                             align='center'
@@ -861,13 +717,19 @@ const Reports: React.FC = () => {
                             backgroundColor: darkMode ? '#1e1e1e' : '#ffffff',
                           }}
                         >
-                          <TableCell sx={{ color: theme.palette.text.secondary }}>
+                          <TableCell
+                            sx={{ color: theme.palette.text.secondary }}
+                          >
                             {row.employeeName}
                           </TableCell>
-                          <TableCell sx={{ color: theme.palette.text.secondary }}>
+                          <TableCell
+                            sx={{ color: theme.palette.text.secondary }}
+                          >
                             {row.department}
                           </TableCell>
-                          <TableCell sx={{ color: theme.palette.text.secondary }}>
+                          <TableCell
+                            sx={{ color: theme.palette.text.secondary }}
+                          >
                             {row.designation}
                           </TableCell>
                           <TableCell
@@ -1040,7 +902,7 @@ const Reports: React.FC = () => {
                   overflowX: 'auto',
                 }}
               >
-                <AppTable sx={{ minWidth: 650 }}>
+                <AppTable tableProps={{ sx: { minWidth: 650 } }}>
                   <TableHead>
                     <TableRow
                       sx={{ backgroundColor: darkMode ? '#2a2a2a' : '#ffffff' }}

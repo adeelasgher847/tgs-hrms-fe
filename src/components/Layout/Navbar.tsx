@@ -147,6 +147,12 @@ const searchableRoutes: SearchResult[] = [
     type: 'route',
   },
   {
+    label: 'Announcements',
+    path: 'announcements',
+    category: 'Main',
+    type: 'route',
+  },
+  {
     label: 'Project List',
     path: 'project-list',
     category: 'Projects',

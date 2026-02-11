@@ -16,13 +16,12 @@ import {
 import { Icons } from '../../assets/icons';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import DeleteConfirmationDialog from '../common/DeleteConfirmationDialog';
-import { } from /* useNavigate */ 'react-router-dom';
+import {} from /* useNavigate */ 'react-router-dom';
 import AppCard from '../common/AppCard';
 import AppDropdown from '../common/AppDropdown';
 import AppButton from '../common/AppButton';
 import AppFormModal, { type FormField } from '../common/AppFormModal';
 import AppInputField from '../common/AppInputField';
-// Notification panel removed from Task Board header per UX request
 import ErrorSnackbar from '../common/ErrorSnackbar';
 import AppPageTitle from '../common/AppPageTitle';
 import { useErrorHandler } from '../../hooks/useErrorHandler';
@@ -37,11 +36,14 @@ import { getStoredUser } from '../../utils/authSession';
 import { isSystemAdmin as roleIsSystemAdmin } from '../../utils/auth';
 import { teamApiService } from '../../api/teamApi';
 import * as tasksApi from '../../api/tasksApi';
+import { TASK_CARD_CONFIG } from '../../theme/themeConfig';
 
-// Determine current employee id from stored session
-// (not currently used — kept for future reference)
-// const CURRENT_EMPLOYEE_ID = localStorage.getItem('employeeId') ?? undefined;
-// Use stored employee id as manager id fallback for createdBy when creating tasks
+function truncateText(text: string, limit: number) {
+  if (!text) return '';
+  if (text.length <= limit) return text;
+  return text.substring(0, limit) + '...';
+}
+
 const CURRENT_MANAGER_ID =
   localStorage.getItem('employeeId') ??
   (getStoredUser<Record<string, unknown>>()?.id as string | undefined) ??
@@ -176,6 +178,15 @@ export default function ManagerTaskBoard() {
     return String(err);
   };
 
+  // Local today string in YYYY-MM-DD for `min` attribute on date inputs
+  const todayLocalDateString = (() => {
+    const d = new Date();
+    const yyyy = d.getFullYear();
+    const mm = String(d.getMonth() + 1).padStart(2, '0');
+    const dd = String(d.getDate()).padStart(2, '0');
+    return `${yyyy}-${mm}-${dd}`;
+  })();
+
   // Load all tasks on mount (from API)
   useEffect(() => {
     let mounted = true;
@@ -193,7 +204,7 @@ export default function ManagerTaskBoard() {
       } catch (err) {
         console.error('Failed to fetch tasks:', err);
         // show error snackbar
-        (showError ?? (() => { }))(err as unknown, {
+        (showError ?? (() => {}))(err as unknown, {
           operation: 'fetch',
           resource: 'employee',
         });
@@ -256,11 +267,11 @@ export default function ManagerTaskBoard() {
     ? teams
     : isManager
       ? teams.filter(t => {
-        const mgrId = String(t.managerId ?? '');
-        if (currentUserIdentifiers.includes(mgrId)) return true;
-        const memberIds = (t.memberIds || []).map(String);
-        return memberIds.some(id => currentUserIdentifiers.includes(id));
-      })
+          const mgrId = String(t.managerId ?? '');
+          if (currentUserIdentifiers.includes(mgrId)) return true;
+          const memberIds = (t.memberIds || []).map(String);
+          return memberIds.some(id => currentUserIdentifiers.includes(id));
+        })
       : [];
 
   const visibleTeamIds = visibleTeams.map(t => t.id);
@@ -406,6 +417,20 @@ export default function ManagerTaskBoard() {
       return;
     }
 
+    // Validate deadline is not in the past (if provided)
+    if (formData.deadline) {
+      // compare as local date strings (YYYY-MM-DD)
+      if (String(formData.deadline) < todayLocalDateString) {
+        showError?.(
+          new Error(
+            'Deadline cannot be in the past. Please select today or a future date.'
+          ),
+          { operation: 'create', resource: 'task' }
+        );
+        return;
+      }
+    }
+
     try {
       const payload = tasksApi.mapTaskToApiPayload({
         title: formData.title.trim(),
@@ -453,6 +478,19 @@ export default function ManagerTaskBoard() {
       !formData.assignedTo?.length
     ) {
       return;
+    }
+
+    // Validate deadline is not in the past (if provided)
+    if (formData.deadline) {
+      if (String(formData.deadline) < todayLocalDateString) {
+        showError?.(
+          new Error(
+            'Deadline cannot be in the past. Please select today or a future date.'
+          ),
+          { operation: 'update', resource: 'task' }
+        );
+        return;
+      }
     }
 
     try {
@@ -652,7 +690,8 @@ export default function ManagerTaskBoard() {
           display: 'grid',
           gridTemplateColumns: {
             xs: '1fr',
-            sm: 'repeat(2, 1fr)',
+            sm: 'repeat(3, 1fr)',
+            md: 'repeat(3, 1fr)',
           },
           gap: 2,
           mb: 3,
@@ -831,12 +870,14 @@ export default function ManagerTaskBoard() {
                                   >
                                     {et.title}
                                   </Typography>
-                                  <Typography
-                                    variant='caption'
-                                    color='text.secondary'
-                                  >
-                                    {et.description}
-                                  </Typography>
+                                  <Tooltip title={et.description} arrow>
+                                    <Typography
+                                      variant='caption'
+                                      color='text.secondary'
+                                    >
+                                      {et.description}
+                                    </Typography>
+                                  </Tooltip>
                                 </Box>
                                 <Box display='flex' alignItems='center' gap={1}>
                                   <Chip
@@ -918,6 +959,7 @@ export default function ManagerTaskBoard() {
                 onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
                   setFormData({ ...formData, deadline: e.target.value })
                 }
+                inputProps={{ min: todayLocalDateString }}
                 inputBackgroundColor={undefined}
               />
             ),
@@ -937,39 +979,39 @@ export default function ManagerTaskBoard() {
           // Assign To will be conditionally rendered by AppFormModal only if teamId selected
           ...(formData.teamId
             ? [
-              {
-                name: 'assignedTo',
-                label: 'Assign To',
-                component: (
-                  <AppDropdown
-                    multiple
-                    options={getAvailableMembers(formData.teamId).map(m => ({
-                      value: m.id,
-                      label: m.name,
-                    }))}
-                    value={formData.assignedTo}
-                    onChange={(
-                      e: SelectChangeEvent<string | number | string[]>
-                    ) =>
-                      setFormData({
-                        ...formData,
-                        assignedTo: (e.target.value as string[]) || [],
-                      })
-                    }
-                    placeholder='Assign To'
-                    containerSx={{ width: '100%' }}
-                    showLabel={false}
-                    label={''}
-                  />
-                ),
-                value: formData.assignedTo.join(','),
-                onChange: (v: string | number) =>
-                  setFormData({
-                    ...formData,
-                    assignedTo: String(v).split(',').filter(Boolean),
-                  }),
-              } as unknown as FormField,
-            ]
+                {
+                  name: 'assignedTo',
+                  label: 'Assign To',
+                  component: (
+                    <AppDropdown
+                      multiple
+                      options={getAvailableMembers(formData.teamId).map(m => ({
+                        value: m.id,
+                        label: m.name,
+                      }))}
+                      value={formData.assignedTo}
+                      onChange={(
+                        e: SelectChangeEvent<string | number | string[]>
+                      ) =>
+                        setFormData({
+                          ...formData,
+                          assignedTo: (e.target.value as string[]) || [],
+                        })
+                      }
+                      placeholder='Assign To'
+                      containerSx={{ width: '100%' }}
+                      showLabel={false}
+                      label={''}
+                    />
+                  ),
+                  value: formData.assignedTo.join(','),
+                  onChange: (v: string | number) =>
+                    setFormData({
+                      ...formData,
+                      assignedTo: String(v).split(',').filter(Boolean),
+                    }),
+                } as unknown as FormField,
+              ]
             : []),
         ];
 
@@ -1032,8 +1074,8 @@ export default function ManagerTaskBoard() {
 
             ...(formData.teamId
               ? [
-                //  as unknown as FormField,
-              ]
+                  //  as unknown as FormField,
+                ]
               : []),
             {
               name: 'deadline',
@@ -1048,6 +1090,7 @@ export default function ManagerTaskBoard() {
                     setFormData({ ...formData, deadline: e.target.value })
                   }
                   InputLabelProps={{ shrink: true }}
+                  inputProps={{ min: todayLocalDateString }}
                 />
               ),
               onChange: v => setFormData({ ...formData, deadline: String(v) }),
@@ -1158,9 +1201,14 @@ export default function ManagerTaskBoard() {
                       justifyContent='space-between'
                       alignItems='center'
                     >
-                      <Typography variant='subtitle1' sx={{ fontWeight: 600 }}>
-                        {t.title}
-                      </Typography>
+                      <Tooltip
+                        title={t.title.length > TASK_CARD_CONFIG.TITLE_LIMIT ? t.title : ''}
+                        arrow
+                      >
+                        <Typography variant='subtitle1' sx={{ fontWeight: 600 }}>
+                          {truncateText(t.title, TASK_CARD_CONFIG.TITLE_LIMIT)}
+                        </Typography>
+                      </Tooltip>
                       <Box display='flex' alignItems='center' gap={1}>
                         <Chip
                           label={t.status}
@@ -1169,9 +1217,14 @@ export default function ManagerTaskBoard() {
                         />
                       </Box>
                     </Box>
-                    <Typography variant='body2' color='text.secondary'>
-                      {t.description}
-                    </Typography>
+                    <Tooltip
+                      title={t.description && t.description.length > TASK_CARD_CONFIG.DESCRIPTION_LIMIT ? t.description : ''}
+                      arrow
+                    >
+                      <Typography variant='body2' color='text.secondary' sx={{ wordBreak: 'break-word' }}>
+                        {truncateText(t.description || '', TASK_CARD_CONFIG.DESCRIPTION_LIMIT)}
+                      </Typography>
+                    </Tooltip>
                     {t.deadline && (
                       <Typography variant='caption' color='text.secondary'>
                         Deadline: {formatDate(t.deadline)}

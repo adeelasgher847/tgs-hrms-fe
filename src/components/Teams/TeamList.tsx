@@ -318,6 +318,7 @@ const TeamList: React.FC<TeamListProps> = ({
         >
           {teams.map(team => {
             const isEmployeePoolTeam = team.id === 'employee-pool';
+            const teamDescription = (team.description || '').trim();
             const memberCount = isEmployeePoolTeam
               ? (employeePoolCount ?? 0)
               : (team.teamMembers?.length ??
@@ -447,24 +448,27 @@ const TeamList: React.FC<TeamListProps> = ({
                     </Box>
                   )}
 
-                  {team.description && (
-                    <Typography
-                      variant='body2'
-                      sx={{
-                        color: theme => theme.palette.text.secondary,
-                        mb: 3,
-                        lineHeight: 1.6,
-                        fontSize: 'var(--body-font-size)',
-                        display: '-webkit-box',
-                        WebkitLineClamp: 3,
-                        WebkitBoxOrient: 'vertical',
-                        overflow: 'hidden',
-                        textOverflow: 'ellipsis',
-                        minHeight: { xs: '3.6em', sm: '4.2em' },
-                      }}
-                    >
-                      {team.description}
-                    </Typography>
+                  {teamDescription && (
+                    <Tooltip title={teamDescription} arrow placement='top'>
+                      <Typography
+                        variant='body2'
+                        sx={{
+                          color: theme => theme.palette.text.secondary,
+                          mb: 3,
+                          lineHeight: 1.6,
+                          fontSize: 'var(--body-font-size)',
+                          display: '-webkit-box',
+                          WebkitLineClamp: 3,
+                          WebkitBoxOrient: 'vertical',
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                          minHeight: { xs: '3.6em', sm: '4.2em' },
+                          cursor: 'help',
+                        }}
+                      >
+                        {teamDescription}
+                      </Typography>
+                    </Tooltip>
                   )}
 
                   <Box

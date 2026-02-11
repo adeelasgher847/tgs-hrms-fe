@@ -37,6 +37,7 @@ const AppInputField = React.forwardRef<HTMLDivElement, AppInputFieldProps>(
     // Check if this is a phone input (has PhoneInput in InputProps)
     const isPhoneInput = rest.InputProps?.startAdornment !== undefined;
     const isDateInput = String(rest.type) === 'date';
+    const isFirefox = typeof navigator !== 'undefined' && /firefox/i.test(navigator.userAgent);
 
     const handleAdornmentClick = (e: React.MouseEvent) => {
       e.preventDefault();
@@ -142,16 +143,18 @@ const AppInputField = React.forwardRef<HTMLDivElement, AppInputFieldProps>(
                     rest.InputProps && rest.InputProps.endAdornment ? (
                       rest.InputProps.endAdornment
                     ) : (
-                      <InputAdornment position='end'>
-                        <IconButton
-                          size='small'
-                          onClick={handleAdornmentClick}
-                          aria-label='open date picker'
-                          sx={{ color: theme.palette.text.secondary }}
-                        >
-                          <CalendarTodayIcon fontSize='small' />
-                        </IconButton>
-                      </InputAdornment>
+                      !isFirefox ? (
+                        <InputAdornment position='end'>
+                          <IconButton
+                            size='small'
+                            onClick={handleAdornmentClick}
+                            aria-label='open date picker'
+                            sx={{ color: theme.palette.text.secondary }}
+                          >
+                            <CalendarTodayIcon fontSize='small' />
+                          </IconButton>
+                        </InputAdornment>
+                      ) : null
                     ),
                 }
                 : rest.InputProps

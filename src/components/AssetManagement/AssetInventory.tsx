@@ -15,6 +15,7 @@ import {
   CircularProgress,
   Stack,
   Pagination,
+  Tooltip,
 } from '@mui/material';
 import {
   Add as AddIcon,
@@ -166,18 +167,18 @@ const AssetInventory: React.FC = () => {
           typeof apiAsset.category === 'object'
             ? apiAsset.category
             : {
-              id: apiAsset.category_id || '',
-              name: apiAsset.categoryName || apiAsset.category || '',
-            };
+                id: apiAsset.category_id || '',
+                name: apiAsset.categoryName || apiAsset.category || '',
+              };
 
         // Handle subcategory - can be object or string
         const subcategoryObj = apiAsset.subcategory
           ? typeof apiAsset.subcategory === 'object'
             ? apiAsset.subcategory
             : {
-              id: apiAsset.subcategory_id || '',
-              name: apiAsset.subcategoryName || apiAsset.subcategory || '',
-            }
+                id: apiAsset.subcategory_id || '',
+                name: apiAsset.subcategoryName || apiAsset.subcategory || '',
+              }
           : undefined;
 
         return {
@@ -251,13 +252,18 @@ const AssetInventory: React.FC = () => {
         // If we get less than 25, it's the last page
         const hasMorePages = apiAssets.length === limit;
 
-        // Use backend pagination info if available, otherwise estimate
+        // Use backend pagination info if available, otherwise estimate.
+        // Always use the page we requested so UI shows correct "page X of Y" and list stays in sync.
+        const requestedPage = page || 1;
         if (
           response.pagination &&
           response.pagination.total &&
           response.pagination.totalPages
         ) {
-          setPagination(response.pagination);
+          setPagination({
+            ...response.pagination,
+            page: requestedPage,
+          });
         } else {
           // Fallback: estimate based on current page and records received
           const estimatedTotal = hasMorePages
@@ -267,7 +273,7 @@ const AssetInventory: React.FC = () => {
 
           setPagination({
             total: estimatedTotal,
-            page: page,
+            page: requestedPage,
             limit: (limit || PAGINATION.DEFAULT_PAGE_SIZE) as number,
             totalPages: estimatedTotalPages,
           });
@@ -345,17 +351,21 @@ const AssetInventory: React.FC = () => {
   useEffect(() => {
     let filtered = assets;
 
-    // Search filter
+    // Search filter (name, serial, location, assignedTo, category, subcategory)
     if (searchTerm) {
+      const term = searchTerm.toLowerCase();
       filtered = filtered.filter(
         asset =>
-          asset.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          asset.serialNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          asset.location.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          asset.name.toLowerCase().includes(term) ||
+          asset.serialNumber.toLowerCase().includes(term) ||
+          asset.location.toLowerCase().includes(term) ||
           (asset.assignedToName &&
-            asset.assignedToName
-              .toLowerCase()
-              .includes(searchTerm.toLowerCase()))
+            asset.assignedToName.toLowerCase().includes(term)) ||
+          resolveCategoryName(asset).toLowerCase().includes(term) ||
+          (resolveSubcategoryName(asset) || '').toLowerCase().includes(term) ||
+          (asset.category?.requestedItem || '')
+            .toLowerCase()
+            .includes(term)
       );
     }
 
@@ -628,22 +638,47 @@ const AssetInventory: React.FC = () => {
     };
   }, [statusCounts, pagination.total]);
 
+  // When filters/search are active, show filtered count in pagination summary (fixes HR role seeing wrong total)
+  const hasActiveFilters =
+    searchTerm.trim() !== '' || !!filters.status || !!filters.category;
+  const displayPagination = useMemo(
+    () =>
+      hasActiveFilters
+        ? {
+          total: filteredAssets.length,
+          totalPages: 1,
+          page: 1,
+          limit: pagination.limit,
+        }
+        : pagination,
+    [
+      hasActiveFilters,
+      filteredAssets.length,
+      pagination.total,
+      pagination.page,
+      pagination.limit,
+      pagination.totalPages,
+    ]
+  );
+
   const handlePageChange = (
     event: React.ChangeEvent<unknown>,
-    page: number
+    newPage: number
   ) => {
-    // Page change is not initial load, so pass false
-    fetchAssets(page, pagination.limit, false);
+    // Update page in state immediately so "Showing page X of Y" and pagination control update
+    setPagination(prev => ({ ...prev, page: newPage }));
+    // Fetch the new page data (list will update when response arrives)
+    fetchAssets(newPage, pagination.limit, false);
   };
 
   // Modal form helpers for AppFormModal
   const hasFormChanges = editingAsset
     ? // compare simple fields for edit
-    formName !== (editingAsset.name || '') ||
-    formCategoryId !== resolveCategoryId(editingAsset) ||
-    formSubcategory !== (editingAsset.subcategoryId || '')
+      formName !== (editingAsset.name || '') ||
+      formCategoryId !== resolveCategoryId(editingAsset) ||
+      formSubcategory !== (editingAsset.subcategoryId || '')
     : // for create, require name and category selected
-    formName.trim() !== '' && formCategoryId !== '';
+      formName.trim() !== '' && formCategoryId !== '';
 
   const onFormSubmit = () => {
     // Format purchase date as YYYY-MM-DD
@@ -696,9 +731,9 @@ const AssetInventory: React.FC = () => {
           ? apiSubcategories
           : formCategoryId
             ? getSubcategoriesByCategoryId(formCategoryId).map(s => ({
-              value: s,
-              label: s,
-            }))
+                value: s,
+                label: s,
+              }))
             : [],
       onChange: (v: string | number) => setFormSubcategory(String(v)),
     },
@@ -773,7 +808,7 @@ const AssetInventory: React.FC = () => {
           />
         </LocalizationProvider>
       ),
-      onChange: () => { },
+      onChange: () => {},
     },
   ];
 
@@ -1050,7 +1085,7 @@ const AssetInventory: React.FC = () => {
               <TableCell>Status</TableCell>
               <TableCell>Assigned To</TableCell>
               <TableCell>Purchase Date</TableCell>
-              {!hideActions && <TableCell align='right'>Actions</TableCell>}
+              {!hideActions && <TableCell align='center'>Actions</TableCell>}
             </TableRow>
           </TableHead>
           <TableBody>
@@ -1067,9 +1102,21 @@ const AssetInventory: React.FC = () => {
                 <TableRow key={asset.id} hover>
                   <TableCell>
                     <Box>
-                      <Typography variant='body2' fontWeight={500}>
-                        {asset.name}
-                      </Typography>
+                      <Box sx={{ maxWidth: 200 }}>
+                        <Tooltip title={asset.name} placement='top'>
+                          <Typography
+                            variant='body2'
+                            fontWeight={500}
+                            sx={{
+                              whiteSpace: 'nowrap',
+                              overflow: 'hidden',
+                              textOverflow: 'ellipsis',
+                            }}
+                          >
+                            {asset.name}
+                          </Typography>
+                        </Tooltip>
+                      </Box>
                       {asset.description && (
                         <Typography variant='caption' color='text.secondary'>
                           {asset.description}
@@ -1123,50 +1170,20 @@ const AssetInventory: React.FC = () => {
                       <Box
                         sx={{
                           display: 'flex',
-                          gap: { xs: 0.5, sm: 1 },
+                          gap: 0,
                           justifyContent: 'center',
                         }}
                       >
-                        <IconButton
-                          size='small'
-                          onClick={() => handleEditAsset(asset)}
-                          title={`Edit ${asset.name}`}
-                          aria-label={`Edit asset ${asset.name}`}
-                          sx={{ p: { xs: 0.5, sm: 1 } }}
-                        >
-                          {roleIsManager() ? (
-                            <Icon
-                              name='edit'
-                              sx={{
-                                width: { xs: 16, sm: 20 },
-                                height: { xs: 16, sm: 20 },
-                              }}
-                            />
-                          ) : (
-                            <Box
-                              component='img'
-                              src={Icons.edit}
-                              alt='Edit'
-                              sx={{
-                                width: { xs: 16, sm: 20 },
-                                height: { xs: 16, sm: 20 },
-                              }}
-                            />
-                          )}
-                        </IconButton>
-
-                        {/** Only show delete when the user is not HR admin (match Designation behaviour) */}
-                        {!isHRAdmin(userRole) && (
+                        <Tooltip title='Edit' arrow>
                           <IconButton
                             size='small'
-                            onClick={() => handleDeleteAsset(asset)}
-                            title={`Delete ${asset.name}`}
-                            aria-label={`Delete asset ${asset.name}`}
+                            onClick={() => handleEditAsset(asset)}
+                            aria-label={`Edit asset ${asset.name}`}
                             sx={{ p: { xs: 0.5, sm: 1 } }}
                           >
                             {roleIsManager() ? (
                               <Icon
-                                name='delete'
+                                name='edit'
                                 sx={{
                                   width: { xs: 16, sm: 20 },
                                   height: { xs: 16, sm: 20 },
@@ -1175,8 +1192,8 @@ const AssetInventory: React.FC = () => {
                             ) : (
                               <Box
                                 component='img'
-                                src={Icons.delete}
-                                alt='Delete'
+                                src={Icons.edit}
+                                alt='Edit'
                                 sx={{
                                   width: { xs: 16, sm: 20 },
                                   height: { xs: 16, sm: 20 },
@@ -1184,6 +1201,38 @@ const AssetInventory: React.FC = () => {
                               />
                             )}
                           </IconButton>
+                        </Tooltip>
+
+                        {/** Only show delete when the user is not HR admin (match Designation behaviour) */}
+                        {!isHRAdmin(userRole) && (
+                          <Tooltip title='Delete' arrow>
+                            <IconButton
+                              size='small'
+                              onClick={() => handleDeleteAsset(asset)}
+                              aria-label={`Delete asset ${asset.name}`}
+                              sx={{ p: { xs: 0.5, sm: 1 } }}
+                            >
+                              {roleIsManager() ? (
+                                <Icon
+                                  name='delete'
+                                  sx={{
+                                    width: { xs: 16, sm: 20 },
+                                    height: { xs: 16, sm: 20 },
+                                  }}
+                                />
+                              ) : (
+                                <Box
+                                  component='img'
+                                  src={Icons.delete}
+                                  alt='Delete'
+                                  sx={{
+                                    width: { xs: 16, sm: 20 },
+                                    height: { xs: 16, sm: 20 },
+                                  }}
+                                />
+                              )}
+                            </IconButton>
+                          </Tooltip>
                         )}
                       </Box>
                     </TableCell>
@@ -1196,11 +1245,11 @@ const AssetInventory: React.FC = () => {
       </AppCard>
 
       {/* Pagination */}
-      {pagination.totalPages > 1 && (
+      {displayPagination.totalPages > 1 && (
         <Box sx={{ display: 'flex', justifyContent: 'center', mt: 3 }}>
           <Pagination
-            count={pagination.totalPages}
-            page={pagination.page}
+            count={displayPagination.totalPages}
+            page={displayPagination.page}
             onChange={handlePageChange}
             color='primary'
             showFirstButton
@@ -1209,12 +1258,12 @@ const AssetInventory: React.FC = () => {
         </Box>
       )}
 
-      {/* Pagination Info */}
-      {assets.length > 0 && (
+      {/* Pagination Info - total records = count on current page (updates when page changes) */}
+      {(assets.length > 0 || filteredAssets.length > 0) && (
         <Box display='flex' justifyContent='center' mt={1}>
           <Typography variant='body2' color='textSecondary'>
-            Showing page {pagination.page} of {pagination.totalPages} (
-            {pagination.total} total records)
+            Showing page {displayPagination.page} of {displayPagination.totalPages} (
+            {filteredAssets.length} total records)
           </Typography>
         </Box>
       )}

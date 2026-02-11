@@ -121,22 +121,7 @@ const LeaveForm: React.FC<LeaveFormProps> = ({
     }
   };
 
-  const handleDocumentReplace = (
-    type: 'existing' | 'new',
-    index: number,
-    file: File
-  ) => {
-    if (type === 'existing') {
-      // Remove existing document and add new file
-      const docUrl = existingDocuments[index];
-      setExistingDocuments(prev => prev.filter((_, i) => i !== index));
-      setDocumentsToRemove(prev => [...prev, docUrl]);
-      setDocuments(prev => [...prev, file]);
-    } else {
-      // Replace new file
-      setDocuments(prev => prev.map((f, i) => (i === index ? file : f)));
-    }
-  };
+
 
   /* ------------------ SUBMIT ------------------ */
   const handleSubmit = async (e: React.FormEvent) => {
@@ -281,7 +266,9 @@ const LeaveForm: React.FC<LeaveFormProps> = ({
           }
           options={leaveTypes.map(type => ({
             value: type.id,
-            label: type.name,
+            label: type.name
+              ? type.name.charAt(0).toUpperCase() + type.name.slice(1)
+              : type.name,
           }))}
           disabled={loadingLeaveTypes}
           containerSx={{ width: '100%' }}
@@ -413,7 +400,7 @@ const LeaveForm: React.FC<LeaveFormProps> = ({
             newDocuments={documents}
             onDocumentsChange={handleDocumentsChange}
             onDocumentRemove={handleDocumentRemove}
-            onDocumentReplace={handleDocumentReplace}
+
             multiple
             accept='image/*'
           />

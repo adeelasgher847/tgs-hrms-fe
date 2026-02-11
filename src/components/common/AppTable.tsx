@@ -45,7 +45,7 @@ export function AppTable({
         color: theme.palette.common.white,
         backgroundColor:
           theme.palette.mode === 'dark' ? 'var(--primary-dark-color)' : 'var(--primary-light-color)',
-        whiteSpace: { xs: 'nowrap', sm: 'normal' },
+        whiteSpace: 'nowrap',
       },
     },
 
@@ -60,6 +60,17 @@ export function AppTable({
         whiteSpace: { xs: 'nowrap', sm: 'normal' },
         backgroundColor: theme.palette.background.paper,
       },
+    },
+    '& .MuiTableCell-root[data-truncate="true"]': {
+      maxWidth: 200,
+      overflow: 'hidden',
+      textOverflow: 'ellipsis',
+      whiteSpace: 'nowrap',
+    },
+    '& .MuiTableCell-root[data-truncate="true"] .MuiTypography-root': {
+      overflow: 'hidden',
+      textOverflow: 'ellipsis',
+      whiteSpace: 'nowrap',
     },
   };
 

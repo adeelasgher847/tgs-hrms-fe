@@ -37,7 +37,7 @@ import icon from 'leaflet/dist/images/marker-icon.png';
 import iconShadow from 'leaflet/dist/images/marker-shadow.png';
 import type { Geofence } from '../../types/geofencing';
 import { geofencingApi } from '../../api/geofencingApi';
-import { teamApiService } from '../../api/teamApi';
+import { teamApiService, type Team } from '../../api/teamApi';
 import { UserContext } from '../../context/UserContext';
 import { isManager, isHRAdmin, isAdmin } from '../../utils/roleUtils';
 import AppPageTitle from '../common/AppPageTitle';
@@ -76,7 +76,9 @@ const GeofencingManagement = () => {
   const [deletingGeofence, setDeletingGeofence] = useState<Geofence | null>(
     null
   );
-  const [managerTeams, setManagerTeams] = useState<any[]>([]);
+  const [managerTeams, setManagerTeams] = useState<
+    Array<{ id: string; name?: string }>
+  >([]);
   const userContext = useContext(UserContext);
   const [formModalOpen, setFormModalOpen] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -203,8 +205,6 @@ const GeofencingManagement = () => {
     }
   };
 
-
-
   if (loading) {
     return (
       <Box
@@ -254,9 +254,7 @@ const GeofencingManagement = () => {
 
       {/* Geofence List */}
       {geofences.length === 0 ? (
-        <Alert severity='info'>
-          No geofences created yet.
-        </Alert>
+        <Alert severity='info'>No geofences created yet.</Alert>
       ) : (
         <Box
           sx={{
@@ -273,8 +271,9 @@ const GeofencingManagement = () => {
                 display: 'flex',
                 flexDirection: 'column',
                 height: '100%',
-                borderLeft: `4px solid ${geofence.isActive ? '#3083dc' : '#888'
-                  }`,
+                borderLeft: `4px solid ${
+                  geofence.isActive ? '#3083dc' : '#888'
+                }`,
               }}
             >
               <Box sx={{ flex: 1 }}>
@@ -303,9 +302,10 @@ const GeofencingManagement = () => {
                 <Typography variant='caption' color='text.secondary'>
                   Type: {geofence.type} | Created:{' '}
                   {new Date(geofence.createdAt).toLocaleDateString()}
-                  {geofence.threshold_enabled && geofence.threshold_distance && (
-                    <> | Threshold: {geofence.threshold_distance}m</>
-                  )}
+                  {geofence.threshold_enabled &&
+                    geofence.threshold_distance && (
+                      <> | Threshold: {geofence.threshold_distance}m</>
+                    )}
                 </Typography>
               </Box>
               <Box display='flex' gap={1} mt={2} justifyContent='flex-end'>
@@ -530,7 +530,10 @@ const GeofencingManagement = () => {
                     attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
                     url='https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png'
                   />
-                  <MapController center={getDisplayCenter(viewingGeofence)} zoom={15} />
+                  <MapController
+                    center={getDisplayCenter(viewingGeofence)}
+                    zoom={15}
+                  />
 
                   <Marker position={getDisplayCenter(viewingGeofence)}>
                     <Popup>
