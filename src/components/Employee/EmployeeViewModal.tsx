@@ -14,6 +14,7 @@ import {
 } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
 import { useOutletContext } from 'react-router-dom';
+import { AppOutletContext } from '../../types/outletContexts';
 import { env } from '../../config/env';
 import AppButton from '../common/AppButton';
 import AppCard from '../common/AppCard';
@@ -61,10 +62,6 @@ interface EmployeeViewModalProps {
   employee: Employee | null;
 }
 
-interface OutletContext {
-  darkMode: boolean;
-  language: 'en' | 'ar';
-}
 
 const EmployeeViewModal: React.FC<EmployeeViewModalProps> = ({
   open,
@@ -73,7 +70,7 @@ const EmployeeViewModal: React.FC<EmployeeViewModalProps> = ({
 }) => {
   const theme = useTheme();
   const direction = theme.direction;
-  const { darkMode } = useOutletContext<OutletContext>();
+  const { darkMode } = useOutletContext<AppOutletContext>();
 
   const bgColor = darkMode ? '#111' : '#fff';
   const textColor = darkMode ? '#8f8f8f' : '#000';

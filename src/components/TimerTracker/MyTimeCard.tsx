@@ -7,15 +7,12 @@ import timesheetApi, { type TimesheetEntry } from '../../api/timesheetApi';
 import attendanceApi from '../../api/attendanceApi';
 import { Link as RouterLink } from 'react-router-dom';
 import { useOutletContext } from 'react-router-dom';
+import type { AppOutletContext } from '../../types/outletContexts';
 import { useErrorHandler } from '../../hooks/useErrorHandler';
 import ErrorSnackbar from '../common/ErrorSnackbar';
 import AppButton from '../common/AppButton';
 import AppCard from '../common/AppCard';
 
-interface OutletContext {
-  darkMode: boolean;
-  language: 'en' | 'ar';
-}
 
 interface MyTimerCardProps {
   /**
@@ -28,7 +25,7 @@ interface MyTimerCardProps {
 const MyTimerCard: React.FC<MyTimerCardProps> = ({
   attendanceRefreshToken,
 }) => {
-  const { darkMode } = useOutletContext<OutletContext>();
+  const { darkMode } = useOutletContext<AppOutletContext>();
   const [currentSession, setCurrentSession] = useState<TimesheetEntry | null>(
     null
   );
@@ -313,7 +310,6 @@ const MyTimerCard: React.FC<MyTimerCardProps> = ({
   return (
     <>
       <AppCard
-        noShadow
         sx={{
           background: darkMode ? '#1e1e1e' : '#ffffff',
           borderRadius: 1,

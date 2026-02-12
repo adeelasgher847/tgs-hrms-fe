@@ -15,6 +15,7 @@ import { PhoneInput } from 'react-international-phone';
 import 'react-international-phone/style.css';
 import '../UserProfile/PhoneInput.css';
 import { useOutletContext } from 'react-router-dom';
+import { AppOutletContext } from '../../types/outletContexts';
 import { env } from '../../config/env';
 import type { EmployeeDto } from '../../api/employeeApi';
 import {
@@ -97,10 +98,6 @@ interface AddEmployeeFormProps {
   onDeleteDocument?: (type: 'profile' | 'cnicFront' | 'cnicBack', url: string) => Promise<void>;
 }
 
-interface OutletContext {
-  darkMode: boolean;
-  language: 'en' | 'ar';
-}
 
 // Component
 const AddEmployeeForm: React.FC<AddEmployeeFormProps> = ({
@@ -111,7 +108,7 @@ const AddEmployeeForm: React.FC<AddEmployeeFormProps> = ({
 }) => {
   const theme = useTheme();
   const isSm = useMediaQuery(theme.breakpoints.down('sm'));
-  const { language } = useOutletContext<OutletContext>();
+  const { language } = useOutletContext<AppOutletContext>();
 
   const API_BASE_URL = env.apiBaseUrl;
   const toAbsoluteUrl = (path?: string | null) => {
