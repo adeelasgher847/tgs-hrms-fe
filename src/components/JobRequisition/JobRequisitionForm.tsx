@@ -4,8 +4,7 @@ import {
   useMediaQuery,
   useTheme,
 } from '@mui/material';
-import { useOutletContext } from 'react-router-dom';
-import type { AppOutletContext } from '../../types/outletContexts';
+import { useQuery } from '@tanstack/react-query';
 import AppButton from '../common/AppButton';
 import AppInputField from '../common/AppInputField';
 import AppDropdown from '../common/AppDropdown';
@@ -80,7 +79,6 @@ const JobRequisitionForm = forwardRef<{ submit: () => void }, JobRequisitionForm
   }, ref) => {
   const theme = useTheme();
   const isSm = useMediaQuery(theme.breakpoints.down('sm'));
-  const { language } = useOutletContext<AppOutletContext>();
 
   const defaultValues: FormValues = {
     jobTitle: initialData?.jobTitle || '',
@@ -102,49 +100,43 @@ const JobRequisitionForm = forwardRef<{ submit: () => void }, JobRequisitionForm
   const [departments, setDepartments] = useState<Department[]>([]);
   const [managers, setManagers] = useState<Manager[]>([]);
   const [generalError, setGeneralError] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [loadingDepartments, setLoadingDepartments] = useState(false);
-  const [loadingManagers, setLoadingManagers] = useState(false);
 
-  const dir = language === 'ar' ? 'rtl' : 'ltr';
-  const label = (en: string, ar: string) => (language === 'ar' ? ar : en);
+  // TanStack Query for fetching departments
+  const { data: depts, isLoading: loadingDepartments } = useQuery({
+    queryKey: ['departments'],
+    queryFn: () => departmentApiService.getAllDepartments(),
+  });
 
-  // Load departments and managers
+  // TanStack Query for fetching employees
+  const { data: emps, isLoading: loadingManagers } = useQuery({
+    queryKey: ['employees'],
+    queryFn: () => employeeApi.getAllEmployeesWithoutPagination(),
+  });
+
+  // Sync departments data when query completes
   useEffect(() => {
-    const loadData = async () => {
-      try {
-        setLoading(true);
-        const [depts, emps] = await Promise.all([
-          departmentApiService.getAllDepartments(),
-          employeeApi.getAllEmployeesWithoutPagination(),
-        ]);
+    if (depts) {
+      setDepartments(
+        (depts || []).map((dept: any) => ({
+          id: dept.id,
+          name: dept.name,
+        }))
+      );
+    }
+  }, [depts]);
 
-        setDepartments(
-          (depts || []).map((dept: any) => ({
-            id: dept.id,
-            name: dept.name,
-          }))
-        );
-
-        // Extract unique managers from employees
-        const uniqueManagers = new Map<string, Manager>();
-        if (emps) {
-          emps.forEach((emp: any) => {
-            if (emp.id && emp.name) {
-              uniqueManagers.set(emp.id, { id: emp.id, name: emp.name });
-            }
-          });
+  // Sync managers data when query completes
+  useEffect(() => {
+    if (emps) {
+      const uniqueManagers = new Map<string, Manager>();
+      emps.forEach((emp: any) => {
+        if (emp.id && emp.name) {
+          uniqueManagers.set(emp.id, { id: emp.id, name: emp.name });
         }
-        setManagers(Array.from(uniqueManagers.values()));
-      } catch (error) {
-        console.error('Error loading form data:', extractErrorMessage(error));
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    loadData();
-  }, []);
+      });
+      setManagers(Array.from(uniqueManagers.values()));
+    }
+  }, [emps]);
 
   // react-hook-form setup
   const { control, handleSubmit, setError, clearErrors, formState: { errors }, watch, getValues } = useForm<FormValues>({
@@ -214,7 +206,7 @@ const JobRequisitionForm = forwardRef<{ submit: () => void }, JobRequisitionForm
     if (!v.jobTitle?.toString().trim()) return false;
     if (!v.departmentId || v.departmentId === 'all') return false;
     if (!v.reportingManagerId || v.reportingManagerId === 'all') return false;
-    if (Number(v.numberOfOpenings) < 1) return false;
+    if (Number(v.numberOfOpenings ?? 0) < 1) return false;
     if (!v.jobDescription?.toString().trim()) return false;
     if (!v.responsibilities?.toString().trim()) return false;
     if (!v.requiredSkills?.toString().trim()) return false;
@@ -226,15 +218,15 @@ const JobRequisitionForm = forwardRef<{ submit: () => void }, JobRequisitionForm
     clearErrors();
 
     if (data.budgetedSalaryMin && isNaN(Number(data.budgetedSalaryMin))) {
-      setError('budgetedSalaryMin', { type: 'manual', message: label('Must be a valid number', 'يجب أن يكون رقمًا صحيحًا') });
+      setError('budgetedSalaryMin', { type: 'manual', message: 'Must be a valid number' });
       return;
     }
     if (data.budgetedSalaryMax && isNaN(Number(data.budgetedSalaryMax))) {
-      setError('budgetedSalaryMax', { type: 'manual', message: label('Must be a valid number', 'يجب أن يكون رقمًا صحيحًا') });
+      setError('budgetedSalaryMax', { type: 'manual', message: 'Must be a valid number' });
       return;
     }
     if (data.budgetedSalaryMin && data.budgetedSalaryMax && Number(data.budgetedSalaryMin) > Number(data.budgetedSalaryMax)) {
-      setError('budgetedSalaryMin', { type: 'manual', message: label('Minimum salary cannot exceed maximum salary', 'الحد الأدنى للراتب لا يمكن أن يتجاوز الحد الأقصى') });
+      setError('budgetedSalaryMin', { type: 'manual', message: 'Minimum salary cannot exceed maximum salary' });
       return;
     }
 
@@ -266,7 +258,7 @@ const JobRequisitionForm = forwardRef<{ submit: () => void }, JobRequisitionForm
     },
   }));
   return (
-    <Box component='form' onSubmit={handleSubmit(onSubmitInternal)} dir={dir}>
+    <Box component='form' onSubmit={handleSubmit(onSubmitInternal)} dir="ltr">
       {/* General Error Display */}
       {generalError && (
         <Box
@@ -288,15 +280,15 @@ const JobRequisitionForm = forwardRef<{ submit: () => void }, JobRequisitionForm
           <Controller
             name='jobTitle'
             control={control}
-            rules={{ required: label('Job title is required', 'المسمى الوظيفي مطلوب') }}
+            rules={{ required: 'Job title is required' }}
             render={({ field }) => (
               <AppInputField
-                label={label('Job Title', 'المسمى الوظيفي')}
+                label='Job Title'
                 value={field.value}
                 onChange={(e: any) => field.onChange(e.target ? e.target.value : e)}
                 error={!!errors.jobTitle}
                 helperText={errors.jobTitle?.message as string}
-                placeholder={label('Enter job title', 'أدخل المسمى الوظيفي')}
+                placeholder='Enter job title'
                 inputBackgroundColor={controlBg}
               />
             )}
@@ -309,23 +301,23 @@ const JobRequisitionForm = forwardRef<{ submit: () => void }, JobRequisitionForm
             name='departmentId'
             control={control}
             rules={{
-              validate: (v: string) => (v && v !== 'all') || label('Department is required', 'القسم مطلوب'),
+              validate: (v: string) => (v && v !== 'all') || 'Department is required',
             }}
             render={({ field }) => (
               <AppDropdown
-                label={label('Department', 'القسم')}
+                label='Department'
                 value={field.value || 'all'}
                 onChange={(e: SelectChangeEvent<string | number | string[]>) => field.onChange(Array.isArray(e.target.value) ? e.target.value[0] : e.target.value)}
                 error={!!errors.departmentId}
                 helperText={errors.departmentId?.message as string}
                 disabled={loadingDepartments}
                 inputBackgroundColor={controlBg}
-                placeholder={label('Select department', 'اختر القسم')}
+                placeholder='Select department'
                 sx={dropdownControlSx}
                 options={[
                   {
                     value: 'all',
-                    label: departments.length === 0 ? label('No departments', 'لا توجد أقسام') : label('Select department', 'اختر القسم'),
+                    label: departments.length === 0 ? 'No departments' : 'Select department',
                   },
                   ...departments.map(dept => ({ value: dept.id, label: dept.name })),
                 ]}
@@ -340,21 +332,21 @@ const JobRequisitionForm = forwardRef<{ submit: () => void }, JobRequisitionForm
             name='reportingManagerId'
             control={control}
             rules={{
-              validate: (v: string) => (v && v !== 'all') || label('Reporting manager is required', 'المدير المباشر مطلوب'),
+              validate: (v: string) => (v && v !== 'all') || 'Reporting manager is required',
             }}
             render={({ field }) => (
               <AppDropdown
-                label={label('Reporting Manager', 'المدير المباشر')}
+                label='Reporting Manager'
                 value={field.value || 'all'}
                 onChange={(e: SelectChangeEvent<string | number | string[]>) => field.onChange(Array.isArray(e.target.value) ? e.target.value[0] : e.target.value)}
                 error={!!errors.reportingManagerId}
                 helperText={errors.reportingManagerId?.message as string}
                 disabled={loadingManagers}
                 inputBackgroundColor={controlBg}
-                placeholder={label('Select manager', 'اختر المدير')}
+                placeholder='Select manager'
                 sx={dropdownControlSx}
                 options={[
-                  { value: 'all', label: managers.length === 0 ? label('No managers', 'لا يوجد مديرين') : label('Select manager', 'اختر المدير') },
+                  { value: 'all', label: managers.length === 0 ? 'No managers' : 'Select manager' },
                   ...managers.map(mgr => ({ value: mgr.id, label: mgr.name })),
                 ]}
               />
@@ -369,15 +361,15 @@ const JobRequisitionForm = forwardRef<{ submit: () => void }, JobRequisitionForm
             control={control}
             render={({ field }) => (
               <AppDropdown
-                label={label('Employment Type', 'نوع التوظيف')}
+                label='Employment Type'
                 value={field.value || ''}
                 onChange={(e: SelectChangeEvent<string | number | string[]>) => field.onChange(Array.isArray(e.target.value) ? e.target.value[0] : e.target.value)}
                 error={!!errors.employmentType}
                 helperText={errors.employmentType?.message as string}
                 inputBackgroundColor={controlBg}
-                placeholder={label('Select employment type', 'اختر نوع التوظيف')}
+                placeholder='Select employment type'
                 sx={dropdownControlSx}
-                options={[{ value: 'all', label: label('Select type', 'اختر النوع') }, ...employmentTypeOptions.map(opt => ({ value: opt.value, label: opt.label }))]}
+                options={[{ value: 'all', label: 'Select type' }, ...employmentTypeOptions.map(opt => ({ value: opt.value, label: opt.label }))]}
               />
             )}
           />
@@ -390,15 +382,15 @@ const JobRequisitionForm = forwardRef<{ submit: () => void }, JobRequisitionForm
             control={control}
             render={({ field }) => (
               <AppDropdown
-                label={label('Work Location', 'مكان العمل')}
+                label='Work Location'
                 value={field.value || ''}
                 onChange={(e: SelectChangeEvent<string | number | string[]>) => field.onChange(Array.isArray(e.target.value) ? e.target.value[0] : e.target.value)}
                 error={!!errors.workLocation}
                 helperText={errors.workLocation?.message as string}
                 inputBackgroundColor={controlBg}
-                placeholder={label('Select location', 'اختر الموقع')}
+                placeholder='Select location'
                 sx={dropdownControlSx}
-                options={[{ value: 'all', label: label('Select location', 'اختر الموقع') }, ...workLocationOptions.map(opt => ({ value: opt.value, label: opt.label }))]}
+                options={[{ value: 'all', label: 'Select location' }, ...workLocationOptions.map(opt => ({ value: opt.value, label: opt.label }))]}
               />
             )}
           />
@@ -409,16 +401,16 @@ const JobRequisitionForm = forwardRef<{ submit: () => void }, JobRequisitionForm
           <Controller
             name='numberOfOpenings'
             control={control}
-            rules={{ min: { value: 1, message: label('Must be at least 1', 'يجب أن يكون على الأقل 1') } }}
+            rules={{ min: { value: 1, message: 'Must be at least 1' } }}
             render={({ field }) => (
               <AppInputField
-                label={label('Number of Openings', 'عدد الفرص المتاحة')}
+                label='Number of Openings'
                 type='number'
                 value={field.value as any}
                 onChange={(e: any) => field.onChange(e.target ? e.target.value : e)}
                 error={!!errors.numberOfOpenings}
                 helperText={errors.numberOfOpenings?.message as string}
-                placeholder={label('Number of openings', 'عدد الفرص')}
+                placeholder='Number of openings'
                 inputBackgroundColor={controlBg}
               />
             )}
@@ -432,13 +424,13 @@ const JobRequisitionForm = forwardRef<{ submit: () => void }, JobRequisitionForm
             control={control}
             render={({ field }) => (
               <AppInputField
-                label={label('Budgeted Salary (Min)', 'الحد الأدنى للراتب')}
+                label='Budgeted Salary (Min)'
                 type='number'
                 value={field.value as any}
                 onChange={(e: any) => field.onChange(e.target ? e.target.value : e)}
                 error={!!errors.budgetedSalaryMin}
                 helperText={errors.budgetedSalaryMin?.message as string}
-                placeholder={label('Minimum salary', 'الحد الأدنى')}
+                placeholder='Minimum salary'
                 inputBackgroundColor={controlBg}
               />
             )}
@@ -452,13 +444,13 @@ const JobRequisitionForm = forwardRef<{ submit: () => void }, JobRequisitionForm
             control={control}
             render={({ field }) => (
               <AppInputField
-                label={label('Budgeted Salary (Max)', 'الحد الأقصى للراتب')}
+                label='Budgeted Salary (Max)'
                 type='number'
                 value={field.value as any}
                 onChange={(e: any) => field.onChange(e.target ? e.target.value : e)}
                 error={!!errors.budgetedSalaryMax}
                 helperText={errors.budgetedSalaryMax?.message as string}
-                placeholder={label('Maximum salary', 'الحد الأقصى')}
+                placeholder='Maximum salary'
                 inputBackgroundColor={controlBg}
               />
             )}
@@ -470,15 +462,15 @@ const JobRequisitionForm = forwardRef<{ submit: () => void }, JobRequisitionForm
           <Controller
             name='jobDescription'
             control={control}
-            rules={{ required: label('Job description is required', 'وصف الوظيفة مطلوب') }}
+            rules={{ required: 'Job description is required' }}
             render={({ field }) => (
               <AppInputField
-                label={label('Job Description', 'وصف الوظيفة')}
+                label='Job Description'
                 value={field.value}
                 onChange={(e: any) => field.onChange(e.target ? e.target.value : e)}
                 error={!!errors.jobDescription}
                 helperText={errors.jobDescription?.message as string}
-                placeholder={label('Provide a detailed job description...', 'قدم وصفًا تفصيليًا للوظيفة...')}
+                placeholder='Provide a detailed job description...'
                 inputBackgroundColor={controlBg}
                 multiline
                 rows={4}
@@ -492,15 +484,15 @@ const JobRequisitionForm = forwardRef<{ submit: () => void }, JobRequisitionForm
           <Controller
             name='responsibilities'
             control={control}
-            rules={{ required: label('Responsibilities are required', 'المسؤوليات مطلوبة') }}
+            rules={{ required: 'Responsibilities are required' }}
             render={({ field }) => (
               <AppInputField
-                label={label('Key Responsibilities', 'المسؤوليات الرئيسية')}
+                label='Key Responsibilities'
                 value={field.value}
                 onChange={(e: any) => field.onChange(e.target ? e.target.value : e)}
                 error={!!errors.responsibilities}
                 helperText={errors.responsibilities?.message as string}
-                placeholder={label('List key responsibilities (one per line or comma-separated)...', 'قائمة المسؤوليات الرئيسية (واحد لكل سطر أو مفصول بفواصل)...')}
+                placeholder='List key responsibilities (one per line or comma-separated)...'
                 inputBackgroundColor={controlBg}
                 multiline
                 rows={4}
@@ -514,15 +506,15 @@ const JobRequisitionForm = forwardRef<{ submit: () => void }, JobRequisitionForm
           <Controller
             name='requiredSkills'
             control={control}
-            rules={{ required: label('Required skills are required', 'المهارات المطلوبة مطلوبة') }}
+            rules={{ required: 'Required skills are required' }}
             render={({ field }) => (
               <AppInputField
-                label={label('Required Skills', 'المهارات المطلوبة')}
+                label='Required Skills'
                 value={field.value}
                 onChange={(e: any) => field.onChange(e.target ? e.target.value : e)}
                 error={!!errors.requiredSkills}
                 helperText={errors.requiredSkills?.message as string}
-                placeholder={label('List required skills (one per line or comma-separated)...', 'قائمة المهارات المطلوبة (واحد لكل سطر أو مفصول بفواصل)...')}
+                placeholder='List required skills (one per line or comma-separated)...'
                 inputBackgroundColor={controlBg}
                 multiline
                 rows={3}
@@ -538,12 +530,12 @@ const JobRequisitionForm = forwardRef<{ submit: () => void }, JobRequisitionForm
             control={control}
             render={({ field }) => (
               <AppInputField
-                label={label('Required Experience', 'الخبرة المطلوبة')}
+                label='Required Experience'
                 value={field.value}
                 onChange={(e: any) => field.onChange(e.target ? e.target.value : e)}
                 error={!!errors.requiredExperience}
                 helperText={errors.requiredExperience?.message as string}
-                placeholder={label('Describe required experience, education, and certifications...', 'وصف الخبرة والتعليم والشهادات المطلوبة...')}
+                placeholder='Describe required experience, education, and certifications...'
                 inputBackgroundColor={controlBg}
                 multiline
                 rows={3}
@@ -559,12 +551,12 @@ const JobRequisitionForm = forwardRef<{ submit: () => void }, JobRequisitionForm
             control={control}
             render={({ field }) => (
               <AppInputField
-                label={label('Justification for Hire', 'تبرير التوظيف')}
+                label='Justification for Hire'
                 value={field.value}
                 onChange={(e: any) => field.onChange(e.target ? e.target.value : e)}
                 error={!!errors.justificationForHire}
                 helperText={errors.justificationForHire?.message as string}
-                placeholder={label('Explain why this hire is needed (new role / replacement / expansion)...', 'اشرح سبب الحاجة إلى هذا التوظيف (دور جديد / استبدال / توسع)...')}
+                placeholder='Explain why this hire is needed (new role / replacement / expansion)...'
                 inputBackgroundColor={controlBg}
                 multiline
                 rows={3}
@@ -578,9 +570,7 @@ const JobRequisitionForm = forwardRef<{ submit: () => void }, JobRequisitionForm
           <Box
             flex='1 1 100%'
             display='flex'
-            justifyContent={
-              isSm ? 'center' : language === 'ar' ? 'flex-start' : 'flex-end'
-            }
+            justifyContent={isSm ? 'center' : 'flex-end'}
             gap={2}
           >
             {onCancel && (
@@ -589,7 +579,7 @@ const JobRequisitionForm = forwardRef<{ submit: () => void }, JobRequisitionForm
                 variantType='secondary'
                 onClick={onCancel}
                 disabled={isSubmitting}
-                text={label('Cancel', 'إلغاء')}
+                text='Cancel'
                 sx={{
                   fontSize: 'var(--body-font-size)',
                   lineHeight: 'var(--body-line-height)',
@@ -601,13 +591,13 @@ const JobRequisitionForm = forwardRef<{ submit: () => void }, JobRequisitionForm
                 }}
               />
             )}
-            <AppButton
-              variant='contained'
-              variantType='primary'
-              type='submit'
-              disabled={!hasChanges || isSubmitting || !isFormComplete()}
-              startIcon={
-                isSubmitting ? (
+            {isSubmitting ? (
+              <AppButton
+                variant='contained'
+                variantType='primary'
+                type='submit'
+                disabled={true}
+                startIcon={
                   <Box
                     sx={{
                       width: 16,
@@ -622,35 +612,42 @@ const JobRequisitionForm = forwardRef<{ submit: () => void }, JobRequisitionForm
                       },
                     }}
                   />
-                ) : null
-              }
-              sx={{
-                fontSize: 'var(--body-font-size)',
-                lineHeight: 'var(--body-line-height)',
-                letterSpacing: 'var(--body-letter-spacing)',
-                boxShadow: 'none',
-                minWidth: { xs: 'auto', sm: 200 },
-                px: { xs: 1.5, sm: 2 },
-                py: { xs: 0.75, sm: 1 },
-                '& .MuiButton-startIcon': {
-                  marginRight: { xs: 0.5, sm: 1 },
-                  '& > *:nth-of-type(1)': {
-                    fontSize: { xs: '18px', sm: '20px' },
+                }
+                sx={{
+                  fontSize: 'var(--body-font-size)',
+                  lineHeight: 'var(--body-line-height)',
+                  letterSpacing: 'var(--body-letter-spacing)',
+                  boxShadow: 'none',
+                  minWidth: { xs: 'auto', sm: 200 },
+                  px: { xs: 1.5, sm: 2 },
+                  py: { xs: 0.75, sm: 1 },
+                  '& .MuiButton-startIcon': {
+                    marginRight: { xs: 0.5, sm: 1 },
+                    '& > *:nth-of-type(1)': {
+                      fontSize: { xs: '18px', sm: '20px' },
+                    },
                   },
-                },
-              }}
-              text={
-                isSubmitting
-                  ? label(
-                      isUpdate ? 'Updating...' : 'Creating...',
-                      isUpdate ? 'جاري التحديث...' : 'جاري الإنشاء...'
-                    )
-                  : label(
-                      isUpdate ? 'Update Requisition' : 'Create Requisition',
-                      isUpdate ? 'تحديث الطلب' : 'إنشاء الطلب'
-                    )
-              }
-            />
+                }}
+                text='Creating...'
+              />
+            ) : (
+              <AppButton
+                variant='contained'
+                variantType='primary'
+                type='submit'
+                disabled={!hasChanges || !isFormComplete()}
+                sx={{
+                  fontSize: 'var(--body-font-size)',
+                  lineHeight: 'var(--body-line-height)',
+                  letterSpacing: 'var(--body-letter-spacing)',
+                  boxShadow: 'none',
+                  minWidth: { xs: 'auto', sm: 200 },
+                  px: { xs: 1.5, sm: 2 },
+                  py: { xs: 0.75, sm: 1 },
+                }}
+                text={isUpdate ? 'Update Requisition' : 'Create Requisition'}
+              />
+            )}
           </Box>
         )}
       </Box>
