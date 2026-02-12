@@ -1,14 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import {
   Box,
   Paper,
   Stack,
   Typography,
   Chip,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  Alert,
   Table,
   TableBody,
   TableCell,
@@ -23,6 +19,7 @@ import jobRequisitionApiService, {
 } from '../../api/jobRequisitionApi';
 import AppButton from '../common/AppButton';
 import { extractErrorMessage } from '../../utils/errorHandler';
+import { useQuery, type UseQueryOptions } from '@tanstack/react-query';
 
 interface RequisitionDetailProps {
   requisition: JobRequisition;
@@ -39,36 +36,39 @@ const statusColorMap: Record<RequisitionStatus, 'default' | 'primary' | 'success
 
 const RequisitionDetail: React.FC<RequisitionDetailProps> = ({
   requisition,
-  onClose,
   onRefresh,
 }) => {
   const [showApprovalWorkflow, setShowApprovalWorkflow] = useState(false);
   const [auditTrail, setAuditTrail] = useState<ApprovalLog[]>([]);
-  const [loadingAudit, setLoadingAudit] = useState(false);
+  
+  // Use tanstack-query to fetch audit trail when appropriate
+  const shouldFetchAudit =
+    requisition.status === 'Pending approval' ||
+    requisition.status === 'Approved' ||
+    requisition.status === 'Rejected';
 
-  useEffect(() => {
-    if (requisition.status === 'Pending approval' || requisition.status === 'Approved' || requisition.status === 'Rejected') {
-      loadAuditTrail();
-    }
-  }, [requisition.id]);
 
-  const loadAuditTrail = async () => {
-    setLoadingAudit(true);
-    try {
-      const trail = await jobRequisitionApiService.getAuditTrail(requisition.id);
-      setAuditTrail(trail);
-    } catch (error) {
-      console.error('Error loading audit trail:', extractErrorMessage(error));
-    } finally {
-      setLoadingAudit(false);
-    }
-  };
+  const {
+    data: auditData,
+    isLoading: loadingAudit,
+    refetch: refetchAudit,
+  } = useQuery<ApprovalLog[], unknown, ApprovalLog[]>(
+    {
+      queryKey: ['requisition', requisition.id, 'auditTrail'],
+      queryFn: async (): Promise<ApprovalLog[]> => {
+        return await jobRequisitionApiService.getAuditTrail(requisition.id);
+      },
+      enabled: !!requisition.id && shouldFetchAudit,
+      onError: (error: unknown) => {
+        console.error('Error loading audit trail:', extractErrorMessage(error));
+      },
+    } as UseQueryOptions<ApprovalLog[], unknown, ApprovalLog[]>
+  );
 
-  const handleApprovalSubmit = async () => {
-    onRefresh();
-    setShowApprovalWorkflow(false);
-    await loadAuditTrail();
-  };
+  // keep local state synced for legacy usage if needed
+  React.useEffect(() => {
+    if (auditData) setAuditTrail(auditData as ApprovalLog[]);
+  }, [auditData]);
 
   const canSubmitForApproval = requisition.status === 'Draft';
   const canApprove = requisition.status === 'Pending approval';

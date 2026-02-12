@@ -13,6 +13,8 @@ interface AppButtonProps extends Omit<ButtonProps, 'children'> {
   variantType?: AppButtonVariant;
   text?: string;
   children?: React.ReactNode;
+  // Allow forwarding arbitrary props (e.g. `to` when using react-router Link)
+  [key: string]: any;
 }
 
 export function AppButton({

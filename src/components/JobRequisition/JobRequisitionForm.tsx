@@ -1,14 +1,16 @@
-import React, { useState, useEffect, forwardRef, useImperativeHandle } from 'react';
+import { useState, useEffect, forwardRef, useImperativeHandle } from 'react';
 import {
   Box,
   useMediaQuery,
   useTheme,
 } from '@mui/material';
 import { useOutletContext } from 'react-router-dom';
+import type { AppOutletContext } from '../../types/outletContexts';
 import AppButton from '../common/AppButton';
 import AppInputField from '../common/AppInputField';
 import AppDropdown from '../common/AppDropdown';
 import type { SelectChangeEvent } from '@mui/material/Select';
+import { useForm, Controller } from 'react-hook-form';
 import {
   type CreateJobRequisitionDto,
   type UpdateJobRequisitionDto,
@@ -38,27 +40,22 @@ interface Manager {
   name: string;
 }
 
-interface FormErrors {
-  jobTitle?: string;
-  departmentId?: string;
-  reportingManagerId?: string;
-  employmentType?: string;
-  workLocation?: string;
-  numberOfOpenings?: string;
-  budgetedSalaryMin?: string;
-  budgetedSalaryMax?: string;
-  jobDescription?: string;
-  responsibilities?: string;
-  requiredSkills?: string;
-  requiredExperience?: string;
-  justificationForHire?: string;
-  general?: string;
-}
+type FormValues = {
+  jobTitle: string;
+  departmentId: string;
+  reportingManagerId: string;
+  employmentType: EmploymentType;
+  workLocation: WorkLocation;
+  numberOfOpenings: number | string;
+  budgetedSalaryMin: string;
+  budgetedSalaryMax: string;
+  jobDescription: string;
+  responsibilities: string;
+  requiredSkills: string;
+  requiredExperience: string;
+  justificationForHire: string;
+};
 
-interface OutletContext {
-  darkMode: boolean;
-  language: 'en' | 'ar';
-}
 
 const employmentTypeOptions: { label: string; value: EmploymentType }[] = [
   { label: 'Full-time', value: 'Full-time' },
@@ -83,28 +80,28 @@ const JobRequisitionForm = forwardRef<{ submit: () => void }, JobRequisitionForm
   }, ref) => {
   const theme = useTheme();
   const isSm = useMediaQuery(theme.breakpoints.down('sm'));
-  const { language } = useOutletContext<OutletContext>();
+  const { language } = useOutletContext<AppOutletContext>();
 
-  const [formData, setFormData] = useState({
+  const defaultValues: FormValues = {
     jobTitle: initialData?.jobTitle || '',
-    departmentId: initialData?.department?.id || '',
-    reportingManagerId: initialData?.reportingManager?.id || '',
+    departmentId: initialData?.department?.id || 'all',
+    reportingManagerId: initialData?.reportingManager?.id || 'all',
     employmentType: (initialData?.employmentType || 'Full-time') as EmploymentType,
     workLocation: (initialData?.workLocation || 'Onsite') as WorkLocation,
-    numberOfOpenings: initialData?.numberOfOpenings || 1,
-    budgetedSalaryMin: initialData?.budgetedSalaryMin || '',
-    budgetedSalaryMax: initialData?.budgetedSalaryMax || '',
+    numberOfOpenings: initialData?.numberOfOpenings ?? 1,
+    budgetedSalaryMin: initialData?.budgetedSalaryMin ? String(initialData.budgetedSalaryMin) : '',
+    budgetedSalaryMax: initialData?.budgetedSalaryMax ? String(initialData.budgetedSalaryMax) : '',
     jobDescription: initialData?.jobDescription || '',
     responsibilities: initialData?.responsibilities || '',
     requiredSkills: initialData?.requiredSkills || '',
     requiredExperience: initialData?.requiredExperience || '',
     justificationForHire: initialData?.justificationForHire || '',
-  });
+  };
 
-  const [originalFormData] = useState({ ...formData });
+  const [originalFormData] = useState({ ...defaultValues });
   const [departments, setDepartments] = useState<Department[]>([]);
   const [managers, setManagers] = useState<Manager[]>([]);
-  const [errors, setErrors] = useState<FormErrors>({});
+  const [generalError, setGeneralError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [loadingDepartments, setLoadingDepartments] = useState(false);
   const [loadingManagers, setLoadingManagers] = useState(false);
@@ -149,30 +146,42 @@ const JobRequisitionForm = forwardRef<{ submit: () => void }, JobRequisitionForm
     loadData();
   }, []);
 
-  // Check if form has changes
-  const hasChanges = isUpdate
-    ? formData.jobTitle !== originalFormData.jobTitle ||
-      formData.departmentId !== originalFormData.departmentId ||
-      formData.reportingManagerId !== originalFormData.reportingManagerId ||
-      formData.employmentType !== originalFormData.employmentType ||
-      formData.workLocation !== originalFormData.workLocation ||
-      formData.numberOfOpenings !== originalFormData.numberOfOpenings ||
-      formData.budgetedSalaryMin !== originalFormData.budgetedSalaryMin ||
-      formData.budgetedSalaryMax !== originalFormData.budgetedSalaryMax ||
-      formData.jobDescription !== originalFormData.jobDescription ||
-      formData.responsibilities !== originalFormData.responsibilities ||
-      formData.requiredSkills !== originalFormData.requiredSkills ||
-      formData.requiredExperience !== originalFormData.requiredExperience ||
-      formData.justificationForHire !== originalFormData.justificationForHire
-    : formData.jobTitle.trim() !== '' ||
-      formData.departmentId !== '' ||
-      formData.reportingManagerId !== '' ||
-      formData.numberOfOpenings !== 1 ||
-      formData.budgetedSalaryMin !== '' ||
-      formData.budgetedSalaryMax !== '' ||
-      formData.jobDescription.trim() !== '' ||
-      formData.responsibilities.trim() !== '' ||
-      formData.requiredSkills.trim() !== '';
+  // react-hook-form setup
+  const { control, handleSubmit, setError, clearErrors, formState: { errors }, watch, getValues } = useForm<FormValues>({
+    defaultValues,
+  });
+
+  const hasChanges = (() => {
+    const current = getValues();
+    if (isUpdate) {
+      return (
+        current.jobTitle !== originalFormData.jobTitle ||
+        current.departmentId !== originalFormData.departmentId ||
+        current.reportingManagerId !== originalFormData.reportingManagerId ||
+        current.employmentType !== originalFormData.employmentType ||
+        current.workLocation !== originalFormData.workLocation ||
+        String(current.numberOfOpenings) !== String(originalFormData.numberOfOpenings) ||
+        current.budgetedSalaryMin !== originalFormData.budgetedSalaryMin ||
+        current.budgetedSalaryMax !== originalFormData.budgetedSalaryMax ||
+        current.jobDescription !== originalFormData.jobDescription ||
+        current.responsibilities !== originalFormData.responsibilities ||
+        current.requiredSkills !== originalFormData.requiredSkills ||
+        current.requiredExperience !== originalFormData.requiredExperience ||
+        current.justificationForHire !== originalFormData.justificationForHire
+      );
+    }
+    return (
+      (current.jobTitle && current.jobTitle.toString().trim() !== '') ||
+      (current.departmentId && current.departmentId !== 'all') ||
+      (current.reportingManagerId && current.reportingManagerId !== 'all') ||
+      (String(current.numberOfOpenings) !== '1') ||
+      (current.budgetedSalaryMin && current.budgetedSalaryMin !== '') ||
+      (current.budgetedSalaryMax && current.budgetedSalaryMax !== '') ||
+      (current.jobDescription && current.jobDescription.toString().trim() !== '') ||
+      (current.responsibilities && current.responsibilities.toString().trim() !== '') ||
+      (current.requiredSkills && current.requiredSkills.toString().trim() !== '')
+    );
+  })();
 
   // Dropdown control styling to match AppInputField
   const dropdownControlSx = {
@@ -200,148 +209,66 @@ const JobRequisitionForm = forwardRef<{ submit: () => void }, JobRequisitionForm
       ? theme.palette.background.default
       : '#F8F8F8';
 
-  // Handlers
-  const setFieldValue = (field: string, value: string | number) => {
-    setFormData(prev => ({
-      ...prev,
-      [field]: value,
-    }));
-
-    // Clear field-specific and general errors when user starts typing
-    setErrors(prev => {
-      const newErrors = { ...prev };
-      delete newErrors[field as keyof FormErrors];
-      delete newErrors.general;
-      return newErrors;
-    });
-  };
-
-  const handleChange = (field: string) =>
-    (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-      setFieldValue(field, (e.target.value ?? '').toString());
-    };
-
-  const handleSelectChange = (field: string) =>
-    (e: SelectChangeEvent<string | number | string[]>) => {
-      const value = e.target.value;
-      // Handle array case (multi-select) by taking first element, or single value
-      const singleValue = Array.isArray(value) ? value[0] : value;
-      setFieldValue(field, singleValue);
-    };
-
-  const validateForm = (): boolean => {
-    const newErrors: FormErrors = {};
-
-    if (!formData.jobTitle.trim())
-      newErrors.jobTitle = label('Job title is required', 'المسمى الوظيفي مطلوب');
-
-    if (!formData.departmentId)
-      newErrors.departmentId = label(
-        'Department is required',
-        'القسم مطلوب'
-      );
-
-    if (!formData.reportingManagerId)
-      newErrors.reportingManagerId = label(
-        'Reporting manager is required',
-        'المدير المباشر مطلوب'
-      );
-
-    if (formData.numberOfOpenings < 1)
-      newErrors.numberOfOpenings = label(
-        'Must be at least 1',
-        'يجب أن يكون على الأقل 1'
-      );
-
-    if (formData.budgetedSalaryMin && isNaN(Number(formData.budgetedSalaryMin)))
-      newErrors.budgetedSalaryMin = label(
-        'Must be a valid number',
-        'يجب أن يكون رقمًا صحيحًا'
-      );
-
-    if (formData.budgetedSalaryMax && isNaN(Number(formData.budgetedSalaryMax)))
-      newErrors.budgetedSalaryMax = label(
-        'Must be a valid number',
-        'يجب أن يكون رقمًا صحيحًا'
-      );
-
-    if (
-      formData.budgetedSalaryMin &&
-      formData.budgetedSalaryMax &&
-      Number(formData.budgetedSalaryMin) > Number(formData.budgetedSalaryMax)
-    ) {
-      newErrors.budgetedSalaryMin = label(
-        'Minimum salary cannot exceed maximum salary',
-        'الحد الأدنى للراتب لا يمكن أن يتجاوز الحد الأقصى'
-      );
-    }
-
-    if (!formData.jobDescription.trim())
-      newErrors.jobDescription = label(
-        'Job description is required',
-        'وصف الوظيفة مطلوب'
-      );
-
-    if (!formData.responsibilities.trim())
-      newErrors.responsibilities = label(
-        'Responsibilities are required',
-        'المسؤوليات مطلوبة'
-      );
-
-    if (!formData.requiredSkills.trim())
-      newErrors.requiredSkills = label(
-        'Required skills are required',
-        'المهارات المطلوبة مطلوبة'
-      );
-
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
-
-  // Helper to check if all required fields are filled
-  const isFormComplete = () => {
-    if (!formData.jobTitle.trim()) return false;
-    if (!formData.departmentId) return false;
-    if (!formData.reportingManagerId) return false;
-    if (formData.numberOfOpenings < 1) return false;
-    if (!formData.jobDescription.trim()) return false;
-    if (!formData.responsibilities.trim()) return false;
-    if (!formData.requiredSkills.trim()) return false;
+  const isFormComplete = (vals?: FormValues) => {
+    const v = vals || getValues();
+    if (!v.jobTitle?.toString().trim()) return false;
+    if (!v.departmentId || v.departmentId === 'all') return false;
+    if (!v.reportingManagerId || v.reportingManagerId === 'all') return false;
+    if (Number(v.numberOfOpenings) < 1) return false;
+    if (!v.jobDescription?.toString().trim()) return false;
+    if (!v.responsibilities?.toString().trim()) return false;
+    if (!v.requiredSkills?.toString().trim()) return false;
     return true;
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!validateForm()) return;
+  const onSubmitInternal = async (data: FormValues) => {
+    setGeneralError(null);
+    clearErrors();
+
+    if (data.budgetedSalaryMin && isNaN(Number(data.budgetedSalaryMin))) {
+      setError('budgetedSalaryMin', { type: 'manual', message: label('Must be a valid number', 'يجب أن يكون رقمًا صحيحًا') });
+      return;
+    }
+    if (data.budgetedSalaryMax && isNaN(Number(data.budgetedSalaryMax))) {
+      setError('budgetedSalaryMax', { type: 'manual', message: label('Must be a valid number', 'يجب أن يكون رقمًا صحيحًا') });
+      return;
+    }
+    if (data.budgetedSalaryMin && data.budgetedSalaryMax && Number(data.budgetedSalaryMin) > Number(data.budgetedSalaryMax)) {
+      setError('budgetedSalaryMin', { type: 'manual', message: label('Minimum salary cannot exceed maximum salary', 'الحد الأدنى للراتب لا يمكن أن يتجاوز الحد الأقصى') });
+      return;
+    }
 
     try {
       const submitData: CreateJobRequisitionDto | UpdateJobRequisitionDto = {
-        ...formData,
-        numberOfOpenings: Number(formData.numberOfOpenings),
-        budgetedSalaryMin: formData.budgetedSalaryMin ? Number(formData.budgetedSalaryMin) : 0,
-        budgetedSalaryMax: formData.budgetedSalaryMax ? Number(formData.budgetedSalaryMax) : 0,
-      };
+        ...data,
+        numberOfOpenings: Number(data.numberOfOpenings),
+        budgetedSalaryMin: data.budgetedSalaryMin ? Number(data.budgetedSalaryMin) : 0,
+        budgetedSalaryMax: data.budgetedSalaryMax ? Number(data.budgetedSalaryMax) : 0,
+      } as any;
       const result = await onSubmit(submitData);
       if (result && result.success) {
-        // Reset or navigate handled by parent
+        // handled by parent
       } else if (result && !result.success && result.errors) {
-        setErrors(result.errors as FormErrors);
+        const errs = result.errors as Record<string, string>;
+        Object.keys(errs).forEach(k => setError(k as any, { type: 'server', message: errs[k] }));
+        if (errs.general) setGeneralError(errs.general);
       }
     } catch (error) {
-      console.error('Submit error:', extractErrorMessage(error));
+      const err = extractErrorMessage(error);
+      console.error('Submit error:', err);
+      setGeneralError(err.message);
     }
   };
 
   useImperativeHandle(ref, () => ({
     submit: () => {
-      handleSubmit({ preventDefault: () => {} } as React.FormEvent);
+      handleSubmit(onSubmitInternal)();
     },
   }));
-
   return (
-    <Box component='form' onSubmit={handleSubmit} dir={dir}>
+    <Box component='form' onSubmit={handleSubmit(onSubmitInternal)} dir={dir}>
       {/* General Error Display */}
-      {errors.general && (
+      {generalError && (
         <Box
           sx={{
             mb: 2,
@@ -351,257 +278,298 @@ const JobRequisitionForm = forwardRef<{ submit: () => void }, JobRequisitionForm
             borderRadius: 1,
           }}
         >
-          {errors.general}
+          {generalError}
         </Box>
       )}
 
       <Box display='flex' flexWrap='wrap' gap={2} sx={{ mt: 1 }}>
         {/* Job Title */}
         <Box flex={isSm ? '1 1 100%' : '1 1 48%'}>
-          <AppInputField
-            label={label('Job Title', 'المسمى الوظيفي')}
-            value={formData.jobTitle}
-            onChange={handleChange('jobTitle')}
-            error={!!errors.jobTitle}
-            helperText={errors.jobTitle}
-            placeholder={label('Enter job title', 'أدخل المسمى الوظيفي')}
-            inputBackgroundColor={controlBg}
+          <Controller
+            name='jobTitle'
+            control={control}
+            rules={{ required: label('Job title is required', 'المسمى الوظيفي مطلوب') }}
+            render={({ field }) => (
+              <AppInputField
+                label={label('Job Title', 'المسمى الوظيفي')}
+                value={field.value}
+                onChange={(e: any) => field.onChange(e.target ? e.target.value : e)}
+                error={!!errors.jobTitle}
+                helperText={errors.jobTitle?.message as string}
+                placeholder={label('Enter job title', 'أدخل المسمى الوظيفي')}
+                inputBackgroundColor={controlBg}
+              />
+            )}
           />
         </Box>
 
         {/* Department */}
         <Box flex={isSm ? '1 1 100%' : '1 1 48%'}>
-          <AppDropdown
-            label={label('Department', 'القسم')}
-            value={formData.departmentId || 'all'}
-            onChange={handleSelectChange('departmentId')}
-            error={!!errors.departmentId}
-            helperText={errors.departmentId}
-            disabled={loadingDepartments}
-            inputBackgroundColor={controlBg}
-            placeholder={label('Select department', 'اختر القسم')}
-            sx={dropdownControlSx}
-            options={[
-              {
-                value: 'all',
-                label:
-                  departments.length === 0
-                    ? label('No departments', 'لا توجد أقسام')
-                    : label('Select department', 'اختر القسم'),
-              },
-              ...departments.map(dept => ({
-                value: dept.id,
-                label: dept.name,
-              })),
-            ]}
+          <Controller
+            name='departmentId'
+            control={control}
+            rules={{
+              validate: (v: string) => (v && v !== 'all') || label('Department is required', 'القسم مطلوب'),
+            }}
+            render={({ field }) => (
+              <AppDropdown
+                label={label('Department', 'القسم')}
+                value={field.value || 'all'}
+                onChange={(e: SelectChangeEvent<string | number | string[]>) => field.onChange(Array.isArray(e.target.value) ? e.target.value[0] : e.target.value)}
+                error={!!errors.departmentId}
+                helperText={errors.departmentId?.message as string}
+                disabled={loadingDepartments}
+                inputBackgroundColor={controlBg}
+                placeholder={label('Select department', 'اختر القسم')}
+                sx={dropdownControlSx}
+                options={[
+                  {
+                    value: 'all',
+                    label: departments.length === 0 ? label('No departments', 'لا توجد أقسام') : label('Select department', 'اختر القسم'),
+                  },
+                  ...departments.map(dept => ({ value: dept.id, label: dept.name })),
+                ]}
+              />
+            )}
           />
         </Box>
 
         {/* Reporting Manager */}
         <Box flex={isSm ? '1 1 100%' : '1 1 48%'}>
-          <AppDropdown
-            label={label('Reporting Manager', 'المدير المباشر')}
-            value={formData.reportingManagerId || 'all'}
-            onChange={handleSelectChange('reportingManagerId')}
-            error={!!errors.reportingManagerId}
-            helperText={errors.reportingManagerId}
-            disabled={loadingManagers}
-            inputBackgroundColor={controlBg}
-            placeholder={label('Select manager', 'اختر المدير')}
-            sx={dropdownControlSx}
-            options={[
-              {
-                value: 'all',
-                label:
-                  managers.length === 0
-                    ? label('No managers', 'لا يوجد مديرين')
-                    : label('Select manager', 'اختر المدير'),
-              },
-              ...managers.map(mgr => ({
-                value: mgr.id,
-                label: mgr.name,
-              })),
-            ]}
+          <Controller
+            name='reportingManagerId'
+            control={control}
+            rules={{
+              validate: (v: string) => (v && v !== 'all') || label('Reporting manager is required', 'المدير المباشر مطلوب'),
+            }}
+            render={({ field }) => (
+              <AppDropdown
+                label={label('Reporting Manager', 'المدير المباشر')}
+                value={field.value || 'all'}
+                onChange={(e: SelectChangeEvent<string | number | string[]>) => field.onChange(Array.isArray(e.target.value) ? e.target.value[0] : e.target.value)}
+                error={!!errors.reportingManagerId}
+                helperText={errors.reportingManagerId?.message as string}
+                disabled={loadingManagers}
+                inputBackgroundColor={controlBg}
+                placeholder={label('Select manager', 'اختر المدير')}
+                sx={dropdownControlSx}
+                options={[
+                  { value: 'all', label: managers.length === 0 ? label('No managers', 'لا يوجد مديرين') : label('Select manager', 'اختر المدير') },
+                  ...managers.map(mgr => ({ value: mgr.id, label: mgr.name })),
+                ]}
+              />
+            )}
           />
         </Box>
 
         {/* Employment Type */}
         <Box flex={isSm ? '1 1 100%' : '1 1 48%'}>
-          <AppDropdown
-            label={label('Employment Type', 'نوع التوظيف')}
-            value={formData.employmentType || 'all'}
-            onChange={handleSelectChange('employmentType')}
-            error={!!errors.employmentType}
-            helperText={errors.employmentType}
-            inputBackgroundColor={controlBg}
-            placeholder={label('Select employment type', 'اختر نوع التوظيف')}
-            sx={dropdownControlSx}
-            options={[
-              {
-                value: 'all',
-                label: label('Select type', 'اختر النوع'),
-              },
-              ...employmentTypeOptions.map(opt => ({
-                value: opt.value,
-                label: opt.label,
-              })),
-            ]}
+          <Controller
+            name='employmentType'
+            control={control}
+            render={({ field }) => (
+              <AppDropdown
+                label={label('Employment Type', 'نوع التوظيف')}
+                value={field.value || ''}
+                onChange={(e: SelectChangeEvent<string | number | string[]>) => field.onChange(Array.isArray(e.target.value) ? e.target.value[0] : e.target.value)}
+                error={!!errors.employmentType}
+                helperText={errors.employmentType?.message as string}
+                inputBackgroundColor={controlBg}
+                placeholder={label('Select employment type', 'اختر نوع التوظيف')}
+                sx={dropdownControlSx}
+                options={[{ value: 'all', label: label('Select type', 'اختر النوع') }, ...employmentTypeOptions.map(opt => ({ value: opt.value, label: opt.label }))]}
+              />
+            )}
           />
         </Box>
 
         {/* Work Location */}
         <Box flex={isSm ? '1 1 100%' : '1 1 48%'}>
-          <AppDropdown
-            label={label('Work Location', 'مكان العمل')}
-            value={formData.workLocation || 'all'}
-            onChange={handleSelectChange('workLocation')}
-            error={!!errors.workLocation}
-            helperText={errors.workLocation}
-            inputBackgroundColor={controlBg}
-            placeholder={label('Select location', 'اختر الموقع')}
-            sx={dropdownControlSx}
-            options={[
-              {
-                value: 'all',
-                label: label('Select location', 'اختر الموقع'),
-              },
-              ...workLocationOptions.map(opt => ({
-                value: opt.value,
-                label: opt.label,
-              })),
-            ]}
+          <Controller
+            name='workLocation'
+            control={control}
+            render={({ field }) => (
+              <AppDropdown
+                label={label('Work Location', 'مكان العمل')}
+                value={field.value || ''}
+                onChange={(e: SelectChangeEvent<string | number | string[]>) => field.onChange(Array.isArray(e.target.value) ? e.target.value[0] : e.target.value)}
+                error={!!errors.workLocation}
+                helperText={errors.workLocation?.message as string}
+                inputBackgroundColor={controlBg}
+                placeholder={label('Select location', 'اختر الموقع')}
+                sx={dropdownControlSx}
+                options={[{ value: 'all', label: label('Select location', 'اختر الموقع') }, ...workLocationOptions.map(opt => ({ value: opt.value, label: opt.label }))]}
+              />
+            )}
           />
         </Box>
 
         {/* Number of Openings */}
         <Box flex={isSm ? '1 1 100%' : '1 1 48%'}>
-          <AppInputField
-            label={label('Number of Openings', 'عدد الفرص المتاحة')}
-            type='number'
-            value={formData.numberOfOpenings}
-            onChange={handleChange('numberOfOpenings')}
-            error={!!errors.numberOfOpenings}
-            helperText={errors.numberOfOpenings}
-            placeholder={label('Number of openings', 'عدد الفرص')}
-            inputBackgroundColor={controlBg}
+          <Controller
+            name='numberOfOpenings'
+            control={control}
+            rules={{ min: { value: 1, message: label('Must be at least 1', 'يجب أن يكون على الأقل 1') } }}
+            render={({ field }) => (
+              <AppInputField
+                label={label('Number of Openings', 'عدد الفرص المتاحة')}
+                type='number'
+                value={field.value as any}
+                onChange={(e: any) => field.onChange(e.target ? e.target.value : e)}
+                error={!!errors.numberOfOpenings}
+                helperText={errors.numberOfOpenings?.message as string}
+                placeholder={label('Number of openings', 'عدد الفرص')}
+                inputBackgroundColor={controlBg}
+              />
+            )}
           />
         </Box>
 
         {/* Budgeted Salary Min */}
         <Box flex={isSm ? '1 1 100%' : '1 1 48%'}>
-          <AppInputField
-            label={label('Budgeted Salary (Min)', 'الحد الأدنى للراتب')}
-            type='number'
-            value={formData.budgetedSalaryMin}
-            onChange={handleChange('budgetedSalaryMin')}
-            error={!!errors.budgetedSalaryMin}
-            helperText={errors.budgetedSalaryMin}
-            placeholder={label('Minimum salary', 'الحد الأدنى')}
-            inputBackgroundColor={controlBg}
+          <Controller
+            name='budgetedSalaryMin'
+            control={control}
+            render={({ field }) => (
+              <AppInputField
+                label={label('Budgeted Salary (Min)', 'الحد الأدنى للراتب')}
+                type='number'
+                value={field.value as any}
+                onChange={(e: any) => field.onChange(e.target ? e.target.value : e)}
+                error={!!errors.budgetedSalaryMin}
+                helperText={errors.budgetedSalaryMin?.message as string}
+                placeholder={label('Minimum salary', 'الحد الأدنى')}
+                inputBackgroundColor={controlBg}
+              />
+            )}
           />
         </Box>
 
         {/* Budgeted Salary Max */}
         <Box flex={isSm ? '1 1 100%' : '1 1 48%'}>
-          <AppInputField
-            label={label('Budgeted Salary (Max)', 'الحد الأقصى للراتب')}
-            type='number'
-            value={formData.budgetedSalaryMax}
-            onChange={handleChange('budgetedSalaryMax')}
-            error={!!errors.budgetedSalaryMax}
-            helperText={errors.budgetedSalaryMax}
-            placeholder={label('Maximum salary', 'الحد الأقصى')}
-            inputBackgroundColor={controlBg}
+          <Controller
+            name='budgetedSalaryMax'
+            control={control}
+            render={({ field }) => (
+              <AppInputField
+                label={label('Budgeted Salary (Max)', 'الحد الأقصى للراتب')}
+                type='number'
+                value={field.value as any}
+                onChange={(e: any) => field.onChange(e.target ? e.target.value : e)}
+                error={!!errors.budgetedSalaryMax}
+                helperText={errors.budgetedSalaryMax?.message as string}
+                placeholder={label('Maximum salary', 'الحد الأقصى')}
+                inputBackgroundColor={controlBg}
+              />
+            )}
           />
         </Box>
 
         {/* Job Description - Full Width */}
         <Box flex='1 1 100%'>
-          <AppInputField
-            label={label('Job Description', 'وصف الوظيفة')}
-            value={formData.jobDescription}
-            onChange={handleChange('jobDescription')}
-            error={!!errors.jobDescription}
-            helperText={errors.jobDescription}
-            placeholder={label(
-              'Provide a detailed job description...',
-              'قدم وصفًا تفصيليًا للوظيفة...'
+          <Controller
+            name='jobDescription'
+            control={control}
+            rules={{ required: label('Job description is required', 'وصف الوظيفة مطلوب') }}
+            render={({ field }) => (
+              <AppInputField
+                label={label('Job Description', 'وصف الوظيفة')}
+                value={field.value}
+                onChange={(e: any) => field.onChange(e.target ? e.target.value : e)}
+                error={!!errors.jobDescription}
+                helperText={errors.jobDescription?.message as string}
+                placeholder={label('Provide a detailed job description...', 'قدم وصفًا تفصيليًا للوظيفة...')}
+                inputBackgroundColor={controlBg}
+                multiline
+                rows={4}
+              />
             )}
-            inputBackgroundColor={controlBg}
-            multiline
-            rows={4}
           />
         </Box>
 
         {/* Key Responsibilities - Full Width */}
         <Box flex='1 1 100%'>
-          <AppInputField
-            label={label('Key Responsibilities', 'المسؤوليات الرئيسية')}
-            value={formData.responsibilities}
-            onChange={handleChange('responsibilities')}
-            error={!!errors.responsibilities}
-            helperText={errors.responsibilities}
-            placeholder={label(
-              'List key responsibilities (one per line or comma-separated)...',
-              'قائمة المسؤوليات الرئيسية (واحد لكل سطر أو مفصول بفواصل)...'
+          <Controller
+            name='responsibilities'
+            control={control}
+            rules={{ required: label('Responsibilities are required', 'المسؤوليات مطلوبة') }}
+            render={({ field }) => (
+              <AppInputField
+                label={label('Key Responsibilities', 'المسؤوليات الرئيسية')}
+                value={field.value}
+                onChange={(e: any) => field.onChange(e.target ? e.target.value : e)}
+                error={!!errors.responsibilities}
+                helperText={errors.responsibilities?.message as string}
+                placeholder={label('List key responsibilities (one per line or comma-separated)...', 'قائمة المسؤوليات الرئيسية (واحد لكل سطر أو مفصول بفواصل)...')}
+                inputBackgroundColor={controlBg}
+                multiline
+                rows={4}
+              />
             )}
-            inputBackgroundColor={controlBg}
-            multiline
-            rows={4}
           />
         </Box>
 
         {/* Required Skills - Full Width */}
         <Box flex='1 1 100%'>
-          <AppInputField
-            label={label('Required Skills', 'المهارات المطلوبة')}
-            value={formData.requiredSkills}
-            onChange={handleChange('requiredSkills')}
-            error={!!errors.requiredSkills}
-            helperText={errors.requiredSkills}
-            placeholder={label(
-              'List required skills (one per line or comma-separated)...',
-              'قائمة المهارات المطلوبة (واحد لكل سطر أو مفصول بفواصل)...'
+          <Controller
+            name='requiredSkills'
+            control={control}
+            rules={{ required: label('Required skills are required', 'المهارات المطلوبة مطلوبة') }}
+            render={({ field }) => (
+              <AppInputField
+                label={label('Required Skills', 'المهارات المطلوبة')}
+                value={field.value}
+                onChange={(e: any) => field.onChange(e.target ? e.target.value : e)}
+                error={!!errors.requiredSkills}
+                helperText={errors.requiredSkills?.message as string}
+                placeholder={label('List required skills (one per line or comma-separated)...', 'قائمة المهارات المطلوبة (واحد لكل سطر أو مفصول بفواصل)...')}
+                inputBackgroundColor={controlBg}
+                multiline
+                rows={3}
+              />
             )}
-            inputBackgroundColor={controlBg}
-            multiline
-            rows={3}
           />
         </Box>
 
         {/* Required Experience - Full Width (Optional) */}
         <Box flex='1 1 100%'>
-          <AppInputField
-            label={label('Required Experience', 'الخبرة المطلوبة')}
-            value={formData.requiredExperience}
-            onChange={handleChange('requiredExperience')}
-            error={!!errors.requiredExperience}
-            helperText={errors.requiredExperience}
-            placeholder={label(
-              'Describe required experience, education, and certifications...',
-              'وصف الخبرة والتعليم والشهادات المطلوبة...'
+          <Controller
+            name='requiredExperience'
+            control={control}
+            render={({ field }) => (
+              <AppInputField
+                label={label('Required Experience', 'الخبرة المطلوبة')}
+                value={field.value}
+                onChange={(e: any) => field.onChange(e.target ? e.target.value : e)}
+                error={!!errors.requiredExperience}
+                helperText={errors.requiredExperience?.message as string}
+                placeholder={label('Describe required experience, education, and certifications...', 'وصف الخبرة والتعليم والشهادات المطلوبة...')}
+                inputBackgroundColor={controlBg}
+                multiline
+                rows={3}
+              />
             )}
-            inputBackgroundColor={controlBg}
-            multiline
-            rows={3}
           />
         </Box>
 
         {/* Justification for Hire - Full Width (Optional) */}
         <Box flex='1 1 100%'>
-          <AppInputField
-            label={label('Justification for Hire', 'تبرير التوظيف')}
-            value={formData.justificationForHire}
-            onChange={handleChange('justificationForHire')}
-            error={!!errors.justificationForHire}
-            helperText={errors.justificationForHire}
-            placeholder={label(
-              'Explain why this hire is needed (new role / replacement / expansion)...',
-              'اشرح سبب الحاجة إلى هذا التوظيف (دور جديد / استبدال / توسع)...'
+          <Controller
+            name='justificationForHire'
+            control={control}
+            render={({ field }) => (
+              <AppInputField
+                label={label('Justification for Hire', 'تبرير التوظيف')}
+                value={field.value}
+                onChange={(e: any) => field.onChange(e.target ? e.target.value : e)}
+                error={!!errors.justificationForHire}
+                helperText={errors.justificationForHire?.message as string}
+                placeholder={label('Explain why this hire is needed (new role / replacement / expansion)...', 'اشرح سبب الحاجة إلى هذا التوظيف (دور جديد / استبدال / توسع)...')}
+                inputBackgroundColor={controlBg}
+                multiline
+                rows={3}
+              />
             )}
-            inputBackgroundColor={controlBg}
-            multiline
-            rows={3}
           />
         </Box>
 

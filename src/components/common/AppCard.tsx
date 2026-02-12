@@ -9,12 +9,14 @@ import {
 interface AppCardProps extends CardProps {
   compact?: boolean;
   padding?: number | string;
+  noShadow?: boolean;
 }
 
 export function AppCard({
   compact = false,
   sx,
   padding,
+  noShadow = false,
   ...rest
 }: AppCardProps) {
   const theme = useTheme(); // access current theme (light/dark)
@@ -37,9 +39,14 @@ export function AppCard({
         color: theme.palette.text.primary,
       };
 
-  const combinedSx: SxProps<Theme> = sx
-    ? ([baseSx, sx] as SxProps<Theme>)
+  // If caller requests no shadow, explicitly remove any boxShadow
+  const effectiveBaseSx: SxProps<Theme> = noShadow
+    ? ({ ...(baseSx as object), boxShadow: 'none' } as SxProps<Theme>)
     : baseSx;
+
+  const combinedSx: SxProps<Theme> = sx
+    ? ([effectiveBaseSx, sx] as SxProps<Theme>)
+    : effectiveBaseSx;
 
   return <Card {...rest} sx={combinedSx} />;
 }

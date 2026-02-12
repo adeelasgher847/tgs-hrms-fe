@@ -11,6 +11,7 @@ import {
 } from '@mui/material';
 import { Add as AddIcon, Edit as EditIcon, Delete as DeleteIcon, ContentCopy as CloneIcon, Close as CloseIcon } from '@mui/icons-material';
 import { useOutletContext } from 'react-router-dom';
+import type { AppOutletContext } from '../../types/outletContexts';
 import jobRequisitionApiService, {
   type JobRequisition,
   type RequisitionStatus,
@@ -29,10 +30,6 @@ import RequisitionDetail from './RequisitionDetail';
 import { jobRequisitionMockData } from '../../Data/jobRequisitionMockData';
 import dayjs from 'dayjs';
 
-interface OutletContext {
-  darkMode: boolean;
-  language: 'en' | 'ar';
-}
 
 const statusColorMap: Record<RequisitionStatus, 'default' | 'primary' | 'success' | 'warning' | 'error'> = {
   'Draft': 'default',
@@ -46,7 +43,7 @@ const JobRequisitionManager: React.FC = () => {
   const direction = theme.direction;
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const isTablet = useMediaQuery('(min-width:601px) and (max-width:786px)');
-  const { darkMode } = useOutletContext<OutletContext>();
+  const { darkMode } = useOutletContext<AppOutletContext>();
 
   const [requisitions, setRequisitions] = useState<JobRequisition[]>([]);
   const [loading, setLoading] = useState(false);
