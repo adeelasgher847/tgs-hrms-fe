@@ -56,7 +56,7 @@ const RequisitionDetail: React.FC<RequisitionDetailProps> = ({
     {
       queryKey: ['requisition', requisition.id, 'auditTrail'],
       queryFn: async (): Promise<ApprovalLog[]> => {
-        return await jobRequisitionApiService.getAuditTrail(requisition.id);
+        return jobRequisitionApiService.getAuditTrail(requisition.id);
       },
       enabled: !!requisition.id && shouldFetchAudit,
       onError: (error: unknown) => {

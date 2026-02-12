@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect, useMemo } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   Box,
   useTheme,
@@ -11,6 +11,7 @@ import {
 } from '@mui/material';
 import { Add as AddIcon, Edit as EditIcon, Delete as DeleteIcon, ContentCopy as CloneIcon, Close as CloseIcon } from '@mui/icons-material';
 import { useOutletContext } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
 import type { AppOutletContext } from '../../types/outletContexts';
 import jobRequisitionApiService, {
   type JobRequisition,
@@ -40,13 +41,11 @@ const statusColorMap: Record<RequisitionStatus, 'default' | 'primary' | 'success
 
 const JobRequisitionManager: React.FC = () => {
   const theme = useTheme();
-  const direction = theme.direction;
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const isTablet = useMediaQuery('(min-width:601px) and (max-width:786px)');
   const { darkMode } = useOutletContext<AppOutletContext>();
 
   const [requisitions, setRequisitions] = useState<JobRequisition[]>([]);
-  const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const { snackbar, showError, showSuccess, closeSnackbar } = useErrorHandler();
 
@@ -70,42 +69,55 @@ const JobRequisitionManager: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<RequisitionStatus | 'All'>('All');
 
-  // Load requisitions
-  const fetchRequisitions = useCallback(async () => {
-    setLoading(true);
-    try {
+  // TanStack Query for fetching requisitions
+  const { data, isLoading, error, refetch } = useQuery({
+    queryKey: ['requisitions', currentPage, paginationLimit, searchTerm, statusFilter],
+    queryFn: () => {
       const filters = {
         searchTerm: searchTerm || undefined,
         status: statusFilter !== 'All' ? (statusFilter as RequisitionStatus) : undefined,
       };
 
-      const response = await jobRequisitionApiService.getRequisitions(
+      return jobRequisitionApiService.getRequisitions(
         currentPage,
         paginationLimit,
         filters
-      );
+      ).then(response => {
+        // Use mock data if API returns no data
+        if (!response.data || response.data.length === 0) {
+          return {
+            data: jobRequisitionMockData,
+            total: jobRequisitionMockData.length,
+          };
+        }
 
-      // Use mock data if API returns no data
-      if (!response.data || response.data.length === 0) {
-        setRequisitions(jobRequisitionMockData);
-        setTotalItems(jobRequisitionMockData.length);
-      } else {
-        setRequisitions(response.data);
-        setTotalItems(response.total);
-      }
-    } catch (error) {
-      // Show error but also fallback to mock data
+        return {
+          data: response.data,
+          total: response.total,
+        };
+      });
+    },
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    retry: 1,
+  });
+
+  // Update local state when query data changes
+  React.useEffect(() => {
+    if (data) {
+      setRequisitions(data.data);
+      setTotalItems(data.total);
+    }
+  }, [data]);
+
+  // Handle query errors
+  React.useEffect(() => {
+    if (error) {
       showError(extractErrorMessage(error));
+      // Fallback to mock data on error
       setRequisitions(jobRequisitionMockData);
       setTotalItems(jobRequisitionMockData.length);
-    } finally {
-      setLoading(false);
     }
-  }, [currentPage, paginationLimit, searchTerm, statusFilter, showError]);
-
-  useEffect(() => {
-    fetchRequisitions();
-  }, [fetchRequisitions]);
+  }, [error, showError]);
 
   const handleCreateOpen = () => {
     setEditingRequisition(null);
@@ -151,7 +163,7 @@ const JobRequisitionManager: React.FC = () => {
       showSuccess('Job requisition deleted successfully');
       setDeleteDialogOpen(false);
       setDeleteTarget(null);
-      await fetchRequisitions();
+      await refetch();
     } catch (error) {
       showError(extractErrorMessage(error));
     } finally {
@@ -174,7 +186,7 @@ const JobRequisitionManager: React.FC = () => {
         showSuccess('Job requisition created successfully');
         handleCreateClose();
       }
-      await fetchRequisitions();
+      await refetch();
       return { success: true };
     } catch (error) {
       const message = extractErrorMessage(error) as unknown as string;
@@ -191,7 +203,7 @@ const JobRequisitionManager: React.FC = () => {
     try {
       await jobRequisitionApiService.cloneRequisition(id);
       showSuccess('Job requisition cloned successfully');
-      await fetchRequisitions();
+      await refetch();
     } catch (error) {
       showError(extractErrorMessage(error));
     } finally {
@@ -235,7 +247,7 @@ const JobRequisitionManager: React.FC = () => {
       </Box>
 
       <Paper sx={{ p: 4, backgroundColor: darkMode ? '#1a1a1a' : '#fff', color: theme.palette.text.primary, boxShadow: 'none' }}>
-        {loading ? (
+        {isLoading ? (
           <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '200px' }}>
             <CircularProgress />
           </Box>
@@ -298,7 +310,7 @@ const JobRequisitionManager: React.FC = () => {
         onClose={handleCreateClose}
         title="Create Job Requisition"
         maxWidth="lg"
-        isRtl={direction === 'rtl'}
+        isRtl={false}
         hideActions
         wrapInForm={false}
         paperSx={{
@@ -321,7 +333,7 @@ const JobRequisitionManager: React.FC = () => {
         onClose={handleEditClose}
         title="Edit Job Requisition"
         maxWidth="lg"
-        isRtl={direction === 'rtl'}
+        isRtl={false}
         hideActions
         wrapInForm={false}
         paperSx={{
@@ -348,7 +360,7 @@ const JobRequisitionManager: React.FC = () => {
             onClose={handleCloseDetail}
             title="Job Requisition Details"
             maxWidth="lg"
-            isRtl={direction === 'rtl'}
+            isRtl={false}
             hideActions
             wrapInForm={false}
             paperSx={{
@@ -359,7 +371,7 @@ const JobRequisitionManager: React.FC = () => {
             <RequisitionDetail
               requisition={selectedRequisition}
               onClose={handleCloseDetail}
-              onRefresh={fetchRequisitions}
+              onRefresh={refetch}
             />
           </AppFormModal>
       )}
