@@ -27,6 +27,7 @@ interface DeleteConfirmationDialogProps {
   cancelText?: string;
   isRTL?: boolean;
   loading?: boolean;
+  confirmVariantType?: 'primary' | 'secondary' | 'danger' | 'ghost';
 }
 
 export const DeleteConfirmationDialog: React.FC<
@@ -42,6 +43,7 @@ export const DeleteConfirmationDialog: React.FC<
   cancelText = 'Cancel',
   isRTL = false,
   loading = false,
+  confirmVariantType = 'danger',
 }) => {
   const theme = useTheme();
   const { darkMode } = useOutletContext<{ darkMode: boolean }>();
@@ -125,7 +127,7 @@ export const DeleteConfirmationDialog: React.FC<
         />
         <AppButton
           onClick={onConfirm}
-          variantType='danger'
+          variantType={confirmVariantType}
           text={
             loading
               ? isRTL
