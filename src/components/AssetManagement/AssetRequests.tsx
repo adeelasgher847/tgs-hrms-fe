@@ -1355,18 +1355,22 @@ const AssetRequests: React.FC = () => {
         </Box>
       )}
 
-      {/* Pagination Info */}
+      {/* Pagination Info - when search is active, show count of rows actually in table */}
       {requests.length > 0 && (
         <Box display='flex' justifyContent='center' mt={1}>
           <Typography variant='body2' color='textSecondary'>
-            Showing page {pagination.page} of {pagination.totalPages} (
-            {tabValue === 0
-              ? displayCounts.all
-              : tabValue === 1
-                ? displayCounts.pending
-                : tabValue === 2
-                  ? displayCounts.approved
-                  : displayCounts.rejected}{' '}
+            Showing page{' '}
+            {searchTerm ? 1 : pagination.page} of{' '}
+            {searchTerm ? 1 : pagination.totalPages} (
+            {searchTerm
+              ? getFilteredRequestsByTab().length
+              : tabValue === 0
+                ? displayCounts.all
+                : tabValue === 1
+                  ? displayCounts.pending
+                  : tabValue === 2
+                    ? displayCounts.approved
+                    : displayCounts.rejected}{' '}
             total records)
           </Typography>
         </Box>

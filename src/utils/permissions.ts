@@ -104,7 +104,6 @@ const ROLE_MENU_ALLOWLIST: Record<NormalizedRole, readonly string[]> = {
     'leave-analytics',
     'payroll',
     'benefits',
-    'announcements',
   ],
   employee: [
     'attendance',

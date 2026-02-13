@@ -462,7 +462,12 @@ const AssetInventory: React.FC = () => {
       try {
         const response =
           await assetApi.getAssetSubcategoriesByCategoryId(formCategoryId);
-        type SubCategoryItem = { id: string; name: string };
+        type SubCategoryItem = {
+          id: string;
+          name: string;
+          category?: string | { id?: string; name?: string };
+          category_id?: string;
+        };
         let subcategoriesData: SubCategoryItem[] = [];
         // Handle various response shapes safely
         const anyResp = response as unknown as {
@@ -481,7 +486,23 @@ const AssetInventory: React.FC = () => {
           subcategoriesData = anyResp.subcategories;
         }
 
-        const mapped = subcategoriesData.map(s => ({
+        // Filter to only subcategories that belong to the selected category
+        // (API may return all subcategories and ignore category_id param)
+        const hasCategoryOnSubs = subcategoriesData.some(
+          s => s.category !== undefined || s.category_id !== undefined
+        );
+        const filtered = hasCategoryOnSubs
+          ? subcategoriesData.filter(sub => {
+              const cat = sub.category;
+              if (sub.category_id === formCategoryId) return true;
+              if (typeof cat === 'string') return cat === formCategoryId;
+              if (cat && typeof cat === 'object' && cat.id)
+                return cat.id === formCategoryId;
+              return false;
+            })
+          : subcategoriesData;
+
+        const mapped = filtered.map(s => ({
           value: s.id,
           label: s.name,
         }));
@@ -718,7 +739,10 @@ const AssetInventory: React.FC = () => {
       type: 'dropdown' as const,
       value: formCategoryId,
       options: apiCategories.length > 0 ? apiCategories : categoryOptions,
-      onChange: (v: string | number) => setFormCategoryId(String(v)),
+      onChange: (v: string | number) => {
+        setFormCategoryId(String(v));
+        setFormSubcategory(''); // Reset subcategory when category changes
+      },
       // ensure we match what AppFormModal expects for custom components or props
     },
     {

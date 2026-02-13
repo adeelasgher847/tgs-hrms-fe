@@ -99,43 +99,20 @@ export const TenantPage: React.FC = () => {
       setIsLoading(true);
 
       const res = await SystemTenantApi.getAll({
-        page: 1,
-        // API expects a number for `limit`. Request a sufficiently large
-        // numeric limit to effectively fetch all tenants client-side.
-        limit: 100000,
+        page: currentPage,
+        limit: itemsPerPage,
         includeDeleted: true,
       });
 
-      const allTenants = res.data;
-
-      let filtered = allTenants;
-
-      if (statusFilter === 'active') {
-        filtered = allTenants.filter(
-          t => !t.isDeleted && t.status === 'active'
-        );
-      } else if (statusFilter === 'suspended') {
-        filtered = allTenants.filter(
-          t => !t.isDeleted && t.status === 'suspended'
-        );
-      } else if (statusFilter === 'deleted') {
-        filtered = allTenants.filter(t => t.isDeleted);
-      }
-
-      setTotalRecords(filtered.length);
-
-      const pages = Math.ceil(filtered.length / itemsPerPage);
-      setTotalPages(pages);
-
-      const start = (currentPage - 1) * itemsPerPage;
-      const end = start + itemsPerPage;
-      setTenants(filtered.slice(start, end));
+      setTenants(res.data);
+      setTotalRecords(res.total);
+      setTotalPages(res.totalPages);
     } catch {
       showError('Failed to fetch tenants');
     } finally {
       setIsLoading(false);
     }
-  }, [statusFilter, currentPage, itemsPerPage, showError]);
+  }, [currentPage, itemsPerPage, showError]);
 
   useEffect(() => {
     fetchTenants();
@@ -652,33 +629,18 @@ export const TenantPage: React.FC = () => {
         </AppTable>
         // </AppCard>
       )}
-      {(() => {
-        // Get current page record count
-        const currentPageRowsCount = tenants.length;
-
-        // Pagination buttons logic:
-        // - On first page: Only show if current page has full limit (to indicate more pages exist)
-        // - On other pages (including last page): Always show if there are multiple pages
-        // This allows navigation between pages even from the last page
-        const shouldShowPagination =
-          totalPages > 1 &&
-          (currentPage === 1
-            ? currentPageRowsCount === itemsPerPage // First page: only show if full limit
-            : true); // Other pages: always show if totalPages > 1
-
-        return shouldShowPagination ? (
-          <Box display='flex' justifyContent='center' mt={2}>
-            <Pagination
-              count={totalPages}
-              page={currentPage}
-              onChange={(_, page) => setCurrentPage(page)}
-              color='primary'
-              showFirstButton
-              showLastButton
-            />
-          </Box>
-        ) : null;
-      })()}
+      {totalPages > 1 && (
+        <Box display='flex' justifyContent='center' mt={2}>
+          <Pagination
+            count={totalPages}
+            page={currentPage}
+            onChange={(_, page) => setCurrentPage(page)}
+            color='primary'
+            showFirstButton
+            showLastButton
+          />
+        </Box>
+      )}
       {totalRecords > 0 && (
         <Box display='flex' justifyContent='center' mt={1}>
           <Typography variant='body2' color='textSecondary'>

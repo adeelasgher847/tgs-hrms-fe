@@ -55,8 +55,8 @@ class TimesheetApiService {
       );
 
       return response.data;
-    } catch {
-      throw _error;
+    } catch (err) {
+      throw err;
     }
   }
 
@@ -67,8 +67,8 @@ class TimesheetApiService {
       );
 
       return response.data;
-    } catch {
-      throw _error;
+    } catch (err) {
+      throw err;
     }
   }
 

@@ -10,7 +10,7 @@ import {
   IconButton,
   CircularProgress,
 } from '@mui/material';
-import { DeleteForever as DeleteForeverIcon } from '@mui/icons-material';
+import { Close as CloseIcon } from '@mui/icons-material';
 import { PhoneInput } from 'react-international-phone';
 import 'react-international-phone/style.css';
 import '../UserProfile/PhoneInput.css';
@@ -195,14 +195,6 @@ const AddEmployeeForm: React.FC<AddEmployeeFormProps> = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Load all designations on mount
-  useEffect(() => {
-    (async () => {
-      const allDesignations = await designationApiService.getAllDesignations();
-      setDesignations(allDesignations);
-    })();
-  }, []);
-
   // Prefill from initialData when it changes
   useEffect(() => {
     if (initialData) {
@@ -332,13 +324,23 @@ const AddEmployeeForm: React.FC<AddEmployeeFormProps> = ({
       setValues(prev => ({ ...prev, [field]: value }));
     }
 
-    // Clear both field-specific and general errors when user starts typing
+    // For email: show error in real time when @ or dot is missing
     setErrors(prev => {
       const newErrors = { ...prev };
-      delete newErrors[field];
-      if (field === 'role') {
-        delete newErrors.role_id;
-        delete newErrors.role_name;
+      if (field === 'email') {
+        if (value.trim()) {
+          const emailError = validateEmailAddress(value);
+          if (emailError) newErrors.email = emailError;
+          else delete newErrors.email;
+        } else {
+          delete newErrors.email;
+        }
+      } else {
+        delete newErrors[field];
+        if (field === 'role') {
+          delete newErrors.role_id;
+          delete newErrors.role_name;
+        }
       }
       delete newErrors.general;
       return newErrors;
@@ -460,21 +462,45 @@ const AddEmployeeForm: React.FC<AddEmployeeFormProps> = ({
     }
   };
 
-  // When a designation is selected, set departmentId to its department
-  const handleDesignationChange = (e: SelectChangeEvent<string | number>) => {
-    const selectedDesignationId = String(e.target.value ?? '');
-    const selectedDesignation = designations.find(
-      d => d.id === selectedDesignationId
-    );
+  // Clear newly uploaded picture (show cross on image, click to remove)
+  const handleClearUploadedPicture = (type: 'profile' | 'cnicFront' | 'cnicBack') => {
+    const field = type === 'profile' ? 'profilePicture' : type === 'cnicFront' ? 'cnicFrontPicture' : 'cnicBackPicture';
+    setValues(prev => ({ ...prev, [field]: null }));
+    setErrors(prev => {
+      const next = { ...prev };
+      delete (next as Record<string, unknown>)[field];
+      return next;
+    });
+  };
+
+  // When department is selected, load only that department's designations
+  const handleDepartmentChange = (e: SelectChangeEvent<string | number>) => {
+    const departmentId = String(e.target.value ?? '').replace(/^all$/, '');
     setValues(prev => ({
       ...prev,
-      designationId: selectedDesignationId,
-      departmentId: selectedDesignation?.departmentId || '',
+      departmentId,
+      designationId: '', // clear designation when department changes
     }));
     setErrors(prev => {
       const newErrors = { ...prev };
-      delete newErrors.designationId;
       delete newErrors.departmentId;
+      delete newErrors.designationId;
+      delete newErrors.general;
+      return newErrors;
+    });
+    if (departmentId) {
+      loadDesignations(departmentId);
+    } else {
+      setDesignations([]);
+    }
+  };
+
+  const handleDesignationChange = (e: SelectChangeEvent<string | number>) => {
+    const selectedDesignationId = String(e.target.value ?? '').replace(/^all$/, '');
+    setValues(prev => ({ ...prev, designationId: selectedDesignationId }));
+    setErrors(prev => {
+      const newErrors = { ...prev };
+      delete newErrors.designationId;
       delete newErrors.general;
       return newErrors;
     });
@@ -830,14 +856,12 @@ const AddEmployeeForm: React.FC<AddEmployeeFormProps> = ({
           />
         </Box>
 
-        {/* Department */}
+        {/* Department - select first; designations will show for this department only */}
         <Box flex={isSm ? '1 1 100%' : '1 1 48%'}>
           <AppDropdown
             label={label('Department', 'القسم')}
             value={values.departmentId || 'all'}
-            onChange={e =>
-              setFieldValue('departmentId', String(e.target.value ?? ''))
-            }
+            onChange={handleDepartmentChange}
             error={!!errors.departmentId}
             helperText={errors.departmentId}
             disabled={loadingDepartments}
@@ -860,7 +884,7 @@ const AddEmployeeForm: React.FC<AddEmployeeFormProps> = ({
           />
         </Box>
 
-        {/* Designation */}
+        {/* Designation - only designations of selected department */}
         <Box flex={isSm ? '1 1 100%' : '1 1 48%'}>
           <AppDropdown
             label={label('Designation', 'المسمى الوظيفي')}
@@ -868,16 +892,22 @@ const AddEmployeeForm: React.FC<AddEmployeeFormProps> = ({
             onChange={handleDesignationChange}
             error={!!errors.designationId}
             helperText={errors.designationId}
-            disabled={loadingDesignations}
+            disabled={loadingDesignations || !values.departmentId}
             inputBackgroundColor={controlBg}
-            placeholder={label('Select designation', 'اختر المسمى الوظيفي')}
+            placeholder={
+              !values.departmentId
+                ? label('Select department first', 'اختر القسم أولاً')
+                : label('Select designation', 'اختر المسمى الوظيفي')
+            }
             sx={dropdownControlSx}
             options={[
               {
                 value: 'all',
                 label:
                   designations.length === 0
-                    ? label('No designations', 'لا توجد مسميات')
+                    ? !values.departmentId
+                      ? label('Select department first', 'اختر القسم أولاً')
+                      : label('No designations', 'لا توجد مسميات')
                     : label('Select designation', 'اختر المسمى الوظيفي'),
               },
               ...designations.map(des => ({
@@ -1145,33 +1175,35 @@ const AddEmployeeForm: React.FC<AddEmployeeFormProps> = ({
                           )
                         }
                       />
-                      {!values.profilePicture && initialData?.profilePicture && (
-                        <IconButton
-                          size='small'
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleDeleteExistingDocument('profile', initialData.profilePicture!);
-                          }}
-                          disabled={deletingType === 'profile'}
-                          sx={{
-                            position: 'absolute',
-                            top: 4,
-                            right: 4,
-                            bgcolor: 'rgba(255, 255, 255, 0.8)',
-                            color: 'error.main',
-                            '&:hover': {
-                              bgcolor: 'rgba(255, 255, 255, 0.9)',
-                              transform: 'scale(1.1)',
-                            },
-                          }}
-                        >
-                          {deletingType === 'profile' ? (
-                            <CircularProgress size={16} color="inherit" />
-                          ) : (
-                            <DeleteForeverIcon fontSize="small" />
-                          )}
-                        </IconButton>
-                      )}
+                      <IconButton
+                        size='small'
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          if (values.profilePicture) {
+                            handleClearUploadedPicture('profile');
+                          } else if (initialData?.profilePicture) {
+                            handleDeleteExistingDocument('profile', initialData.profilePicture);
+                          }
+                        }}
+                        disabled={deletingType === 'profile'}
+                        sx={{
+                          position: 'absolute',
+                          top: 4,
+                          right: 4,
+                          bgcolor: 'rgba(255, 255, 255, 0.9)',
+                          color: 'error.main',
+                          '&:hover': {
+                            bgcolor: 'rgba(255, 255, 255, 1)',
+                            transform: 'scale(1.1)',
+                          },
+                        }}
+                      >
+                        {deletingType === 'profile' ? (
+                          <CircularProgress size={16} color="inherit" />
+                        ) : (
+                          <CloseIcon fontSize="small" />
+                        )}
+                      </IconButton>
                     </Box>
                     <Typography variant='caption' sx={{ display: 'block' }}>
                       {label('Profile Picture', 'الصورة الشخصية')}
@@ -1220,33 +1252,35 @@ const AddEmployeeForm: React.FC<AddEmployeeFormProps> = ({
                           )
                         }
                       />
-                      {!values.cnicFrontPicture && initialData?.cnicFrontPicture && (
-                        <IconButton
-                          size='small'
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleDeleteExistingDocument('cnicFront', initialData.cnicFrontPicture!);
-                          }}
-                          disabled={deletingType === 'cnicFront'}
-                          sx={{
-                            position: 'absolute',
-                            top: 4,
-                            right: 4,
-                            bgcolor: 'rgba(255, 255, 255, 0.8)',
-                            color: 'error.main',
-                            '&:hover': {
-                              bgcolor: 'rgba(255, 255, 255, 0.9)',
-                              transform: 'scale(1.1)',
-                            },
-                          }}
-                        >
-                          {deletingType === 'cnicFront' ? (
-                            <CircularProgress size={16} color="inherit" />
-                          ) : (
-                            <DeleteForeverIcon fontSize="small" />
-                          )}
-                        </IconButton>
-                      )}
+                      <IconButton
+                        size='small'
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          if (values.cnicFrontPicture) {
+                            handleClearUploadedPicture('cnicFront');
+                          } else if (initialData?.cnicFrontPicture) {
+                            handleDeleteExistingDocument('cnicFront', initialData.cnicFrontPicture);
+                          }
+                        }}
+                        disabled={deletingType === 'cnicFront'}
+                        sx={{
+                          position: 'absolute',
+                          top: 4,
+                          right: 4,
+                          bgcolor: 'rgba(255, 255, 255, 0.9)',
+                          color: 'error.main',
+                          '&:hover': {
+                            bgcolor: 'rgba(255, 255, 255, 1)',
+                            transform: 'scale(1.1)',
+                          },
+                        }}
+                      >
+                        {deletingType === 'cnicFront' ? (
+                          <CircularProgress size={16} color="inherit" />
+                        ) : (
+                          <CloseIcon fontSize="small" />
+                        )}
+                      </IconButton>
                     </Box>
                     <Typography variant='caption' sx={{ display: 'block' }}>
                       {label('CNIC Front', 'الوجه الأمامي للهوية')}
@@ -1295,33 +1329,35 @@ const AddEmployeeForm: React.FC<AddEmployeeFormProps> = ({
                           )
                         }
                       />
-                      {!values.cnicBackPicture && initialData?.cnicBackPicture && (
-                        <IconButton
-                          size='small'
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleDeleteExistingDocument('cnicBack', initialData.cnicBackPicture!);
-                          }}
-                          disabled={deletingType === 'cnicBack'}
-                          sx={{
-                            position: 'absolute',
-                            top: 4,
-                            right: 4,
-                            bgcolor: 'rgba(255, 255, 255, 0.8)',
-                            color: 'error.main',
-                            '&:hover': {
-                              bgcolor: 'rgba(255, 255, 255, 0.9)',
-                              transform: 'scale(1.1)',
-                            },
-                          }}
-                        >
-                          {deletingType === 'cnicBack' ? (
-                            <CircularProgress size={16} color="inherit" />
-                          ) : (
-                            <DeleteForeverIcon fontSize="small" />
-                          )}
-                        </IconButton>
-                      )}
+                      <IconButton
+                        size='small'
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          if (values.cnicBackPicture) {
+                            handleClearUploadedPicture('cnicBack');
+                          } else if (initialData?.cnicBackPicture) {
+                            handleDeleteExistingDocument('cnicBack', initialData.cnicBackPicture);
+                          }
+                        }}
+                        disabled={deletingType === 'cnicBack'}
+                        sx={{
+                          position: 'absolute',
+                          top: 4,
+                          right: 4,
+                          bgcolor: 'rgba(255, 255, 255, 0.9)',
+                          color: 'error.main',
+                          '&:hover': {
+                            bgcolor: 'rgba(255, 255, 255, 1)',
+                            transform: 'scale(1.1)',
+                          },
+                        }}
+                      >
+                        {deletingType === 'cnicBack' ? (
+                          <CircularProgress size={16} color="inherit" />
+                        ) : (
+                          <CloseIcon fontSize="small" />
+                        )}
+                      </IconButton>
                     </Box>
                     <Typography variant='caption' sx={{ display: 'block' }}>
                       {label('CNIC Back', 'الوجه الخلفي للهوية')}

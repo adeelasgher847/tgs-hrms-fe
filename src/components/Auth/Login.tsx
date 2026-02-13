@@ -76,23 +76,12 @@ const Login: React.FC = () => {
   const { snackbar, showError, closeSnackbar } = useErrorHandler();
   const [isLoading, setIsLoading] = useState(false);
 
-  // User-preferred fallback message for password errors
-  const USER_PASSWORD_MSG = 'incorrect pasword.Please try agin.';
+  // Fallback message when API returns no message
+  const FALLBACK_PASSWORD_MSG = 'Incorrect password. Please try again.';
 
-  const normalizePasswordError = (msg?: unknown) => {
-    const raw = msg === undefined || msg === null ? '' : String(msg);
-    const lower = raw.toLowerCase();
-    // If message is empty or generic/small, prefer the USER_PASSWORD_MSG
-    if (!raw) return USER_PASSWORD_MSG;
-    if (
-      lower.includes('incorrect') ||
-      lower.includes('invalid credentials') ||
-      lower.includes('wrong password') ||
-      lower.includes('invalid')
-    ) {
-      return USER_PASSWORD_MSG;
-    }
-    return raw;
+  const getPasswordErrorFromApi = (msg?: unknown) => {
+    const raw = msg === undefined || msg === null ? '' : String(msg).trim();
+    return raw || FALLBACK_PASSWORD_MSG;
   };
 
   useEffect(() => {
@@ -328,7 +317,7 @@ const Login: React.FC = () => {
       if (data?.field === 'email') {
         setEmailError(data.message || '');
       } else if (data?.field === 'password') {
-        setPasswordError(normalizePasswordError(data.message));
+        setPasswordError(getPasswordErrorFromApi(data.message));
       } else if (data?.errors) {
         // Handle field-specific errors from errors object
         if (data.errors.email) {
@@ -341,38 +330,50 @@ const Login: React.FC = () => {
           const passwordErr = Array.isArray(data.errors.password)
             ? data.errors.password.join(', ')
             : String(data.errors.password);
-          setPasswordError(normalizePasswordError(passwordErr));
+          setPasswordError(getPasswordErrorFromApi(passwordErr));
         }
-        // If no specific field errors, check for general message
+        // If no specific field errors, check for general message (use API message as-is)
         if (!data.errors.email && !data.errors.password && data?.message) {
-          // Try to determine which field the error relates to based on message content
-          const errorMsg = String(data.message).toLowerCase();
-          if (errorMsg.includes('email') || errorMsg.includes('e-mail')) {
-            setEmailError(data.message);
+          const msg = String(data.message);
+          const lower = msg.toLowerCase();
+          const isEmailRelated =
+            lower.includes('email') ||
+            lower.includes('e-mail') ||
+            lower.includes('missing');
+          if (isEmailRelated) {
+            setEmailError(msg);
           } else {
-            setPasswordError(normalizePasswordError(data.message));
+            setPasswordError(getPasswordErrorFromApi(msg));
           }
         }
       } else if (data?.message) {
-        // Try to determine which field the error relates to based on message content
-        const errorMsg = String(data.message).toLowerCase();
-        if (errorMsg.includes('email') || errorMsg.includes('e-mail')) {
-          setEmailError(data.message);
+        // Use API message as-is; route to email for "missing fields" type, else by content
+        const msg = String(data.message);
+        const lower = msg.toLowerCase();
+        const isEmailRelated =
+          lower.includes('email') ||
+          lower.includes('e-mail') ||
+          lower.includes('missing');
+        if (isEmailRelated) {
+          setEmailError(msg);
         } else {
-          // Default to password field for general login errors
-          setPasswordError(normalizePasswordError(data.message));
+          setPasswordError(getPasswordErrorFromApi(msg));
         }
       } else if (error.message) {
-        // Try to determine which field the error relates to based on message content
-        const errorMsg = String(error.message).toLowerCase();
-        if (errorMsg.includes('email') || errorMsg.includes('e-mail')) {
-          setEmailError(error.message);
+        const msg = String(error.message);
+        const lower = msg.toLowerCase();
+        const isEmailRelated =
+          lower.includes('email') ||
+          lower.includes('e-mail') ||
+          lower.includes('missing');
+        if (isEmailRelated) {
+          setEmailError(msg);
         } else {
-          setPasswordError(normalizePasswordError(error.message));
+          setPasswordError(getPasswordErrorFromApi(msg));
         }
       } else {
         // Use the user's requested default message for unknown login errors
-        setPasswordError(USER_PASSWORD_MSG);
+        setPasswordError(FALLBACK_PASSWORD_MSG);
       }
     } finally {
       setIsLoading(false);

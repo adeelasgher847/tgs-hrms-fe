@@ -551,27 +551,40 @@ const AttendanceTable = () => {
       let response: AttendanceResponse;
 
       if (view === 'all') {
-        response = await attendanceApi.getAllAttendance(
-          1,
-          date,
-          date,
-          undefined,
-          selectedTenant || undefined
-        );
-
-        const events: AttendanceEvent[] =
-          (response.items as AttendanceEvent[]) || [];
         let rows: AttendanceRecord[] = [];
 
-        const isShiftBased =
-          events.length > 0 &&
-          hasDateField(events[0]) &&
-          hasCheckInField(events[0]);
-
-        if (isShiftBased) {
-          rows = buildFromSummaries(events as unknown[], currentUser.id);
+        if (isSystemAdmin(currentUser.role)) {
+          const systemData = await attendanceApi.getSystemAllAttendance(
+            date,
+            date
+          );
+          rows = buildFromSystemAll(
+            systemData,
+            selectedTenant || null,
+            selectedEmployee || null
+          );
         } else {
-          rows = buildFromEvents(events, currentUser.id, true);
+          response = await attendanceApi.getAllAttendance(
+            1,
+            date,
+            date,
+            undefined,
+            selectedTenant || undefined
+          );
+
+          const events: AttendanceEvent[] =
+            (response.items as AttendanceEvent[]) || [];
+
+          const isShiftBased =
+            events.length > 0 &&
+            hasDateField(events[0]) &&
+            hasCheckInField(events[0]);
+
+          if (isShiftBased) {
+            rows = buildFromSummaries(events as unknown[], currentUser.id);
+          } else {
+            rows = buildFromEvents(events, currentUser.id, true);
+          }
         }
 
         // If an employee is selected in admin "All" view, keep only that employee's records
@@ -1206,8 +1219,9 @@ const AttendanceTable = () => {
     setSelectedTenant('');
     setStartDate('');
     setEndDate('');
-    setCurrentNavigationDate('all');
-    fetchAttendance('all', undefined, '', '');
+    const todayStr = formatLocalYMD(new Date());
+    setCurrentNavigationDate(todayStr);
+    fetchAttendanceByDate(todayStr, 'all');
 
     const storedUser = localStorage.getItem('user');
     if (storedUser) {
@@ -1328,17 +1342,19 @@ const AttendanceTable = () => {
     setCurrentPage(1);
     setStartDate('');
     setEndDate('');
-    setMyAttendanceNavigationDate('all');
-    fetchAttendance('my', undefined, '', '');
+    const todayStr = formatLocalYMD(new Date());
+    setMyAttendanceNavigationDate(todayStr);
+    fetchAttendanceByDate(todayStr, 'my');
   };
 
   const handleManagerTeamAttendance = () => {
     setManagerView('team');
     setTeamCurrentPage(1);
-    setTeamCurrentNavigationDate('all');
+    const todayStr = formatLocalYMD(new Date());
+    setTeamCurrentNavigationDate(todayStr);
     setTeamStartDate('');
     setTeamEndDate('');
-    fetchTeamAttendance(1);
+    fetchAttendanceByDate(todayStr, 'team');
   };
   useEffect(() => {
     if (mode === 'dark') {
@@ -1347,6 +1363,25 @@ const AttendanceTable = () => {
       document.body.removeAttribute('data-theme');
     }
   }, [mode]);
+
+  // Set role flags from stored user on mount so All Attendance button shows immediately (without waiting for fetchAttendance)
+  useEffect(() => {
+    const storedUser = localStorage.getItem('user');
+    if (storedUser) {
+      try {
+        const user = JSON.parse(storedUser);
+        const roleName = (user.role?.name || user.role || '').toString();
+        setUserRole(roleName);
+        setIsManager(checkIsManager(user.role));
+        setIsAdminUser(isAdmin(user.role));
+        setIsSystemAdminUser(isSystemAdmin(user.role));
+        setIsNetworkAdminUser(isNetworkAdmin(user.role));
+        setIsHRAdminUser(isHRAdmin(user.role));
+      } catch {
+        // ignore
+      }
+    }
+  }, []);
 
   useEffect(() => {
     // Check if we should default to 'all' view for admins who have 'My Attendance' hidden
@@ -1358,12 +1393,21 @@ const AttendanceTable = () => {
         isAdmin(user.role) ||
         isHRAdmin(user.role)
       ) {
-        // If "My Attendance" is hidden, default to 'all'
+        // If "My Attendance" is hidden, default to 'all' with current date selected in date nav
         setAdminView('all');
-        fetchAttendanceRef.current?.('all', undefined, '', '');
+        const todayStr = formatLocalYMD(new Date());
+        setCurrentNavigationDate(todayStr);
+        fetchAttendanceByDate(todayStr, 'all');
+      } else if (checkIsManager(user.role)) {
+        // Manager (not admin): default to current date in date nav for My Attendance
+        const todayStr = formatLocalYMD(new Date());
+        setMyAttendanceNavigationDate(todayStr);
+        fetchAttendanceByDate(todayStr, 'my');
       } else {
-        // Otherwise default to 'my' as usual
-        fetchAttendanceRef.current?.('my', undefined, '', '');
+        // Employee (not admin, not manager): default to current date in date nav
+        const todayStr = formatLocalYMD(new Date());
+        setMyAttendanceNavigationDate(todayStr);
+        fetchAttendanceByDate(todayStr, 'my');
       }
     } else {
       fetchAttendanceRef.current?.('my', undefined, '', '');
@@ -1391,8 +1435,13 @@ const AttendanceTable = () => {
 
   useEffect(() => {
     if (adminView === 'all' && isSystemAdminUser) {
-      // Use stable ref to avoid including fetchAttendance in deps
-      fetchAttendanceRef.current?.('all', undefined, startDate, endDate);
+      if (!startDate && !endDate) {
+        const todayStr = formatLocalYMD(new Date());
+        setCurrentNavigationDate(todayStr);
+        fetchAttendanceByDate(todayStr, 'all');
+      } else {
+        fetchAttendanceRef.current?.('all', undefined, startDate, endDate);
+      }
     }
   }, [selectedTenant, adminView, isSystemAdminUser, startDate, endDate]);
 
@@ -1587,9 +1636,23 @@ const AttendanceTable = () => {
     setCurrentPage(1);
     setStartDate('');
     setEndDate('');
+    setSelectedTenant('');
     setSelectedEmployee('');
-    const viewForFetch = canViewAllAttendance ? adminView : 'my';
-    fetchAttendance(viewForFetch, '', '', '');
+    const todayStr = formatLocalYMD(new Date());
+    if (canViewAllAttendance && adminView === 'all') {
+      setCurrentNavigationDate(todayStr);
+      fetchAttendanceByDate(todayStr, 'all');
+    } else if (isManager && !isAdminLike) {
+      setMyAttendanceNavigationDate(todayStr);
+      fetchAttendanceByDate(todayStr, 'my');
+    } else if (!canViewAllAttendance) {
+      // Employee: current date only
+      setMyAttendanceNavigationDate(todayStr);
+      fetchAttendanceByDate(todayStr, 'my');
+    } else {
+      const viewForFetch = canViewAllAttendance ? adminView : 'my';
+      fetchAttendance(viewForFetch, '', '', '');
+    }
   };
 
   const handleEmployeeChange = (value: string) => {
@@ -2269,9 +2332,10 @@ const AttendanceTable = () => {
               onClick={() => {
                 setTeamStartDate('');
                 setTeamEndDate('');
-                setTeamCurrentNavigationDate('all');
+                const todayStr = formatLocalYMD(new Date());
+                setTeamCurrentNavigationDate(todayStr);
                 setSelectedTeamEmployee('');
-                fetchTeamAttendance(1);
+                fetchAttendanceByDate(todayStr, 'team');
               }}
               sx={{
                 color: 'primary.dark',
@@ -2553,9 +2617,10 @@ const AttendanceTable = () => {
               onClick={() => {
                 setTeamStartDate('');
                 setTeamEndDate('');
-                setTeamCurrentNavigationDate('all');
+                const todayStr = formatLocalYMD(new Date());
+                setTeamCurrentNavigationDate(todayStr);
                 setSelectedTeamEmployee('');
-                fetchTeamAttendance(1);
+                fetchAttendanceByDate(todayStr, 'team');
               }}
               sx={{
                 width: { xs: '100%', sm: '200px' },
@@ -2654,6 +2719,25 @@ const AttendanceTable = () => {
             onDateChange={handleTeamDateNavigationChange}
             disabled={teamLoading}
           />
+          {(() => {
+            const teamRecordCount = filteredTeamAttendance.reduce(
+              (sum, m) => sum + ((m as CheckInTeamMember).attendance?.length || 0),
+              0
+            );
+            return teamRecordCount > 0 ? (
+              <Box sx={{ display: 'flex', justifyContent: 'center', mt: 2 }}>
+                <Typography
+                  fontWeight={400}
+                  fontSize='16px'
+                  lineHeight='24px'
+                  letterSpacing='-1%'
+                  color='#2C2C2C'
+                >
+                  Showing all {teamRecordCount} records
+                </Typography>
+              </Box>
+            ) : null;
+          })()}
         </Paper>
       )}
 

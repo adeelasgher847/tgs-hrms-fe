@@ -316,11 +316,12 @@ const PerformanceTrend: React.FC<PerformanceTrendProps> = ({ tenantId }) => {
             gap: 2,
             mb: 3,
             flexDirection: { xs: 'column', sm: 'row' },
+            flexWrap: 'wrap',
             overflowX: 'auto',
             alignItems: { xs: 'stretch', sm: 'center' },
           }}
         >
-          <Box sx={{ minWidth: { xs: '100%', sm: 190 }, maxWidth: 190 }}>
+          <Box sx={{ minWidth: { xs: '100%', sm: 190 }, maxWidth: 490 }}>
             <AppDropdown
               label='Employee'
               options={[
@@ -339,7 +340,7 @@ const PerformanceTrend: React.FC<PerformanceTrendProps> = ({ tenantId }) => {
             />
           </Box>
 
-          <Box sx={{ minWidth: { xs: '100%', sm: 190 }, maxWidth: 190 }}>
+          <Box sx={{ minWidth: { xs: '100%', sm: 190 }, maxWidth: 490 }}>
             <AppDropdown
               label='Status'
               options={[

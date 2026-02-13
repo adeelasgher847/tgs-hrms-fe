@@ -4,7 +4,6 @@ import AppPageTitle from '../common/AppPageTitle';
 import AppCard from '../common/AppCard';
 import AppDropdown from '../common/AppDropdown';
 import * as tasksApi from '../../api/tasksApi';
-// removed unused getStoredUser
 import { useErrorHandler } from '../../hooks/useErrorHandler';
 import ErrorSnackbar from '../common/ErrorSnackbar';
 // teamApiService not required in this component
@@ -86,29 +85,7 @@ export default function MyTasks() {
       const updated = await tasksApi.patchTaskStatus(taskId, newStatus);
       setTasks(prev => prev.map(t => (t.id === updated.id ? updated : t)));
       showSuccess('Status updated');
-
-      // send notification to manager if status changed
-      const oldTask = previousTasks.find(t => t.id === taskId);
-      if (oldTask && oldTask.status !== updated.status) {
-        const storedUser = getStoredUser<Record<string, unknown>>();
-        const employeeName =
-          storedUser && storedUser.first_name
-            ? `${String(storedUser.first_name)} ${String(
-              storedUser.last_name ?? ''
-            )}`.trim()
-            : String(
-              (storedUser as Record<string, unknown> | null)?.name ??
-              'Employee'
-            );
-        addNotification({
-          title: 'Task Status Updated',
-          text: `Task "${updated.title}" updated to ${updated.status}`,
-          taskTitle: updated.title,
-          employeeName,
-          oldStatus: oldTask.status,
-          newStatus: updated.status as TaskStatus,
-        });
-      }
+      // Do not show in-app notification to employee when they complete their own task
     } catch (err) {
       // rollback optimistic update
       setTasks(previousTasks);

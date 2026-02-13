@@ -693,6 +693,15 @@ const LeaveRequestPage = () => {
                   backgroundColor:
                     activeTab === 'history' ? '#fff' : 'transparent',
                   borderColor: '#fff',
+                  '&:hover': {
+                    color:
+                      activeTab === 'history'
+                        ? 'var(--primary-dark-color)'
+                        : '#fff',
+                    backgroundColor:
+                      activeTab === 'history' ? '#fff' : 'transparent',
+                    borderColor: '#fff',
+                  },
                 }}
               >
                 Leave History
