@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import {
   Box,
   useTheme,
@@ -8,8 +8,15 @@ import {
   Chip,
   Paper,
   CircularProgress,
+  TableHead,
+  TableRow,
+  TableCell,
+  TableBody,
+  IconButton,
+  Tooltip,
+  Pagination,
 } from '@mui/material';
-import { Add as AddIcon, Edit as EditIcon, Delete as DeleteIcon, ContentCopy as CloneIcon, Close as CloseIcon } from '@mui/icons-material';
+import { Add as AddIcon, Edit as EditIcon, Delete as DeleteIcon, ContentCopy as CloneIcon, Close as CloseIcon, Visibility as ViewIcon } from '@mui/icons-material';
 import { useOutletContext } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import type { AppOutletContext } from '../../types/outletContexts';
@@ -23,7 +30,7 @@ import ErrorSnackbar from '../common/ErrorSnackbar';
 import AppButton from '../common/AppButton';
 import AppPageTitle from '../common/AppPageTitle';
 import AppFormModal from '../common/AppFormModal';
-// AppTable and AppCard were removed in favor of Paper for consistent styling
+import AppTable from '../common/AppTable';
 import DeleteConfirmationDialog from '../common/DeleteConfirmationDialog';
 import { PAGINATION } from '../../constants/appConstants';
 import JobRequisitionForm from './JobRequisitionForm';
@@ -102,7 +109,7 @@ const JobRequisitionManager: React.FC = () => {
   });
 
   // Update local state when query data changes
-  React.useEffect(() => {
+  useEffect(() => {
     if (data) {
       setRequisitions(data.data);
       setTotalItems(data.total);
@@ -246,63 +253,118 @@ const JobRequisitionManager: React.FC = () => {
         </AppButton>
       </Box>
 
-      <Paper sx={{ p: 4, backgroundColor: darkMode ? '#1a1a1a' : '#fff', color: theme.palette.text.primary, boxShadow: 'none' }}>
-        {isLoading ? (
-          <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '200px' }}>
-            <CircularProgress />
-          </Box>
-        ) : requisitions.length === 0 ? (
-          <Typography variant="body1" sx={{ textAlign: 'center', color: darkMode ? '#8f8f8f' : '#666' }}>
-            No job requisitions found
-          </Typography>
-        ) : (
-          <Stack spacing={2}>
-            {requisitions.map((req) => (
-              <Box
-                key={req.id}
-                sx={{
-                  p: 2,
-                  border: '1px solid',
-                  borderColor: 'divider',
-                  borderRadius: 1,
-                  '&:hover': { bgcolor: 'action.hover' },
-                }}
-              >
-                <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ flexWrap: 'wrap', gap: 2 }}>
-                  <Box flex={1}>
-                    <Typography variant="h6" sx={{ color: theme.palette.text.primary }}>{req.jobTitle}</Typography>
-                    <Stack direction="row" spacing={2} sx={{ mt: 1, flexWrap: 'wrap' }}>
-                      <Typography variant="caption" sx={{ color: darkMode ? '#8f8f8f' : '#666' }}>
-                        {req.department?.name}
-                      </Typography>
-                      <Typography variant="caption" sx={{ color: darkMode ? '#8f8f8f' : '#666' }}>
-                        {req.employmentType} • {req.numberOfOpenings} opening(s)
-                      </Typography>
-                      <Typography variant="caption" sx={{ color: darkMode ? '#8f8f8f' : '#666' }}>
-                        {dayjs(req.createdAt).format('MMM DD, YYYY')}
-                      </Typography>
-                    </Stack>
-                  </Box>
-                  <Stack direction="row" spacing={1} alignItems="center">
-                    <Chip
-                      label={req.status}
-                      color={statusColorMap[req.status]}
-                      size="small"
-                      variant="outlined"
-                    />
-                    <AppButton
-                      onClick={() => handleViewDetails(req)}
-                      size="small"
-                    >
-                      View
-                    </AppButton>
+      <AppTable
+        sx={{ backgroundColor: darkMode ? '#1a1a1a' : '#fff', color: theme.palette.text.primary }}
+        tableProps={{ stickyHeader: true }}
+      >
+        <TableHead>
+          <TableRow>
+            <TableCell>Job Title</TableCell>
+            <TableCell>Department</TableCell>
+            <TableCell>Employment Type</TableCell>
+            <TableCell>Openings</TableCell>
+            <TableCell>Status</TableCell>
+            <TableCell>Created Date</TableCell>
+            <TableCell align="center">Actions</TableCell>
+          </TableRow>
+        </TableHead>
+        <TableBody>
+          {isLoading ? (
+            <TableRow>
+              <TableCell colSpan={7} align="center">
+                <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', py: 4 }}>
+                  <CircularProgress />
+                </Box>
+              </TableCell>
+            </TableRow>
+          ) : requisitions.length === 0 ? (
+            <TableRow>
+              <TableCell colSpan={7} align="center">
+                <Typography variant="body1" sx={{ color: darkMode ? '#8f8f8f' : '#666', py: 4 }}>
+                  No job requisitions found
+                </Typography>
+              </TableCell>
+            </TableRow>
+          ) : (
+            requisitions.map((req) => (
+              <TableRow key={req.id} hover>
+                <TableCell>
+                  <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                    {req.jobTitle}
+                  </Typography>
+                </TableCell>
+                <TableCell>{req.department?.name || '-'}</TableCell>
+                <TableCell>{req.employmentType}</TableCell>
+                <TableCell>{req.numberOfOpenings}</TableCell>
+                <TableCell>
+                  <Chip
+                    label={req.status}
+                    color={statusColorMap[req.status]}
+                    size="small"
+                    variant="outlined"
+                  />
+                </TableCell>
+                <TableCell>{dayjs(req.createdAt).format('MMM DD, YYYY')}</TableCell>
+                <TableCell align="center">
+                  <Stack direction="row" spacing={1} justifyContent="center" alignItems="center">
+                    <Tooltip title="View Details">
+                      <IconButton
+                        size="small"
+                        onClick={() => handleViewDetails(req)}
+                        sx={{ color: 'primary.main' }}
+                      >
+                        <ViewIcon fontSize="small" />
+                      </IconButton>
+                    </Tooltip>
+                    <Tooltip title="Edit">
+                      <IconButton
+                        size="small"
+                        onClick={() => handleEditOpen(req)}
+                        sx={{ color: 'primary.main' }}
+                      >
+                        <EditIcon fontSize="small" />
+                      </IconButton>
+                    </Tooltip>
+                    <Tooltip title="Clone">
+                      <IconButton
+                        size="small"
+                        onClick={() => handleCloneRequisition(req.id)}
+                        disabled={submitting}
+                        sx={{ color: 'primary.main' }}
+                      >
+                        <CloneIcon fontSize="small" />
+                      </IconButton>
+                    </Tooltip>
+                    <Tooltip title="Delete">
+                      <IconButton
+                        size="small"
+                        onClick={() => handleDeleteClick(req.id)}
+                        disabled={submitting}
+                        sx={{ color: 'error.main' }}
+                      >
+                        <DeleteIcon fontSize="small" />
+                      </IconButton>
+                    </Tooltip>
                   </Stack>
-                </Stack>
-              </Box>
-            ))}
-          </Stack>
-        )}
-      </Paper>
+                </TableCell>
+              </TableRow>
+            ))
+          )}
+        </TableBody>
+      </AppTable>
+
+      {totalPages > 1 && (
+        <Box display="flex" justifyContent="center" mt={3}>
+          <Pagination
+            count={totalPages}
+            page={currentPage}
+            onChange={(_, page) => setCurrentPage(page)}
+            color="primary"
+            showFirstButton
+            showLastButton
+          />
+        </Box>
+      )}
 
       {/* Create Modal */}
       <AppFormModal

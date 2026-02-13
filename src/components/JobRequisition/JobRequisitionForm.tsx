@@ -217,19 +217,6 @@ const JobRequisitionForm = forwardRef<{ submit: () => void }, JobRequisitionForm
     setGeneralError(null);
     clearErrors();
 
-    if (data.budgetedSalaryMin && isNaN(Number(data.budgetedSalaryMin))) {
-      setError('budgetedSalaryMin', { type: 'manual', message: 'Must be a valid number' });
-      return;
-    }
-    if (data.budgetedSalaryMax && isNaN(Number(data.budgetedSalaryMax))) {
-      setError('budgetedSalaryMax', { type: 'manual', message: 'Must be a valid number' });
-      return;
-    }
-    if (data.budgetedSalaryMin && data.budgetedSalaryMax && Number(data.budgetedSalaryMin) > Number(data.budgetedSalaryMax)) {
-      setError('budgetedSalaryMin', { type: 'manual', message: 'Minimum salary cannot exceed maximum salary' });
-      return;
-    }
-
     try {
       const submitData: CreateJobRequisitionDto | UpdateJobRequisitionDto = {
         ...data,
@@ -422,6 +409,13 @@ const JobRequisitionForm = forwardRef<{ submit: () => void }, JobRequisitionForm
           <Controller
             name='budgetedSalaryMin'
             control={control}
+            rules={{
+              validate: (value, formValues) => {
+                if (value && isNaN(Number(value))) return 'Must be a valid number';
+                if (value && formValues.budgetedSalaryMax && Number(value) > Number(formValues.budgetedSalaryMax)) return 'Minimum salary cannot exceed maximum salary';
+                return true;
+              }
+            }}
             render={({ field }) => (
               <AppInputField
                 label='Budgeted Salary (Min)'
@@ -442,6 +436,12 @@ const JobRequisitionForm = forwardRef<{ submit: () => void }, JobRequisitionForm
           <Controller
             name='budgetedSalaryMax'
             control={control}
+            rules={{
+              validate: (value) => {
+                if (value && isNaN(Number(value))) return 'Must be a valid number';
+                return true;
+              }
+            }}
             render={({ field }) => (
               <AppInputField
                 label='Budgeted Salary (Max)'

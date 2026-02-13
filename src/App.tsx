@@ -1,6 +1,7 @@
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { Suspense, lazy } from 'react';
 import { Box, CircularProgress } from '@mui/material';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import Layout from './components/Layout/Layout';
 import ProtectedRoute from './components/common/ProtectedRoute';
 import RouteErrorBoundary from './components/common/RouteErrorBoundary';
@@ -12,6 +13,17 @@ import { CompanyProvider } from './context/CompanyContext';
 import { NotificationProvider } from './context/NotificationContext';
 import { ThemeProvider } from './theme';
 import './App.css';
+
+// Create a QueryClient instance
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      refetchOnWindowFocus: false,
+      retry: 1,
+      staleTime: 5 * 60 * 1000, // 5 minutes
+    },
+  },
+});
 
 const LoadingFallback = () => (
   <Box
@@ -153,12 +165,13 @@ const JobRequisitionManager = lazy(
 
 function App() {
   return (
-    <LanguageProvider>
-      <UserProvider>
-        <ProfilePictureProvider>
-          <Router>
-            <Suspense fallback={<LoadingFallback />}>
-              <Routes>
+    <QueryClientProvider client={queryClient}>
+      <LanguageProvider>
+        <UserProvider>
+          <ProfilePictureProvider>
+            <Router>
+              <Suspense fallback={<LoadingFallback />}>
+                <Routes>
                 <Route path='/' element={<Login />} />
                 <Route path='/forget' element={<Forget />} />
                 <Route path='/reset-password' element={<ResetPassword />} />
@@ -344,13 +357,14 @@ function App() {
                 </Route>
                 <Route path='/company-details' element={<CompanyDetails />} />
                 <Route path='*' element={<Error404 />} />
-              </Routes>
-            </Suspense>
-          </Router>
-          <NotificationToast />
-        </ProfilePictureProvider>
-      </UserProvider>
-    </LanguageProvider>
+                </Routes>
+              </Suspense>
+            </Router>
+            <NotificationToast />
+          </ProfilePictureProvider>
+        </UserProvider>
+      </LanguageProvider>
+    </QueryClientProvider>
   );
 }
 export default App;
