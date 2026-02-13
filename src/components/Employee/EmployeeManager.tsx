@@ -24,6 +24,7 @@ import { Add as AddIcon } from '@mui/icons-material';
 import WarningIcon from '@mui/icons-material/Warning';
 import FileDownloadIcon from '@mui/icons-material/FileDownload';
 import { useOutletContext, useLocation, useNavigate } from 'react-router-dom';
+import type { AppOutletContext } from '../../types/outletContexts';
 import AddEmployeeForm from './AddEmployeeForm';
 import EmployeeList from './EmployeeList';
 import EmployeeViewModal from './EmployeeViewModal';
@@ -84,10 +85,6 @@ interface Employee {
   updatedAt: string;
 }
 
-interface OutletContext {
-  darkMode: boolean;
-  language: 'en' | 'ar';
-}
 
 import { useUser } from '../../hooks/useUser';
 import { isManager } from '../../utils/roleUtils';
@@ -100,7 +97,7 @@ const EmployeeManager: React.FC = () => {
   const direction = theme.direction;
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const isTablet = useMediaQuery('(min-width:601px) and (max-width:786px)');
-  const { darkMode } = useOutletContext<OutletContext>();
+  const { darkMode } = useOutletContext<AppOutletContext>();
   const location = useLocation();
   const navigate = useNavigate();
   const { user } = useUser(); // Get user context
@@ -281,37 +278,28 @@ const EmployeeManager: React.FC = () => {
     profile_picture: member.user.profile_pic || undefined,
     department: member.department
       ? {
-        id: member.department.id,
-        name: member.department.name,
-        description: '',
-        tenantId: '',
-        createdAt: '',
-        updatedAt: '',
-        ...member.department,
-      }
+          id: member.department.id,
+          name: member.department.name,
+          description: '',
+          tenantId: '',
+          createdAt: '',
+          updatedAt: '',
+        }
       : member.designation.department
-        ? {
+      ? {
           id: member.designation.department.id,
           name: member.designation.department.name,
           description: '',
           tenantId: '',
           createdAt: '',
           updatedAt: '',
-          ...member.designation.department,
         }
-        : {
-          id: '',
-          name: 'Unknown',
-          description: '',
-          tenantId: '',
-          createdAt: '',
-          updatedAt: '',
-        },
+      : null,
     designation: {
       id: member.designation.id,
       title: member.designation.title,
       tenantId: '', // Not available
-      departmentId: member.department?.id || '',
+      departmentId: member.department?.id || member.designation.department?.id || '',
       createdAt: '',
       updatedAt: '',
     },
