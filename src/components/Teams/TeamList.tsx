@@ -78,7 +78,7 @@ const TeamList: React.FC<TeamListProps> = ({
       editTeam: 'Edit Team',
       deleteTeam: 'Delete Team',
       cancel: 'Cancel',
-      teamUpdated: 'Team successfully',
+      teamUpdated: 'Team updated successfully',
       teamDeleted: 'Team deleted successfully',
       error: 'An error occurred',
     },
@@ -198,7 +198,9 @@ const TeamList: React.FC<TeamListProps> = ({
         currentTeam.description = updatedTeam.description;
       }
 
-      snackbar.success(lang.teamUpdated);
+      snackbar.success(
+        (updatedTeam as { message?: string }).message ?? lang.teamUpdated
+      );
       setShowEditDialog(false);
       setSelectedTeam(null);
 
@@ -401,7 +403,7 @@ const TeamList: React.FC<TeamListProps> = ({
                           {team.manager?.first_name} {team.manager?.last_name}
                         </Typography>
                       </Box>
-                      {!isHRAdmin() && (
+                      {!isHRAdmin() && !isEmployeePoolTeam && (
                         <Box
                           sx={{
                             display: 'flex',

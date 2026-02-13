@@ -21,6 +21,7 @@ import {
   useMediaQuery,
   useTheme,
 } from '@mui/material';
+import { FilterList as FilterIcon } from '@mui/icons-material';
 import type { SelectChangeEvent } from '@mui/material/Select';
 import { LocalizationProvider } from '@mui/x-date-pickers';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
@@ -45,6 +46,7 @@ import ErrorSnackbar from '../common/ErrorSnackbar';
 import AppDropdown from '../common/AppDropdown';
 import AppPageTitle from '../common/AppPageTitle';
 import AppTable from '../common/AppTable';
+import AppButton from '../common/AppButton';
 
 type LeaveStatus = '' | 'pending' | 'approved' | 'rejected' | 'withdrawn';
 
@@ -168,6 +170,17 @@ const CrossTenantLeaveManagement: React.FC = () => {
     },
     [isSystemAdminUser]
   );
+
+  const handleClearFilters = useCallback(() => {
+    setFilters(prev => ({
+      ...prev,
+      departmentId: '',
+      status: '' as LeaveStatus,
+      startDate: null,
+      endDate: null,
+    }));
+    setCurrentPage(1);
+  }, []);
 
   const fetchTenants = useCallback(async () => {
     try {
@@ -591,6 +604,7 @@ const CrossTenantLeaveManagement: React.FC = () => {
       isMobile,
       handleFilterChange,
       handlePageChange,
+      handleClearFilters,
     }: {
       tableLoading: boolean;
       filters: {
@@ -614,12 +628,19 @@ const CrossTenantLeaveManagement: React.FC = () => {
         event: React.ChangeEvent<unknown>,
         page: number
       ) => void;
+      handleClearFilters: () => void;
     }) => (
       <Paper sx={{ p: 3, position: 'relative', boxShadow: 'none' }}>
         <Typography variant='h4' fontWeight={600} mb={2}>
           Leave Management Table
         </Typography>
-        <Stack direction={isMobile ? 'column' : 'row'} spacing={2} mb={3}>
+        <Stack
+          direction={isMobile ? 'column' : 'row'}
+          spacing={2}
+          mb={3}
+          flexWrap='wrap'
+          useFlexGap
+        >
           <AppDropdown
             // label='Department'
             showLabel={false}
@@ -674,6 +695,24 @@ const CrossTenantLeaveManagement: React.FC = () => {
             }
             slotProps={{ textField: { size: 'small' } }}
           />
+          <AppButton
+            variant='outlined'
+            variantType='secondary'
+            startIcon={<FilterIcon />}
+            onClick={handleClearFilters}
+            sx={{
+              p: 0.9,
+              width: { xs: '100%', sm: 'auto' },
+              color: 'var(--primary-dark-color)',
+              borderColor: 'var(--primary-dark-color)',
+              '&:hover': {
+                borderColor: 'var(--primary-dark-color)',
+                backgroundColor: 'transparent',
+              },
+            }}
+          >
+            Clear Filters
+          </AppButton>
         </Stack>
         {tableLoading && (
           <Box
@@ -861,6 +900,7 @@ const CrossTenantLeaveManagement: React.FC = () => {
           isMobile={isMobile}
           handleFilterChange={handleFilterChange}
           handlePageChange={handlePageChange}
+          handleClearFilters={handleClearFilters}
         />
 
         <ErrorSnackbar

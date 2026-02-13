@@ -190,7 +190,7 @@ export default function AnnouncementsPage() {
                       </Typography>
                     </Tooltip>
                   </TableCell>
-                  <TableCell>{a.category}</TableCell>
+                  <TableCell sx={{ textTransform: 'capitalize' }}>{a.category}</TableCell>
                   <TableCell sx={{ textTransform: 'capitalize' }}>
                     {String(a.priority)}
                   </TableCell>

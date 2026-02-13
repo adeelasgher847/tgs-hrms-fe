@@ -315,3 +315,7 @@ export const TASK_CARD_CONFIG = {
   TITLE_LIMIT: 20,
   DESCRIPTION_LIMIT: 40,
 };
+
+export const ASSET_TABLE_CONFIG = {
+  NAME_LIMIT: 25,
+};

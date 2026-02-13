@@ -1603,6 +1603,21 @@ const RequestManagement: React.FC = () => {
           />
         ),
       },
+      ...(selectedAction === 'approve' && availableAssets.length === 0
+        ? [
+            {
+              name: 'assetNotAvailableMessage',
+              label: '',
+              value: '',
+              onChange: () => { },
+              component: (
+                <Alert severity='warning' sx={{ mt: 1 }}>
+                  Asset not available
+                </Alert>
+              ),
+            },
+          ]
+        : []),
       {
         name: 'assignedAssetId',
         label: 'Assign Asset',
@@ -1680,7 +1695,7 @@ const RequestManagement: React.FC = () => {
         ) : undefined,
       },
     ];
-  }, [control, errors, loading, availableAssets, selectedRequest]);
+  }, [control, errors, loading, availableAssets, selectedRequest, selectedAction]);
 
   // Fetch comments for requests
   React.useEffect(() => {

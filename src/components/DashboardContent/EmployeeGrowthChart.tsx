@@ -5,6 +5,9 @@ import { useOutletContext } from 'react-router-dom';
 import { useLanguage } from '../../hooks/useLanguage';
 import systemEmployeeApiService from '../../api/systemEmployeeApi';
 import systemDashboardApiService from '../../api/systemDashboardApi';
+import { getCurrentUser } from '../../utils/auth';
+import { getStoredUser, getTenantIdFromUser } from '../../utils/authSession';
+import { isSystemAdmin } from '../../utils/roleUtils';
 import AppDropdown from '../common/AppDropdown';
 // using shared AppDropdown for time selector
 
@@ -33,10 +36,16 @@ const EmployeeGrowthChart: React.FC = () => {
   const { darkMode } = useOutletContext<{ darkMode: boolean }>();
   const { language } = useLanguage();
 
+  const currentUser = getCurrentUser();
+  const userRole = currentUser?.role;
+  const isSysAdmin = isSystemAdmin(userRole);
+
   const [tenants, setTenants] = useState<Tenant[]>([]);
   const [loadingTenants, setLoadingTenants] = useState(true);
-  const [selectedTenant, setSelectedTenant] = useState<string>('Ibex Tech.');
-  const [selectedYear, setSelectedYear] = useState<number>(2025);
+  const [selectedTenant, setSelectedTenant] = useState<string>('');
+  const [selectedYear, setSelectedYear] = useState<number>(
+    () => new Date().getFullYear()
+  );
   const [selectedMonth, setSelectedMonth] = useState<string>('');
   const [tenantGrowthData, setTenantGrowthData] = useState<TenantGrowth[]>([]);
 
@@ -45,20 +54,27 @@ const EmployeeGrowthChart: React.FC = () => {
     ar: 'نمو الموظفين',
   };
 
+  // Tenant admin: use tenant ID from localStorage (set at login); System admin: fetch tenants and let user select
   useEffect(() => {
+    if (!isSysAdmin) {
+      const storedTenantId = localStorage.getItem('tenant_id');
+      const tenantId =
+        (storedTenantId && storedTenantId.trim()) ||
+        getTenantIdFromUser(getStoredUser() ?? undefined) ||
+        (currentUser?.tenant_id as string) ||
+        '';
+      if (tenantId) setSelectedTenant(String(tenantId).trim());
+      setLoadingTenants(false);
+      return;
+    }
+
     const fetchTenants = async () => {
       try {
         const data = await systemEmployeeApiService.getAllTenants(true);
-        // Show all tenants (no filtering)
-        setTenants(data as unknown as Tenant[]);
+        setTenants((data || []) as unknown as Tenant[]);
 
-        if (data.length > 0) {
-          const ibexTenant = data.find(t => t.name === 'Ibex Tech.');
-          if (ibexTenant) {
-            setSelectedTenant(ibexTenant.id);
-          } else {
-            setSelectedTenant(data[0].id);
-          }
+        if (data && data.length > 0) {
+          setSelectedTenant(data[0].id);
         }
       } catch {
         // Ignore tenant dropdown errors; chart will just have no data
@@ -68,11 +84,11 @@ const EmployeeGrowthChart: React.FC = () => {
     };
 
     fetchTenants();
-  }, []);
+  }, [isSysAdmin, currentUser?.tenant_id]);
 
   useEffect(() => {
+    if (!selectedTenant) return;
     const fetchTenantGrowth = async () => {
-      if (!selectedTenant) return;
       try {
         const data = await systemDashboardApiService.getTenantGrowth(
           selectedYear,
@@ -86,6 +102,18 @@ const EmployeeGrowthChart: React.FC = () => {
 
     fetchTenantGrowth();
   }, [selectedTenant, selectedYear]);
+
+  useEffect(() => {
+    if (tenantGrowthData.length === 0) return;
+    const mm = String(new Date().getMonth() + 1).padStart(2, '0');
+    const match = tenantGrowthData.find(
+      d =>
+        d.month === mm ||
+        d.month.endsWith('-' + mm) ||
+        d.month === String(new Date().getMonth() + 1)
+    );
+    if (match) setSelectedMonth(match.month);
+  }, [tenantGrowthData]);
 
   // Filter data by selected month if a month is selected
   const filteredData = selectedMonth
@@ -212,30 +240,32 @@ const EmployeeGrowthChart: React.FC = () => {
         </Typography>
 
         <Box display='flex' gap={1} flexWrap='wrap'>
-          <AppDropdown
-            label='Tenant'
-            value={selectedTenant}
-            onChange={e => setSelectedTenant(e.target.value as string)}
-            options={tenants.map(t => ({ value: t.id, label: t.name }))}
-            containerSx={{
-              minWidth: { xs: '100%', sm: 140 },
-              width: { xs: '100%', sm: 'auto' },
-            }}
-            sx={{
-              '& .MuiSelect-select': {
-                color: theme.palette.text.primary,
-                display: 'flex',
-                alignItems: 'center',
-                maxWidth: { xs: '100%', sm: 200 },
-                overflow: 'hidden',
-                textOverflow: 'ellipsis',
-                whiteSpace: 'nowrap',
-              },
-              '& .MuiOutlinedInput-notchedOutline': {
-                borderColor: theme.palette.divider,
-              },
-            }}
-          />
+          {isSysAdmin && (
+            <AppDropdown
+              label='Tenant'
+              value={selectedTenant}
+              onChange={e => setSelectedTenant(e.target.value as string)}
+              options={tenants.map(t => ({ value: t.id, label: t.name }))}
+              containerSx={{
+                minWidth: { xs: '100%', sm: 140 },
+                width: { xs: '100%', sm: 'auto' },
+              }}
+              sx={{
+                '& .MuiSelect-select': {
+                  color: theme.palette.text.primary,
+                  display: 'flex',
+                  alignItems: 'center',
+                  maxWidth: { xs: '100%', sm: 200 },
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  whiteSpace: 'nowrap',
+                },
+                '& .MuiOutlinedInput-notchedOutline': {
+                  borderColor: theme.palette.divider,
+                },
+              }}
+            />
+          )}
 
           <AppDropdown
             label='Month'
