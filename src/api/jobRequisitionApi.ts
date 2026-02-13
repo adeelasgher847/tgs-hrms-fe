@@ -226,6 +226,17 @@ class JobRequisitionApiService {
   }
 
   /**
+   * Publish a requisition (only when approved)
+   */
+  async publishRequisition(id: string): Promise<JobRequisition> {
+    const response = await axiosInstance.post<JobRequisition>(
+      `${this.baseUrl}/${id}/publish`,
+      {}
+    );
+    return response.data;
+  }
+
+  /**
    * Get audit trail for a requisition
    */
   async getAuditTrail(id: string): Promise<ApprovalLog[]> {

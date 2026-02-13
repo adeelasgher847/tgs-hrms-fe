@@ -15,8 +15,24 @@ import {
   IconButton,
   Tooltip,
   Pagination,
+  Menu,
+  MenuItem,
+  ListItemIcon,
+  ListItemText,
+  Divider,
 } from '@mui/material';
-import { Add as AddIcon, Edit as EditIcon, Delete as DeleteIcon, ContentCopy as CloneIcon, Close as CloseIcon, Visibility as ViewIcon } from '@mui/icons-material';
+import { 
+  Add as AddIcon, 
+  Edit as EditIcon, 
+  Delete as DeleteIcon, 
+  ContentCopy as CloneIcon, 
+  Close as CloseIcon, 
+  Visibility as ViewIcon,
+  CheckCircle as ApproveIcon,
+  Cancel as RejectIcon,
+  Publish as PublishIcon,
+  MoreVert as MoreVertIcon
+} from '@mui/icons-material';
 import { useOutletContext } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import type { AppOutletContext } from '../../types/outletContexts';
@@ -61,11 +77,19 @@ const JobRequisitionManager: React.FC = () => {
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [detailModalOpen, setDetailModalOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [approveDialogOpen, setApproveDialogOpen] = useState(false);
+  const [rejectDialogOpen, setRejectDialogOpen] = useState(false);
+  const [publishDialogOpen, setPublishDialogOpen] = useState(false);
 
   // Form states
   const [editingRequisition, setEditingRequisition] = useState<JobRequisition | null>(null);
   const [selectedRequisition, setSelectedRequisition] = useState<JobRequisition | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
+  const [actionTarget, setActionTarget] = useState<string | null>(null);
+  
+  // Menu state
+  const [menuAnchor, setMenuAnchor] = useState<null | HTMLElement>(null);
+  const [selectedRequisitionForMenu, setSelectedRequisitionForMenu] = useState<JobRequisition | null>(null);
 
   // Pagination
   const [currentPage, setCurrentPage] = useState(1);
@@ -218,6 +242,121 @@ const JobRequisitionManager: React.FC = () => {
     }
   };
 
+  const handleApproveClick = (id: string) => {
+    setActionTarget(id);
+    setApproveDialogOpen(true);
+  };
+
+  const handleApproveConfirm = async () => {
+    if (!actionTarget) return;
+
+    setSubmitting(true);
+    try {
+      await jobRequisitionApiService.approveRequisition(actionTarget, {
+        status: 'Approved',
+      });
+      showSuccess('Job requisition approved successfully');
+      setApproveDialogOpen(false);
+      setActionTarget(null);
+      await refetch();
+    } catch (error) {
+      showError(extractErrorMessage(error));
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleRejectClick = (id: string) => {
+    setActionTarget(id);
+    setRejectDialogOpen(true);
+  };
+
+  const handleRejectConfirm = async () => {
+    if (!actionTarget) return;
+
+    setSubmitting(true);
+    try {
+      await jobRequisitionApiService.rejectRequisition(actionTarget, {
+        status: 'Rejected',
+      });
+      showSuccess('Job requisition rejected successfully');
+      setRejectDialogOpen(false);
+      setActionTarget(null);
+      await refetch();
+    } catch (error) {
+      showError(extractErrorMessage(error));
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handlePublishClick = (id: string) => {
+    setActionTarget(id);
+    setPublishDialogOpen(true);
+  };
+
+  const handlePublishConfirm = async () => {
+    if (!actionTarget) return;
+
+    setSubmitting(true);
+    try {
+      await jobRequisitionApiService.publishRequisition(actionTarget);
+      showSuccess('Job requisition published successfully');
+      setPublishDialogOpen(false);
+      setActionTarget(null);
+      await refetch();
+    } catch (error) {
+      showError(extractErrorMessage(error));
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleMenuOpen = (event: React.MouseEvent<HTMLElement>, requisition: JobRequisition) => {
+    setMenuAnchor(event.currentTarget);
+    setSelectedRequisitionForMenu(requisition);
+  };
+
+  const handleMenuClose = () => {
+    setMenuAnchor(null);
+    setSelectedRequisitionForMenu(null);
+  };
+
+  const handleMenuEdit = () => {
+    if (selectedRequisitionForMenu) {
+      handleEditOpen(selectedRequisitionForMenu);
+    }
+    handleMenuClose();
+  };
+
+  const handleMenuDelete = () => {
+    if (selectedRequisitionForMenu) {
+      handleDeleteClick(selectedRequisitionForMenu.id);
+    }
+    handleMenuClose();
+  };
+
+  const handleMenuApprove = () => {
+    if (selectedRequisitionForMenu) {
+      handleApproveClick(selectedRequisitionForMenu.id);
+    }
+    handleMenuClose();
+  };
+
+  const handleMenuReject = () => {
+    if (selectedRequisitionForMenu) {
+      handleRejectClick(selectedRequisitionForMenu.id);
+    }
+    handleMenuClose();
+  };
+
+  const handleMenuClone = () => {
+    if (selectedRequisitionForMenu) {
+      handleCloneRequisition(selectedRequisitionForMenu.id);
+    }
+    handleMenuClose();
+  };
+
   const totalPages = useMemo(() => {
     return Math.max(1, Math.ceil(totalItems / paginationLimit));
   }, [totalItems, paginationLimit]);
@@ -316,33 +455,29 @@ const JobRequisitionManager: React.FC = () => {
                         <ViewIcon fontSize="small" />
                       </IconButton>
                     </Tooltip>
-                    <Tooltip title="Edit">
-                      <IconButton
-                        size="small"
-                        onClick={() => handleEditOpen(req)}
-                        sx={{ color: 'primary.main' }}
-                      >
-                        <EditIcon fontSize="small" />
-                      </IconButton>
+                    <Tooltip title={req.status === 'Approved' ? 'Publish' : 'Publish (Only available for approved requisitions)'}>
+                      <span>
+                        <IconButton
+                          size="small"
+                          onClick={() => handlePublishClick(req.id)}
+                          disabled={submitting || req.status !== 'Approved'}
+                          sx={{ 
+                            color: req.status === 'Approved' ? 'info.main' : 'action.disabled',
+                            opacity: req.status === 'Approved' ? 1 : 0.5
+                          }}
+                        >
+                          <PublishIcon fontSize="small" />
+                        </IconButton>
+                      </span>
                     </Tooltip>
-                    <Tooltip title="Clone">
+                    <Tooltip title="More Actions">
                       <IconButton
                         size="small"
-                        onClick={() => handleCloneRequisition(req.id)}
+                        onClick={(e) => handleMenuOpen(e, req)}
                         disabled={submitting}
-                        sx={{ color: 'primary.main' }}
+                        sx={{ color: 'text.secondary' }}
                       >
-                        <CloneIcon fontSize="small" />
-                      </IconButton>
-                    </Tooltip>
-                    <Tooltip title="Delete">
-                      <IconButton
-                        size="small"
-                        onClick={() => handleDeleteClick(req.id)}
-                        disabled={submitting}
-                        sx={{ color: 'error.main' }}
-                      >
-                        <DeleteIcon fontSize="small" />
+                        <MoreVertIcon fontSize="small" />
                       </IconButton>
                     </Tooltip>
                   </Stack>
@@ -352,6 +487,60 @@ const JobRequisitionManager: React.FC = () => {
           )}
         </TableBody>
       </AppTable>
+
+      {/* Actions Menu */}
+      <Menu
+        anchorEl={menuAnchor}
+        open={Boolean(menuAnchor)}
+        onClose={handleMenuClose}
+        anchorOrigin={{
+          vertical: 'bottom',
+          horizontal: 'right',
+        }}
+        transformOrigin={{
+          vertical: 'top',
+          horizontal: 'right',
+        }}
+      >
+        <MenuItem onClick={handleMenuEdit}>
+          <ListItemIcon>
+            <EditIcon fontSize="small" sx={{ color: 'primary.main' }} />
+          </ListItemIcon>
+          <ListItemText>Edit</ListItemText>
+        </MenuItem>
+        <Divider />
+        <MenuItem 
+          onClick={handleMenuApprove}
+          disabled={selectedRequisitionForMenu?.status === 'Approved' || selectedRequisitionForMenu?.status === 'Rejected'}
+        >
+          <ListItemIcon>
+            <ApproveIcon fontSize="small" sx={{ color: 'success.main' }} />
+          </ListItemIcon>
+          <ListItemText>Approve</ListItemText>
+        </MenuItem>
+        <MenuItem 
+          onClick={handleMenuReject}
+          disabled={selectedRequisitionForMenu?.status === 'Rejected' || selectedRequisitionForMenu?.status === 'Approved'}
+        >
+          <ListItemIcon>
+            <RejectIcon fontSize="small" sx={{ color: 'error.main' }} />
+          </ListItemIcon>
+          <ListItemText>Reject</ListItemText>
+        </MenuItem>
+        <Divider />
+        <MenuItem onClick={handleMenuClone}>
+          <ListItemIcon>
+            <CloneIcon fontSize="small" sx={{ color: 'primary.main' }} />
+          </ListItemIcon>
+          <ListItemText>Clone</ListItemText>
+        </MenuItem>
+        <MenuItem onClick={handleMenuDelete}>
+          <ListItemIcon>
+            <DeleteIcon fontSize="small" sx={{ color: 'error.main' }} />
+          </ListItemIcon>
+          <ListItemText>Delete</ListItemText>
+        </MenuItem>
+      </Menu>
 
       {totalPages > 1 && (
         <Box display="flex" justifyContent="center" mt={3}>
@@ -441,10 +630,59 @@ const JobRequisitionManager: React.FC = () => {
       {/* Delete Confirmation */}
       <DeleteConfirmationDialog
         open={deleteDialogOpen}
-        onClose={() => setDeleteDialogOpen(false)}
+        onClose={() => {
+          setDeleteDialogOpen(false);
+          setDeleteTarget(null);
+        }}
         onConfirm={handleDeleteConfirm}
         title="Delete Job Requisition"
         message="Are you sure you want to delete this job requisition? This action cannot be undone."
+        confirmText="Delete"
+        loading={submitting}
+      />
+
+      {/* Approve Confirmation */}
+      <DeleteConfirmationDialog
+        open={approveDialogOpen}
+        onClose={() => {
+          setApproveDialogOpen(false);
+          setActionTarget(null);
+        }}
+        onConfirm={handleApproveConfirm}
+        title="Approve Job Requisition"
+        message="Are you sure you want to approve this job requisition?"
+        confirmText="Approve"
+        confirmVariantType="primary"
+        loading={submitting}
+      />
+
+      {/* Reject Confirmation */}
+      <DeleteConfirmationDialog
+        open={rejectDialogOpen}
+        onClose={() => {
+          setRejectDialogOpen(false);
+          setActionTarget(null);
+        }}
+        onConfirm={handleRejectConfirm}
+        title="Reject Job Requisition"
+        message="Are you sure you want to reject this job requisition?"
+        confirmText="Reject"
+        confirmVariantType="danger"
+        loading={submitting}
+      />
+
+      {/* Publish Confirmation */}
+      <DeleteConfirmationDialog
+        open={publishDialogOpen}
+        onClose={() => {
+          setPublishDialogOpen(false);
+          setActionTarget(null);
+        }}
+        onConfirm={handlePublishConfirm}
+        title="Publish Job Requisition"
+        message="Are you sure you want to publish this job requisition? It will be made available for candidates."
+        confirmText="Publish"
+        confirmVariantType="primary"
         loading={submitting}
       />
 
