@@ -43,7 +43,6 @@ import AppDropdown from '../common/AppDropdown';
 import AppFormModal from '../common/AppFormModal';
 import AppPageTitle from '../common/AppPageTitle';
 import AppInputField from '../common/AppInputField';
-import AppSearch from '../common/AppSearch';
 
 dayjs.extend(dayjsPluginLocalizedFormat);
 
@@ -882,18 +881,6 @@ const PayrollRecords: React.FC = () => {
           </Box>
         </Paper>
       )}
-      {/* Search bar (using shared AppSearch) placed below the month/year/generate controls */}
-      <AppCard sx={{ mb: 3 }}>
-        <AppSearch
-          value={searchQuery}
-          onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-            setSearchQuery(String(e.target.value || ''));
-            setCurrentPage(1);
-          }}
-          placeholder='Search employee name or email'
-          sx={{ borderRadius: 2, width: '100%' }}
-        />
-      </AppCard>
       <Paper
         elevation={0}
         sx={{

@@ -17,6 +17,7 @@ import {
   DialogContent,
   DialogActions,
   Pagination,
+  Tooltip,
   useTheme,
 } from '@mui/material';
 import {
@@ -32,7 +33,14 @@ import {
 import StatusChip from './StatusChip';
 import { formatDate } from '../../utils/dateUtils';
 import { PAGINATION } from '../../constants/appConstants';
+import { ASSET_TABLE_CONFIG } from '../../theme/themeConfig';
 import AppTable from '../common/AppTable';
+
+function truncateText(text: string, limit: number) {
+  if (!text) return '';
+  if (text.length <= limit) return text;
+  return text.substring(0, limit) + '...';
+}
 import AppDropdown from '../common/AppDropdown';
 import AppSearch from '../common/AppSearch';
 import AppButton from '../common/AppButton';
@@ -677,8 +685,8 @@ const SystemAdminAssets: React.FC = () => {
           >
             <Box
               sx={{
-                flex: { xs: '0 0 100%', sm: '1 1 150px' },
-                minWidth: { xs: '100%', sm: '150px' },
+                width: { xs: '100%', sm: 'auto' },
+                minWidth: 0,
                 order: { xs: 1, sm: 'initial' },
                 mb: { xs: 1, sm: 0 },
               }}
@@ -692,8 +700,8 @@ const SystemAdminAssets: React.FC = () => {
             </Box>
             <Box
               sx={{
-                flex: { xs: '0 0 100%', sm: '1 1 150px' },
-                minWidth: { xs: '100%', sm: '150px' },
+                width: { xs: '100%', sm: 'auto' },
+                minWidth: 0,
                 order: { xs: 2, sm: 'initial' },
                 mb: { xs: 1, sm: 0 },
               }}
@@ -701,6 +709,7 @@ const SystemAdminAssets: React.FC = () => {
               <AppDropdown
                 label='Category'
                 showLabel={false}
+                containerSx={{ minWidth: 0, width: '100%' }}
                 value={categoryFilter}
                 onChange={e => setCategoryFilter(String(e.target.value || ''))}
                 options={[
@@ -711,8 +720,8 @@ const SystemAdminAssets: React.FC = () => {
             </Box>
             <Box
               sx={{
-                flex: { xs: '0 0 100%', sm: '1 1 150px' },
-                minWidth: { xs: '100%', sm: '150px' },
+                width: { xs: '100%', sm: 'auto' },
+                minWidth: 0,
                 order: { xs: 3, sm: 'initial' },
                 mb: { xs: 1, sm: 0 },
               }}
@@ -720,6 +729,7 @@ const SystemAdminAssets: React.FC = () => {
               <AppDropdown
                 label='Tenant'
                 showLabel={false}
+                containerSx={{ minWidth: 0, width: '100%' }}
                 value={tenantFilter}
                 onChange={e => setTenantFilter(String(e.target.value || ''))}
                 options={[
@@ -733,8 +743,8 @@ const SystemAdminAssets: React.FC = () => {
             </Box>
             <Box
               sx={{
-                flex: { xs: '0 0 100%', sm: '1 1 150px' },
-                minWidth: { xs: '100%', sm: '150px' },
+                width: { xs: '100%', sm: 'auto' },
+                minWidth: 0,
                 order: { xs: 4, sm: 'initial' },
                 mb: { xs: 1, sm: 0 },
               }}
@@ -742,6 +752,7 @@ const SystemAdminAssets: React.FC = () => {
               <AppDropdown
                 label='Assigned Status'
                 showLabel={false}
+                containerSx={{ minWidth: 0, width: '100%' }}
                 value={assignedFilter}
                 onChange={e => setAssignedFilter(String(e.target.value || ''))}
                 options={[
@@ -758,6 +769,7 @@ const SystemAdminAssets: React.FC = () => {
               onClick={handleClearFilters}
               sx={{
                 p: 0.9,
+                width: { xs: '100%', sm: 'auto' },
                 color: 'var(--primary-dark-color)',
                 borderColor: 'var(--primary-dark-color)',
                 '&:hover': {
@@ -841,9 +853,23 @@ const SystemAdminAssets: React.FC = () => {
             filteredAssets.map(asset => (
               <TableRow key={asset.id} hover>
                 <TableCell>
-                  <Typography variant='body2' fontWeight={500}>
-                    {asset.name}
-                  </Typography>
+                  <Tooltip title={asset.name} placement='top'>
+                    <Typography
+                      variant='body2'
+                      fontWeight={500}
+                      sx={{
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        whiteSpace: 'nowrap',
+                        maxWidth: '200px',
+                      }}
+                    >
+                      {truncateText(
+                        asset.name,
+                        ASSET_TABLE_CONFIG.NAME_LIMIT
+                      )}
+                    </Typography>
+                  </Tooltip>
                   <Typography
                     variant='caption'
                     color='text.secondary'
@@ -961,11 +987,11 @@ const SystemAdminAssets: React.FC = () => {
           />
         </Box>
       )}
-      {!loading && totalRecords > 0 && (
+      {!loading && filteredAssets.length > 0 && (
         <Box display='flex' justifyContent='center' pb={2}>
           <Typography variant='body2' color='textSecondary'>
-            Showing page {currentPage} of {totalPages} ({totalRecords} total
-            records)
+            Showing page {currentPage} of {totalPages} ({filteredAssets.length}{' '}
+            records on this page)
           </Typography>
         </Box>
       )}

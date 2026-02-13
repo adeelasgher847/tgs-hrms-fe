@@ -289,7 +289,6 @@ const LeaveForm: React.FC<LeaveFormProps> = ({
               setStartDate(null);
             }
           }}
-          minDate={getToday()}
           slotProps={{
             textField: {
               fullWidth: true,
@@ -344,7 +343,7 @@ const LeaveForm: React.FC<LeaveFormProps> = ({
               setEndDate(null);
             }
           }}
-          minDate={startDate || getToday()}
+          minDate={startDate ?? undefined}
           slotProps={{
             textField: {
               fullWidth: true,

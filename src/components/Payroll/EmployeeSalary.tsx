@@ -969,6 +969,9 @@ const EmployeeSalaryPage: React.FC = () => {
                           color: darkMode ? '#8f8f8f' : '#666',
                           mt: 1,
                           fontStyle: 'italic',
+                          whiteSpace: 'pre-wrap',
+                          wordBreak: 'break-word',
+                          overflowWrap: 'break-word',
                         }}
                       >
                         {allowance.description}
@@ -1051,6 +1054,9 @@ const EmployeeSalaryPage: React.FC = () => {
                           color: darkMode ? '#8f8f8f' : '#666',
                           mt: 1,
                           fontStyle: 'italic',
+                          whiteSpace: 'pre-wrap',
+                          wordBreak: 'break-word',
+                          overflowWrap: 'break-word',
                         }}
                       >
                         {deduction.description}
@@ -1137,7 +1143,12 @@ const EmployeeSalaryPage: React.FC = () => {
                   </Typography>
                   <Typography
                     variant='body1'
-                    sx={{ color: theme.palette.text.primary }}
+                    sx={{
+                      color: theme.palette.text.primary,
+                      whiteSpace: 'pre-wrap',
+                      wordBreak: 'break-word',
+                      overflowWrap: 'break-word',
+                    }}
                   >
                     {mySalary.notes}
                   </Typography>
@@ -1617,7 +1628,12 @@ const EmployeeSalaryPage: React.FC = () => {
                     </Typography>
                     <Typography
                       variant='body1'
-                      sx={{ color: theme.palette.text.primary }}
+                      sx={{
+                        color: theme.palette.text.primary,
+                        whiteSpace: 'pre-wrap',
+                        wordBreak: 'break-word',
+                        overflowWrap: 'break-word',
+                      }}
                     >
                       {selectedSalary.notes}
                     </Typography>

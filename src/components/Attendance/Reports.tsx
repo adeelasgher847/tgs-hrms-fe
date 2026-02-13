@@ -20,6 +20,7 @@ import {
   type LeaveSummaryItem,
   type TeamMember,
 } from '../../api/leaveReportApi';
+import employeeApi from '../../api/employeeApi';
 import { useIsDarkMode } from '../../theme';
 import AppCard from '../common/AppCard';
 import AppTable from '../common/AppTable';
@@ -65,7 +66,7 @@ const Reports: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [selectedEmployee, setSelectedEmployee] = useState<string | null>(null);
   const [allEmployees, setAllEmployees] = useState<
-    Array<{ id: string; name: string }>
+    Array<{ id: string; name: string; firstName: string }>
   >([]);
   const [, setTeamSummary] = useState<TeamMember[]>([]);
   const [loadingEmployees, setLoadingEmployees] = useState(false);
@@ -138,13 +139,20 @@ const Reports: React.FC = () => {
 
   // handleTabChange removed — `tab` is not dynamically changed in this component
 
-  const handleYearChange = (event: SelectChangeEvent<string | number>) => {
-    setSelectedYear(Number(event.target.value));
+  const handleYearChange = (
+    event: SelectChangeEvent<string | number | string[]>
+  ) => {
+    const value = event.target.value;
+    const single = Array.isArray(value) ? value[0] : value;
+    setSelectedYear(Number(single));
   };
 
-  const handleEmployeeChange = (event: SelectChangeEvent<string | number>) => {
+  const handleEmployeeChange = (
+    event: SelectChangeEvent<string | number | string[]>
+  ) => {
     const value = event.target.value;
-    setSelectedEmployee(value === 'all' ? null : String(value));
+    const single = Array.isArray(value) ? value[0] : value;
+    setSelectedEmployee(single === 'all' ? null : String(single));
   };
 
   const filteredEmployeeReports = useMemo(() => {

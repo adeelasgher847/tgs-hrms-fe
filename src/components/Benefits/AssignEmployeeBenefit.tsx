@@ -151,9 +151,16 @@ const AssignEmployeeBenefit: React.FC<{
 
         if (!isMounted) return;
 
-        const employeeRecord = response?.find(
+        type EmployeeWithBenefitsEntry = {
+          employeeId?: string;
+          benefits?: { id: string }[];
+        };
+        const list: EmployeeWithBenefitsEntry[] = Array.isArray(response)
+          ? (response as EmployeeWithBenefitsEntry[])
+          : (response as { items?: EmployeeWithBenefitsEntry[] })?.items ?? [];
+        const employeeRecord = list.find(
           entry =>
-            entry.employeeId?.toLowerCase() === selectedEmployeeId.toLowerCase()
+            entry?.employeeId?.toLowerCase() === selectedEmployeeId.toLowerCase()
         );
 
         const benefitIds = employeeRecord?.benefits?.map(b => b.id) || [];

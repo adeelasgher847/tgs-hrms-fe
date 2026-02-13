@@ -29,7 +29,6 @@ import UndoIcon from '@mui/icons-material/Undo';
 import FileDownloadIcon from '@mui/icons-material/FileDownload';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
 import EditIcon from '@mui/icons-material/Edit';
-import DeleteIcon from '@mui/icons-material/Delete';
 import type { Leave } from '../../type/levetypes';
 import { formatDate } from '../../utils/dateUtils';
 import { leaveApi } from '../../api/leaveApi';
@@ -256,19 +255,31 @@ const LeaveHistory: React.FC<LeaveHistoryProps> = ({
     return Array.from(names);
   }, [leavesToUse, allLeavesForFilter, isAdmin, currentUserId]);
 
+  const leavesInSelectedMonth = useMemo(() => {
+    if (!dateFilter || !/^\d{4}-\d{2}$/.test(dateFilter)) return leavesToUse;
+    const [y, m] = dateFilter.split('-').map(Number);
+    const startOfMonth = new Date(y, m - 1, 1);
+    const endOfMonth = new Date(y, m, 0);
+    return leavesToUse.filter(leave => {
+      const leaveStart = new Date(leave.startDate);
+      const leaveEnd = new Date(leave.endDate);
+      return leaveStart <= endOfMonth && leaveEnd >= startOfMonth;
+    });
+  }, [leavesToUse, dateFilter]);
+
   const filteredLeaves = useMemo(() => {
     if (isManager && viewMode === 'you') {
-      return leavesToUse.filter(
+      return leavesInSelectedMonth.filter(
         l => l.employee?.id === currentUserId || l.employeeId === currentUserId
       );
     }
 
-    if (selectedEmployee === '') return leavesToUse;
+    if (selectedEmployee === '') return leavesInSelectedMonth;
 
-    return leavesToUse.filter(
+    return leavesInSelectedMonth.filter(
       leave => leave.employee?.first_name === selectedEmployee
     );
-  }, [selectedEmployee, leavesToUse, isManager, viewMode, currentUserId]);
+  }, [selectedEmployee, leavesInSelectedMonth, isManager, viewMode, currentUserId]);
 
   // Check if an employee is selected (for admin filtering)
   const isEmployeeFiltered = isAdmin && selectedEmployee !== '';
@@ -371,22 +382,6 @@ const LeaveHistory: React.FC<LeaveHistoryProps> = ({
     setOpenDocs(true);
   };
 
-  const handleDeleteDocument = async (docUrl: string) => {
-    if (!currentLeaveId) return;
-    if (!window.confirm('Are you sure you want to delete this document?')) return;
-
-    try {
-      await leaveApi.deleteDocument(currentLeaveId, docUrl);
-      // Remove from local state
-      setCurrentDocs(prev => prev.filter(d => d !== docUrl));
-      // Refresh leaves to update the main list
-      refreshLeaves();
-    } catch (error) {
-      console.error('Failed to delete document', error);
-      alert('Failed to delete document');
-    }
-  };
-
   const handleMenuClick = (
     event: React.MouseEvent<HTMLElement>,
     leave: Leave
@@ -477,9 +472,10 @@ const LeaveHistory: React.FC<LeaveHistoryProps> = ({
               value={dateFilter}
               onChange={e => onDateFilterChange(e.target.value)}
               sx={{
-                width: 160,
+                width: { xs: '100%', sm: 220 },
                 bgcolor: 'background.paper',
                 borderRadius: 1,
+                '& .MuiInputBase-input': { padding: '10px 14px' },
               }}
               InputLabelProps={{ shrink: true }}
             />
@@ -504,7 +500,19 @@ const LeaveHistory: React.FC<LeaveHistoryProps> = ({
                 ...employeeNames.map(name => ({ value: name, label: name })),
               ]}
               placeholder='All Employees'
-              containerSx={{ minWidth: { xs: '100%', sm: 200 } }}
+              containerSx={{
+                width: { xs: '100%', sm: 220 },
+                minWidth: { xs: '100%', sm: 220 },
+                maxWidth: { xs: '100%', sm: 220 },
+              }}
+              sx={{
+                '& .MuiOutlinedInput-root': {
+                  borderRadius: 1,
+                  bgcolor: 'background.paper',
+                },
+                '& .MuiInputBase-input': { padding: '10px 14px' },
+                '& .MuiSelect-select': { padding: '10px 14px' },
+              }}
             />
           )}
 
@@ -632,7 +640,6 @@ const LeaveHistory: React.FC<LeaveHistoryProps> = ({
                 </TableCell>
                 <TableCell>
                   <Chip
-                    icon={statusConfig[leave.status]?.icon}
                     label={
                       leave.status
                         ? leave.status.charAt(0).toUpperCase() +
@@ -980,7 +987,7 @@ const LeaveHistory: React.FC<LeaveHistoryProps> = ({
           ) : null;
         })()}
 
-        {totalItems > 0 && (
+        {paginatedLeaves.length > 0 && (
           <Typography
             variant='body2'
             color='text.secondary'
@@ -991,8 +998,8 @@ const LeaveHistory: React.FC<LeaveHistoryProps> = ({
             }}
           >
             {useServerPagination
-              ? `Showing page ${currentPage} of ${totalPages} (${totalItems} total records)`
-              : `Showing page ${page} of ${totalPages} (${totalItems} total records)`}
+              ? `Showing page ${currentPage} of ${totalPages} (${paginatedLeaves.length} total records)`
+              : `Showing page ${page} of ${totalPages} (${paginatedLeaves.length} total records)`}
           </Typography>
         )}
       </Box>
@@ -1096,23 +1103,6 @@ const LeaveHistory: React.FC<LeaveHistoryProps> = ({
                           />
                         )}
                       </Box>
-                      <IconButton
-                        size='small'
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleDeleteDocument(doc);
-                        }}
-                        sx={{
-                          position: 'absolute',
-                          top: 4,
-                          right: 4,
-                          bgcolor: 'background.paper',
-                          boxShadow: 1,
-                          '&:hover': { bgcolor: 'error.light', color: 'white' },
-                        }}
-                      >
-                        <DeleteIcon fontSize='small' />
-                      </IconButton>
                     </Box>
                   );
                 }
@@ -1154,23 +1144,6 @@ const LeaveHistory: React.FC<LeaveHistoryProps> = ({
                         View / Download
                       </Typography>
                     </Box>
-                    <IconButton
-                      size='small'
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleDeleteDocument(doc);
-                      }}
-                      sx={{
-                        position: 'absolute',
-                        top: 4,
-                        right: 4,
-                        bgcolor: 'background.paper',
-                        boxShadow: 1,
-                        '&:hover': { bgcolor: 'error.light', color: 'white' },
-                      }}
-                    >
-                      <DeleteIcon fontSize='small' />
-                    </IconButton>
                   </Box>
                 );
               })}
