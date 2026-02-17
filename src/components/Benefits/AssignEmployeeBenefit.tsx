@@ -153,7 +153,12 @@ const AssignEmployeeBenefit: React.FC<{
 
         type EmployeeWithBenefitsEntry = {
           employeeId?: string;
-          benefits?: { id: string }[];
+          benefits?: Array<{
+            id: string;
+            benefitId?: string;
+            statusOfAssignment?: string;
+            status?: string;
+          }>;
         };
         const list: EmployeeWithBenefitsEntry[] = Array.isArray(response)
           ? (response as EmployeeWithBenefitsEntry[])
@@ -163,7 +168,18 @@ const AssignEmployeeBenefit: React.FC<{
             entry?.employeeId?.toLowerCase() === selectedEmployeeId.toLowerCase()
         );
 
-        const benefitIds = employeeRecord?.benefits?.map(b => b.id) || [];
+        // Only treat ACTIVE assignments as "already assigned" - cancelled/expired can be re-assigned
+        const benefitIds =
+          employeeRecord?.benefits
+            ?.filter(b => {
+              const status = (
+                b.statusOfAssignment ||
+                b.status ||
+                ''
+              ).toLowerCase();
+              return status === 'active';
+            })
+            .map(b => (b as { benefitId?: string }).benefitId || b.id) || [];
         setAssignedBenefitIds(benefitIds);
       } catch (err) {
         if (isMounted) setAssignedBenefitIds([]);
@@ -229,7 +245,9 @@ const AssignEmployeeBenefit: React.FC<{
           onClose={onClose}
           title='Assign Benefits to Employee'
           onSubmit={() => handleSubmit(handleFormSubmit)()}
+          submitLabel='Assign Benefits'
           isSubmitting={loading}
+          submitDisabled={!isFormValid || loading}
           hasChanges={!!isFormValid}
           maxWidth='sm'
           fields={[

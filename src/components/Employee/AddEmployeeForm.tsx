@@ -798,7 +798,7 @@ const AddEmployeeForm: React.FC<AddEmployeeFormProps> = ({
             value={values.cnicNumber}
             onChange={handleCnicChange}
             error={!!errors.cnicNumber}
-            // helperText={errors.cnicNumber || label('Format: 12345-1234567-1', 'التنسيق: 12345-1234567-1')}
+            helperText={errors.cnicNumber}
             placeholder='12345-1234567-1'
             inputBackgroundColor={controlBg}
           />

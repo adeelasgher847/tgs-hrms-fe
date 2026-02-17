@@ -65,7 +65,7 @@ const EmployeeBenefits: React.FC = () => {
   const { snackbar, showError, showSuccess, closeSnackbar } = useErrorHandler();
   const [openDeleteDialog, setOpenDeleteDialog] = useState(false);
   const [selectedStatus, setSelectedStatus] = useState<
-    'all' | 'active' | 'expired' | 'cancelled'
+    'all' | 'active' | 'inactive' | 'expired' | 'cancelled'
   >('all');
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
@@ -215,7 +215,9 @@ const EmployeeBenefits: React.FC = () => {
     benefitId: string,
     employeeBenefitStatus: string,
     benefitAssignmentId: string,
-    employeeId: string
+    employeeId: string,
+    assignmentStartDate?: string,
+    assignmentEndDate?: string
   ) => {
     try {
       setBenefitLoading(true);
@@ -230,6 +232,8 @@ const EmployeeBenefits: React.FC = () => {
         employeeStatus: effectiveEmployeeStatus,
         benefitAssignmentId,
         employeeId,
+        startDate: assignmentStartDate,
+        endDate: assignmentEndDate,
       });
 
       setOpenBenefitDialog(true);
@@ -297,7 +301,13 @@ const EmployeeBenefits: React.FC = () => {
       benefits:
         selectedStatus === 'all'
           ? emp.benefits
-          : emp.benefits.filter(b => b.statusOfAssignment === selectedStatus),
+          : emp.benefits.filter(b => {
+              const effectiveStatus =
+                b.status === 'inactive'
+                  ? 'inactive'
+                  : b.statusOfAssignment || b.status || '';
+              return effectiveStatus === selectedStatus;
+            }),
     }))
     .filter(emp => selectedStatus === 'all' || emp.benefits.length > 0);
 
@@ -406,6 +416,7 @@ const EmployeeBenefits: React.FC = () => {
               options={[
                 { value: 'all', label: 'All Benefits' },
                 { value: 'active', label: 'Active' },
+                { value: 'inactive', label: 'Inactive' },
                 { value: 'expired', label: 'Expired' },
                 { value: 'cancelled', label: 'Cancelled' },
               ]}
@@ -417,6 +428,7 @@ const EmployeeBenefits: React.FC = () => {
                   (v === '' ? 'all' : v) as
                     | 'all'
                     | 'active'
+                    | 'inactive'
                     | 'expired'
                     | 'cancelled'
                 );
@@ -567,7 +579,9 @@ const EmployeeBenefits: React.FC = () => {
                                   b.id,
                                   effectiveStatus,
                                   b.benefitAssignmentId,
-                                  emp.employeeId
+                                  emp.employeeId,
+                                  b.startDate,
+                                  b.endDate
                                 )
                               }
                             />

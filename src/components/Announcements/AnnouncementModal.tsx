@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Box, Checkbox, FormControlLabel, useTheme } from '@mui/material';
 import AppFormModal from '../common/AppFormModal';
+import DateTimePickerField from '../common/DateTimePickerField';
 import AppInputField from '../common/AppInputField';
 import AppDropdown from '../common/AppDropdown';
 import {
@@ -359,25 +360,13 @@ export default function AnnouncementModal({
         />
 
         {!sendNow && !isSent && (
-          <AppInputField
+          <DateTimePickerField
             label={isRtl ? 'جدولة الإرسال' : 'Schedule at'}
-            name='scheduled_at'
-            type='datetime-local'
             value={scheduledAt}
+            onChange={setScheduledAt}
             required
             error={Boolean(scheduledAtError)}
             helperText={scheduledAtError}
-            onChange={(e: unknown) =>
-              setScheduledAt(
-                typeof e === 'string' ? e : (e as any).target?.value || ''
-              )
-            }
-            inputBackgroundColor={
-              theme.palette.mode === 'dark'
-                ? theme.palette.background.default
-                : '#F8F8F8'
-            }
-            sx={{ '& input': { colorScheme: theme.palette.mode } }}
           />
         )}
       </Box>

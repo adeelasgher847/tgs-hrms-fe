@@ -72,18 +72,42 @@ const TenantBasedEmployeeManager: React.FC = () => {
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const isTablet = useMediaQuery('(min-width:601px) and (max-width:786px)');
 
-  // Fetch departments + tenants once on mount
+  // Fetch tenants once on mount; departments are loaded when tenant is selected
   const fetchFiltersData = async () => {
     try {
-      const [deptRes, tenantRes] = await Promise.all([
-        departmentApiService.getAllDepartments(),
-        systemEmployeeApiService.getAllTenants(true),
-      ]);
-      setDepartments(deptRes || []);
+      const tenantRes = await systemEmployeeApiService.getAllTenants(true);
       setTenants(tenantRes || []);
-      setTenantsLoaded(true); // Mark tenants as loaded - this will trigger employee fetch
+      setTenantsLoaded(true);
     } catch {
       // Leave filters empty if loading fails
+    }
+  };
+
+  // Fetch departments for the selected tenant only (system admin: departments by tenant)
+  const fetchDepartmentsByTenant = async (tenantId: string) => {
+    if (!tenantId) {
+      setDepartments([]);
+      return;
+    }
+    try {
+      const res = await departmentApiService.getAllTenantsWithDepartments(
+        tenantId
+      );
+      const tenantData = res?.tenants?.find(
+        t => t.tenant_id === tenantId || String(t.tenant_id) === tenantId
+      );
+      const deptList = tenantData?.departments ?? [];
+      const mapped: BackendDepartment[] = deptList.map(d => ({
+        id: d.id,
+        tenantId,
+        name: d.name,
+        description: d.description,
+        createdAt: d.created_at ? new Date(d.created_at) : new Date(),
+        updatedAt: d.created_at ? new Date(d.created_at) : new Date(),
+      }));
+      setDepartments(mapped);
+    } catch {
+      setDepartments([]);
     }
   };
 
@@ -189,10 +213,19 @@ const TenantBasedEmployeeManager: React.FC = () => {
     }
   };
 
-  // mount: load tenants & departments first
+  // mount: load tenants first (departments load when tenant is selected)
   useEffect(() => {
     fetchFiltersData();
   }, []);
+
+  // When tenant is selected, load that tenant's departments only
+  useEffect(() => {
+    if (filters.tenantId) {
+      fetchDepartmentsByTenant(filters.tenantId);
+    } else {
+      setDepartments([]);
+    }
+  }, [filters.tenantId]);
 
   useEffect(() => {
     if (filters.departmentId)
@@ -261,10 +294,19 @@ const TenantBasedEmployeeManager: React.FC = () => {
   ]);
 
   const handleFilterChange = (key: string, value: string) => {
-    setFilters(prev => ({ ...prev, [key]: value }));
-    if (key === 'departmentId') {
-      // reset designation when department changes
-      setFilters(prev => ({ ...prev, departmentId: value, designationId: '' }));
+    if (key === 'tenantId') {
+      setFilters(prev => ({
+        ...prev,
+        tenantId: value,
+        departmentId: '',
+        designationId: '',
+      }));
+    } else {
+      setFilters(prev => ({
+        ...prev,
+        [key]: value,
+        ...(key === 'departmentId' ? { designationId: '' } : {}),
+      }));
     }
     setCurrentPage(1);
   };
@@ -365,6 +407,7 @@ const TenantBasedEmployeeManager: React.FC = () => {
             onChange={e =>
               handleFilterChange('departmentId', String(e.target.value))
             }
+            disabled={!filters.tenantId}
             containerSx={{ width: isMobile ? '100%' : isTablet ? '30%' : 190 }}
           />
 

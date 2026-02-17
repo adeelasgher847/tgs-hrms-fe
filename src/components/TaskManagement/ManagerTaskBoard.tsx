@@ -77,6 +77,7 @@ export default function ManagerTaskBoard() {
   const [selectedTeam, setSelectedTeam] = useState<string>('all');
   const [selectedStatus, setSelectedStatus] = useState<string>('all');
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+  const [isCreateTaskSubmitting, setIsCreateTaskSubmitting] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [editingTask, setEditingTask] = useState<Task | null>(null);
   const [formData, setFormData] = useState<TaskFormData>({
@@ -432,6 +433,7 @@ export default function ManagerTaskBoard() {
     }
 
     try {
+      setIsCreateTaskSubmitting(true);
       const payload = tasksApi.mapTaskToApiPayload({
         title: formData.title.trim(),
         description: formData.description.trim(),
@@ -455,6 +457,8 @@ export default function ManagerTaskBoard() {
         operation: 'create',
         resource: 'employee',
       });
+    } finally {
+      setIsCreateTaskSubmitting(false);
     }
   };
 
@@ -1032,7 +1036,9 @@ export default function ManagerTaskBoard() {
             wrapInForm={true}
             showCancelButton={true}
             showSubmitButton={true}
+            isSubmitting={isCreateTaskSubmitting}
             submitDisabled={
+              isCreateTaskSubmitting ||
               !formData.title.trim() ||
               !formData.teamId ||
               !formData.assignedTo?.length

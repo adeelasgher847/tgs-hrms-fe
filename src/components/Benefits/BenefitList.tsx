@@ -53,6 +53,7 @@ const BenefitList: React.FC = () => {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [selectedBenefit, setSelectedBenefit] = useState<Benefit | null>(null);
   const [deleting, setDeleting] = useState(false);
+  const [savingBenefit, setSavingBenefit] = useState(false);
 
   const fetchBenefits = useCallback(async () => {
     setLoading(true);
@@ -81,6 +82,7 @@ const BenefitList: React.FC = () => {
 
   const handleSaveBenefit = async (data: BenefitFormValues) => {
     try {
+      setSavingBenefit(true);
       const payload = {
         name: data.name,
         description: data.description,
@@ -102,6 +104,8 @@ const BenefitList: React.FC = () => {
       fetchBenefits();
     } catch (error) {
       showError(error);
+    } finally {
+      setSavingBenefit(false);
     }
   };
 
@@ -556,6 +560,7 @@ const BenefitList: React.FC = () => {
         }}
         onSubmit={handleSaveBenefit}
         benefit={editingBenefitForModal}
+        isSubmitting={savingBenefit}
       />
 
       <ErrorSnackbar

@@ -11,6 +11,7 @@ import {
   IconButton,
   Tooltip,
   Chip,
+  Pagination,
 } from '@mui/material';
 import FileDownloadIcon from '@mui/icons-material/FileDownload';
 import DatePicker from 'react-multi-date-picker';
@@ -47,8 +48,11 @@ import systemEmployeeApiService from '../../api/systemEmployeeApi';
 import type { SelectChangeEvent } from '@mui/material/Select';
 import AppPageTitle from '../common/AppPageTitle';
 import { type CheckInTeamMember } from './TeamCheckInDialog';
+import { PAGINATION } from '../../constants/appConstants';
 
 import TeamCheckInView from './TeamCheckInView';
+
+const ATTENDANCE_PAGE_SIZE = PAGINATION.DEFAULT_PAGE_SIZE;
 
 type TenantOption = { id: string; name: string };
 interface AttendanceRecord {
@@ -106,8 +110,8 @@ const AttendanceTable = () => {
     Array<{ id: string; name: string }>
   >([]);
   const [loading, setLoading] = useState(false);
-  const [, setCurrentPage] = useState(1);
-  const [, setTotalPages] = useState(1);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
   const [totalItems, setTotalItems] = useState(0);
   const [isManager, setIsManager] = useState(false);
   const [isAdminUser, setIsAdminUser] = useState(false);
@@ -720,7 +724,6 @@ const AttendanceTable = () => {
     }
   };
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const _fetchEmployeesFromAttendance = async (
     _viewOverride?: 'my' | 'all'
   ) => {
@@ -730,6 +733,19 @@ const AttendanceTable = () => {
       if (currentView === 'my') {
         setEmployees([]);
         return;
+      }
+
+      const storedUserForCheck = localStorage.getItem('user');
+      if (storedUserForCheck) {
+        try {
+          const userForCheck = JSON.parse(storedUserForCheck);
+          if (isSystemAdmin(userForCheck.role) && !selectedTenant) {
+            setEmployees([]);
+            return;
+          }
+        } catch {
+          // ignore
+        }
       }
 
       const storedUser = localStorage.getItem('user');
@@ -1050,15 +1066,16 @@ const AttendanceTable = () => {
       } catch (e) {
         // ignore
       }
-      setCurrentPage(1);
-      setTotalPages(1);
-      setTotalItems(rows.length);
 
       setAttendanceData(rows);
+
+      const isSystemAdminWithTenant =
+        isSystemAdminFlag && (selectedTenant || '').trim() !== '';
       if (
         canViewAllLocal &&
         effectiveView === 'all' &&
-        !effectiveSelectedEmployee
+        !effectiveSelectedEmployee &&
+        !isSystemAdminWithTenant
       ) {
         const employeesFromAttendance = new Map<
           string,
@@ -1099,6 +1116,19 @@ const AttendanceTable = () => {
       }
 
       setFilteredData(filteredRows);
+
+      // For system admin "all" view, use client-side pagination to avoid rendering too many rows
+      const useSystemAdminPagination =
+        isSystemAdminFlag && effectiveView === 'all' && filteredRows.length > ATTENDANCE_PAGE_SIZE;
+      if (useSystemAdminPagination) {
+        setCurrentPage(1);
+        setTotalPages(Math.ceil(filteredRows.length / ATTENDANCE_PAGE_SIZE));
+        setTotalItems(filteredRows.length);
+      } else {
+        setCurrentPage(1);
+        setTotalPages(1);
+        setTotalItems(filteredRows.length);
+      }
     } catch (error) {
       setAttendanceData([]);
       setFilteredData([]);
@@ -1334,6 +1364,9 @@ const AttendanceTable = () => {
   const handleTenantChange = (tenantId: string) => {
     setSelectedTenant(tenantId);
     setSelectedEmployee('');
+    if (!tenantId) {
+      setEmployees([]);
+    }
     setCurrentPage(1);
   };
 
@@ -1444,6 +1477,12 @@ const AttendanceTable = () => {
       }
     }
   }, [selectedTenant, adminView, isSystemAdminUser, startDate, endDate]);
+
+  useEffect(() => {
+    if (adminView === 'all' && isSystemAdminUser && selectedTenant) {
+      _fetchEmployeesFromAttendance('all');
+    }
+  }, [selectedTenant, adminView, isSystemAdminUser]);
 
   useEffect(() => {
     if (attendanceData.length > 0 && adminView === 'all') {
@@ -1668,6 +1707,17 @@ const AttendanceTable = () => {
     userRoleLc === 'hr_admin';
   const canViewAllAttendance =
     isAdminUser || isSystemAdminUser || isNetworkAdminUser || isHRAdminUser;
+
+  // For system admin "all" view, show only current page to avoid rendering thousands of rows
+  const attendanceDataToRender =
+    isSystemAdminUser &&
+    adminView === 'all' &&
+    totalItems > ATTENDANCE_PAGE_SIZE
+      ? filteredData.slice(
+          (currentPage - 1) * ATTENDANCE_PAGE_SIZE,
+          currentPage * ATTENDANCE_PAGE_SIZE
+        )
+      : filteredData;
 
   return (
     <Box>
@@ -2061,8 +2111,8 @@ const AttendanceTable = () => {
                     <CircularProgress />
                   </TableCell>
                 </TableRow>
-              ) : filteredData.length > 0 ? (
-                filteredData.map(record => (
+              ) : attendanceDataToRender.length > 0 ? (
+                attendanceDataToRender.map(record => (
                   <TableRow key={record.id}>
                     {canViewAllAttendance && adminView === 'all' && (
                       <TableCell>
@@ -2148,6 +2198,21 @@ const AttendanceTable = () => {
               )}
             </TableBody>
           </AppTable>
+
+          {isSystemAdminUser &&
+            adminView === 'all' &&
+            totalPages > 1 && (
+              <Box sx={{ display: 'flex', justifyContent: 'center', mt: 2 }}>
+                <Pagination
+                  count={totalPages}
+                  page={currentPage}
+                  onChange={(_, page) => setCurrentPage(page)}
+                  color='primary'
+                  showFirstButton
+                  showLastButton
+                />
+              </Box>
+            )}
 
           {canViewAllAttendance && adminView === 'all' && (
             <DateNavigation
