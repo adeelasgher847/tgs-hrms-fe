@@ -277,9 +277,9 @@ const AppDropdown = React.forwardRef<HTMLDivElement, AppDropdownProps>(
               },
             }}
           >
-            {options.map(option => (
+            {options.map((option, index) => (
               <MenuItem
-                key={option.value}
+                key={`${String(option.value)}-${index}`}
                 value={option.value === 'all' ? '' : option.value}
                 sx={{
                   color: theme.palette.text.primary,

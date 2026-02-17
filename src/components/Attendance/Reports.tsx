@@ -462,7 +462,7 @@ const Reports: React.FC = () => {
                 { label: 'All Employees', value: 'all' },
                 ...allEmployees.map(emp => ({
                   label: emp.name,
-                  value: emp.firstName,
+                  value: emp.name,
                 })),
               ]}
               placeholder='Select Employee'

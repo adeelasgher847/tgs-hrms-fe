@@ -42,6 +42,8 @@ export interface EmployeeBenefitDetail {
   status: string;
   type?: string;
   statusOfAssignment?: string;
+  startDate?: string;
+  endDate?: string;
 }
 
 export interface EmployeeWithBenefits {

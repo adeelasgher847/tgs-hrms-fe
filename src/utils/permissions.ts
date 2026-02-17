@@ -65,7 +65,6 @@ const ROLE_MENU_ALLOWLIST: Record<NormalizedRole, readonly string[]> = {
   ],
   'network-admin': [
     'dashboard',
-    'announcements',
     'department',
     'employees',
     'teams',
@@ -359,7 +358,6 @@ const DASHBOARD_ALLOWLIST_ENTRIES: Record<NormalizedRole, readonly string[]> = {
   ],
   'network-admin': [
     '',
-    'announcements',
     'departments',
     'Designations',
     'EmployeeManager',
@@ -434,7 +432,6 @@ const DASHBOARD_ALLOWLIST_ENTRIES: Record<NormalizedRole, readonly string[]> = {
     'teams/list',
     'teams/tasks',
     'manager-tasks',
-    'my-tasks',
     'assets',
     'assets/request-management',
     'EmployeeProfileView',

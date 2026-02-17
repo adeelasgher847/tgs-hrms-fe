@@ -602,60 +602,18 @@ const EmployeeManager: React.FC = () => {
           });
         }
 
-        // Handle single message format
+        // Handle single message format — show API message as-is, only decide which field
         if (responseData.message) {
-          const backendError = responseData.message;
-
-          // Parse common backend error patterns
-          if (
-            backendError.toLowerCase().includes('email') &&
-            backendError.toLowerCase().includes('already exists')
-          ) {
-            fieldErrors.email = 'Email already exists';
-          } else if (
-            backendError.toLowerCase().includes('user') &&
-            backendError.toLowerCase().includes('already exists')
-          ) {
-            fieldErrors.email = 'User already exists in this tenant';
-          } else if (
-            backendError.toLowerCase().includes('phone') &&
-            backendError.toLowerCase().includes('already exists')
-          ) {
-            fieldErrors.phone = 'Phone number already exists';
-          } else if (
-            backendError.toLowerCase().includes('first') &&
-            backendError.toLowerCase().includes('required')
-          ) {
-            fieldErrors.first_name = 'First name is required';
-          } else if (
-            backendError.toLowerCase().includes('last') &&
-            backendError.toLowerCase().includes('required')
-          ) {
-            fieldErrors.last_name = 'Last name is required';
-          } else if (
-            backendError.toLowerCase().includes('email') &&
-            backendError.toLowerCase().includes('required')
-          ) {
-            fieldErrors.email = 'Email is required';
-          } else if (
-            backendError.toLowerCase().includes('phone') &&
-            backendError.toLowerCase().includes('required')
-          ) {
-            fieldErrors.phone = 'Phone is required';
-          } else if (
-            backendError.toLowerCase().includes('designation') &&
-            backendError.toLowerCase().includes('required')
-          ) {
-            fieldErrors.designationId = 'Designation is required';
-          } else if (
-            backendError.toLowerCase().includes('password') &&
-            backendError.toLowerCase().includes('required')
-          ) {
-            fieldErrors.password = 'Password is required';
-          } else {
-            // Generic error for other cases
-            fieldErrors.general = backendError;
-          }
+          const msg = responseData.message;
+          const lower = msg.toLowerCase();
+          if (lower.includes('cnic')) fieldErrors.cnicNumber = msg;
+          else if (lower.includes('phone')) fieldErrors.phone = msg;
+          else if (lower.includes('email') || lower.includes('user')) fieldErrors.email = msg;
+          else if (lower.includes('first')) fieldErrors.first_name = msg;
+          else if (lower.includes('last')) fieldErrors.last_name = msg;
+          else if (lower.includes('designation')) fieldErrors.designationId = msg;
+          else if (lower.includes('password')) fieldErrors.password = msg;
+          else fieldErrors.general = msg;
         }
 
         if (Object.keys(fieldErrors).length > 0) {
@@ -1379,6 +1337,7 @@ const EmployeeManager: React.FC = () => {
                 designationId: editing.designationId,
                 departmentId: editing.departmentId,
                 gender: editing.status === 'Active' ? 'male' : 'female', // Default/estimate since not in employee
+                role: (editing.role_name || '').trim() || 'Employee',
                 role_name: editing.role_name,
                 cnicNumber: editing.cnic_number,
                 profilePicture: editing.profile_picture,
