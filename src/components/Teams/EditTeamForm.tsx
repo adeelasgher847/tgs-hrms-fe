@@ -243,6 +243,7 @@ const EditTeamForm: React.FC<EditTeamFormProps> = ({
       onClose={handleClose}
       maxWidth='sm'
       fullWidth
+      disableRestoreFocus
       PaperProps={{
         sx: {
           backgroundColor: theme => theme.palette.background.paper,

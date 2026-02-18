@@ -14,6 +14,7 @@ import {
 import AppTable from '../common/AppTable';
 import ReplayIcon from '@mui/icons-material/Replay';
 import { useOutletContext } from 'react-router-dom';
+import { AppOutletContext } from '../../types/outletContexts';
 import { Icons } from '../../assets/icons';
 
 interface Employee {
@@ -62,10 +63,6 @@ interface EmployeeListProps {
   designations?: Record<string, string>;
 }
 
-interface OutletContext {
-  darkMode: boolean;
-  language: 'en' | 'ar';
-}
 
 const EmployeeList: React.FC<EmployeeListProps> = ({
   employees,
@@ -79,7 +76,7 @@ const EmployeeList: React.FC<EmployeeListProps> = ({
 }) => {
   const theme = useTheme();
   const direction = theme.direction;
-  const { darkMode } = useOutletContext<OutletContext>();
+  const { darkMode } = useOutletContext<AppOutletContext>();
 
   // Dark mode styles
   const textColor = theme.palette.text.primary;

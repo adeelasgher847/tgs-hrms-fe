@@ -156,10 +156,8 @@ class TeamApiService {
     if (newTeam.id && teamData.manager_id) {
       try {
         await this.addMemberToTeam(newTeam.id, teamData.manager_id);
-      } catch (error) {
-        // Log the error but don't throw - team creation was successful
-        // The manager can be added manually later if needed
-        console.warn('Failed to add manager as team member:', error);
+      } catch {
+        // Manager add as member failed; team creation succeeded - do not throw
       }
     }
 
@@ -175,6 +173,9 @@ class TeamApiService {
       const teamsWithMembers = await Promise.all(
         teams.items.map(async team => {
           if (!team.teamMembers) {
+            if (team.id === 'employee-pool') {
+              return { ...team, teamMembers: [] };
+            }
             try {
               const membersResponse = await this.getTeamMembers(team.id, 1);
               return {
@@ -208,13 +209,6 @@ class TeamApiService {
       teamData
     );
     const updatedTeam = response.data;
-
-    if (teamData.manager_id && teamData.manager_id !== currentTeam.manager_id) {
-      if (currentTeam.manager_id) {
-        await this.removeMemberFromTeam(id, currentTeam.manager_id);
-      }
-      await this.addMemberToTeam(id, teamData.manager_id);
-    }
 
     return updatedTeam;
   }
@@ -254,6 +248,9 @@ class TeamApiService {
     teamId: string,
     page: number = 1
   ): Promise<PaginatedResponse<TeamMember>> {
+    if (teamId === 'employee-pool') {
+      return { items: [], total: 0, page: 1, limit: 25, totalPages: 1 };
+    }
     try {
       const response = await axiosInstance.get<PaginatedResponse<TeamMember>>(
         `${this.baseUrl}/${teamId}/members?page=${page}`

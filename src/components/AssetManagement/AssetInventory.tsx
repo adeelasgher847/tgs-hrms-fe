@@ -37,7 +37,6 @@ import {
   assetCategories,
   getSubcategoriesByCategoryId,
 } from '../../Data/assetCategories';
-import { isHRAdmin } from '../../utils/roleUtils';
 import { isManager as roleIsManager } from '../../utils/auth';
 import { formatDate } from '../../utils/dateUtils';
 import { useErrorHandler } from '../../hooks/useErrorHandler';
@@ -112,7 +111,7 @@ const AssetInventory: React.FC = () => {
   const storedUser = JSON.parse(localStorage.getItem('user') || '{}');
   const userRole = storedUser.role;
 
-  const hideActions = isHRAdmin(userRole);
+  const hideActions = false;
 
   const showSnackbar = React.useCallback(
     (
@@ -1227,37 +1226,34 @@ const AssetInventory: React.FC = () => {
                           </IconButton>
                         </Tooltip>
 
-                        {/** Only show delete when the user is not HR admin (match Designation behaviour) */}
-                        {!isHRAdmin(userRole) && (
-                          <Tooltip title='Delete' arrow>
-                            <IconButton
-                              size='small'
-                              onClick={() => handleDeleteAsset(asset)}
-                              aria-label={`Delete asset ${asset.name}`}
-                              sx={{ p: { xs: 0.5, sm: 1 } }}
-                            >
-                              {roleIsManager() ? (
-                                <Icon
-                                  name='delete'
-                                  sx={{
-                                    width: { xs: 16, sm: 20 },
-                                    height: { xs: 16, sm: 20 },
-                                  }}
-                                />
-                              ) : (
-                                <Box
-                                  component='img'
-                                  src={Icons.delete}
-                                  alt='Delete'
-                                  sx={{
-                                    width: { xs: 16, sm: 20 },
-                                    height: { xs: 16, sm: 20 },
-                                  }}
-                                />
-                              )}
-                            </IconButton>
-                          </Tooltip>
-                        )}
+                        <Tooltip title='Delete' arrow>
+                          <IconButton
+                            size='small'
+                            onClick={() => handleDeleteAsset(asset)}
+                            aria-label={`Delete asset ${asset.name}`}
+                            sx={{ p: { xs: 0.5, sm: 1 } }}
+                          >
+                            {roleIsManager() ? (
+                              <Icon
+                                name='delete'
+                                sx={{
+                                  width: { xs: 16, sm: 20 },
+                                  height: { xs: 16, sm: 20 },
+                                }}
+                              />
+                            ) : (
+                              <Box
+                                component='img'
+                                src={Icons.delete}
+                                alt='Delete'
+                                sx={{
+                                  width: { xs: 16, sm: 20 },
+                                  height: { xs: 16, sm: 20 },
+                                }}
+                              />
+                            )}
+                          </IconButton>
+                        </Tooltip>
                       </Box>
                     </TableCell>
                   )}

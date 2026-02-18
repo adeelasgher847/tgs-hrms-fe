@@ -22,6 +22,7 @@ interface BenefitFormModalProps {
   onClose: () => void;
   onSubmit: (data: BenefitFormValues) => void;
   benefit?: BenefitFormValues | null;
+  isSubmitting?: boolean;
 }
 
 const schema = yup.object({
@@ -53,6 +54,7 @@ const BenefitFormModal: React.FC<BenefitFormModalProps> = ({
   onClose,
   onSubmit,
   benefit,
+  isSubmitting: isSubmittingProp,
 }) => {
   const {
     control,
@@ -60,7 +62,7 @@ const BenefitFormModal: React.FC<BenefitFormModalProps> = ({
     reset,
     watch,
     setValue,
-    formState: { errors, isSubmitting },
+    formState: { errors, isSubmitting: formIsSubmitting },
   } = useForm<BenefitFormValues>({
     resolver: yupResolver(schema),
     mode: 'onChange',
@@ -252,6 +254,8 @@ const BenefitFormModal: React.FC<BenefitFormModalProps> = ({
     },
   ];
 
+  const isSubmitting = isSubmittingProp ?? formIsSubmitting;
+
   return (
     <AppFormModal
       open={open}
@@ -262,6 +266,7 @@ const BenefitFormModal: React.FC<BenefitFormModalProps> = ({
       submitLabel={benefit ? 'Update' : 'Create'}
       cancelLabel='Cancel'
       isSubmitting={isSubmitting}
+      submitDisabled={isSubmitting || !isChanged}
       hasChanges={isChanged}
       maxWidth='sm'
     />

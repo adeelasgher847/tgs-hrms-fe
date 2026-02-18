@@ -24,6 +24,7 @@ import { Add as AddIcon } from '@mui/icons-material';
 import WarningIcon from '@mui/icons-material/Warning';
 import FileDownloadIcon from '@mui/icons-material/FileDownload';
 import { useOutletContext, useLocation, useNavigate } from 'react-router-dom';
+import type { AppOutletContext } from '../../types/outletContexts';
 import AddEmployeeForm from './AddEmployeeForm';
 import EmployeeList from './EmployeeList';
 import EmployeeViewModal from './EmployeeViewModal';
@@ -84,10 +85,6 @@ interface Employee {
   updatedAt: string;
 }
 
-interface OutletContext {
-  darkMode: boolean;
-  language: 'en' | 'ar';
-}
 
 import { useUser } from '../../hooks/useUser';
 import { isManager } from '../../utils/roleUtils';
@@ -100,7 +97,7 @@ const EmployeeManager: React.FC = () => {
   const direction = theme.direction;
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const isTablet = useMediaQuery('(min-width:601px) and (max-width:786px)');
-  const { darkMode } = useOutletContext<OutletContext>();
+  const { darkMode } = useOutletContext<AppOutletContext>();
   const location = useLocation();
   const navigate = useNavigate();
   const { user } = useUser(); // Get user context
@@ -281,37 +278,28 @@ const EmployeeManager: React.FC = () => {
     profile_picture: member.user.profile_pic || undefined,
     department: member.department
       ? {
-        id: member.department.id,
-        name: member.department.name,
-        description: '',
-        tenantId: '',
-        createdAt: '',
-        updatedAt: '',
-        ...member.department,
-      }
+          id: member.department.id,
+          name: member.department.name,
+          description: '',
+          tenantId: '',
+          createdAt: '',
+          updatedAt: '',
+        }
       : member.designation.department
-        ? {
+      ? {
           id: member.designation.department.id,
           name: member.designation.department.name,
           description: '',
           tenantId: '',
           createdAt: '',
           updatedAt: '',
-          ...member.designation.department,
         }
-        : {
-          id: '',
-          name: 'Unknown',
-          description: '',
-          tenantId: '',
-          createdAt: '',
-          updatedAt: '',
-        },
+      : null,
     designation: {
       id: member.designation.id,
       title: member.designation.title,
       tenantId: '', // Not available
-      departmentId: member.department?.id || '',
+      departmentId: member.department?.id || member.designation.department?.id || '',
       createdAt: '',
       updatedAt: '',
     },
@@ -614,60 +602,18 @@ const EmployeeManager: React.FC = () => {
           });
         }
 
-        // Handle single message format
+        // Handle single message format — show API message as-is, only decide which field
         if (responseData.message) {
-          const backendError = responseData.message;
-
-          // Parse common backend error patterns
-          if (
-            backendError.toLowerCase().includes('email') &&
-            backendError.toLowerCase().includes('already exists')
-          ) {
-            fieldErrors.email = 'Email already exists';
-          } else if (
-            backendError.toLowerCase().includes('user') &&
-            backendError.toLowerCase().includes('already exists')
-          ) {
-            fieldErrors.email = 'User already exists in this tenant';
-          } else if (
-            backendError.toLowerCase().includes('phone') &&
-            backendError.toLowerCase().includes('already exists')
-          ) {
-            fieldErrors.phone = 'Phone number already exists';
-          } else if (
-            backendError.toLowerCase().includes('first') &&
-            backendError.toLowerCase().includes('required')
-          ) {
-            fieldErrors.first_name = 'First name is required';
-          } else if (
-            backendError.toLowerCase().includes('last') &&
-            backendError.toLowerCase().includes('required')
-          ) {
-            fieldErrors.last_name = 'Last name is required';
-          } else if (
-            backendError.toLowerCase().includes('email') &&
-            backendError.toLowerCase().includes('required')
-          ) {
-            fieldErrors.email = 'Email is required';
-          } else if (
-            backendError.toLowerCase().includes('phone') &&
-            backendError.toLowerCase().includes('required')
-          ) {
-            fieldErrors.phone = 'Phone is required';
-          } else if (
-            backendError.toLowerCase().includes('designation') &&
-            backendError.toLowerCase().includes('required')
-          ) {
-            fieldErrors.designationId = 'Designation is required';
-          } else if (
-            backendError.toLowerCase().includes('password') &&
-            backendError.toLowerCase().includes('required')
-          ) {
-            fieldErrors.password = 'Password is required';
-          } else {
-            // Generic error for other cases
-            fieldErrors.general = backendError;
-          }
+          const msg = responseData.message;
+          const lower = msg.toLowerCase();
+          if (lower.includes('cnic')) fieldErrors.cnicNumber = msg;
+          else if (lower.includes('phone')) fieldErrors.phone = msg;
+          else if (lower.includes('email') || lower.includes('user')) fieldErrors.email = msg;
+          else if (lower.includes('first')) fieldErrors.first_name = msg;
+          else if (lower.includes('last')) fieldErrors.last_name = msg;
+          else if (lower.includes('designation')) fieldErrors.designationId = msg;
+          else if (lower.includes('password')) fieldErrors.password = msg;
+          else fieldErrors.general = msg;
         }
 
         if (Object.keys(fieldErrors).length > 0) {
@@ -1391,6 +1337,7 @@ const EmployeeManager: React.FC = () => {
                 designationId: editing.designationId,
                 departmentId: editing.departmentId,
                 gender: editing.status === 'Active' ? 'male' : 'female', // Default/estimate since not in employee
+                role: (editing.role_name || '').trim() || 'Employee',
                 role_name: editing.role_name,
                 cnicNumber: editing.cnic_number,
                 profilePicture: editing.profile_picture,

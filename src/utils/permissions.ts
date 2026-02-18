@@ -61,16 +61,17 @@ const ROLE_MENU_ALLOWLIST: Record<NormalizedRole, readonly string[]> = {
     'audit logs',
     'performance',
     'payroll',
+    'recruitment',
   ],
   'network-admin': [
     'dashboard',
-    'announcements',
     'department',
     'employees',
     'teams',
     'assets',
     'attendance',
     'benefits',
+    'recruitment',
   ],
   'hr-admin': [
     'attendance',
@@ -82,6 +83,7 @@ const ROLE_MENU_ALLOWLIST: Record<NormalizedRole, readonly string[]> = {
     'leave-analytics',
     'payroll',
     'employees',
+    'recruitment',
   ],
   admin: [
     'dashboard',
@@ -95,6 +97,7 @@ const ROLE_MENU_ALLOWLIST: Record<NormalizedRole, readonly string[]> = {
     'leave-analytics',
     'payroll',
     'benefits',
+    'recruitment',
   ],
   manager: [
     'teams',
@@ -104,17 +107,11 @@ const ROLE_MENU_ALLOWLIST: Record<NormalizedRole, readonly string[]> = {
     'leave-analytics',
     'payroll',
     'benefits',
+    'recruitment',
   ],
-  employee: [
-    'attendance',
-    'assets',
-    'benefits',
-    'leave-analytics',
-    'payroll',
-    'teams',
-  ],
-  user: ['attendance', 'assets', 'benefits', 'payroll', 'teams', 'announcements'],
-  unknown: ['benefits'],
+  employee: ['attendance', 'assets', 'benefits', 'leave-analytics', 'payroll', 'teams', 'recruitment'],
+  user: ['attendance', 'assets', 'benefits', 'payroll', 'teams', 'recruitment'],
+  unknown: ['benefits', 'recruitment'],
 };
 
 const normalizeLabel = (value: string) => (value || '').toLowerCase().trim();
@@ -134,6 +131,7 @@ const MENU_KEY_MATCHERS: Array<{ key: string; patterns: string[] }> = [
   { key: 'audit logs', patterns: ['audit logs'] },
   { key: 'performance', patterns: ['performance'] },
   { key: 'payroll', patterns: ['payroll'] },
+  { key: 'recruitment', patterns: ['recruitment'] },
 ];
 
 const getMenuKey = (label: string) => {
@@ -160,6 +158,7 @@ type ParentKey =
   | 'employees'
   | 'teams'
   | 'audit logs'
+  | 'recruitment'
   | 'misc';
 
 const PARENT_KEY_MATCHERS: Array<{ key: ParentKey; patterns: string[] }> = [
@@ -172,6 +171,7 @@ const PARENT_KEY_MATCHERS: Array<{ key: ParentKey; patterns: string[] }> = [
   { key: 'employees', patterns: ['employee'] },
   { key: 'teams', patterns: ['team'] },
   { key: 'audit logs', patterns: ['audit logs'] },
+  { key: 'recruitment', patterns: ['recruitment'] },
 ];
 
 const getParentKey = (label: string): ParentKey => {
@@ -354,10 +354,10 @@ const DASHBOARD_ALLOWLIST_ENTRIES: Record<NormalizedRole, readonly string[]> = {
     'performance-dashboard',
     'payroll-reports',
     'benefit-report',
+    'job-requisitions',
   ],
   'network-admin': [
     '',
-    'announcements',
     'departments',
     'Designations',
     'EmployeeManager',
@@ -378,6 +378,7 @@ const DASHBOARD_ALLOWLIST_ENTRIES: Record<NormalizedRole, readonly string[]> = {
     'settings',
     'benefits-list',
     'employee-benefit',
+    'job-requisitions',
   ],
   'hr-admin': [
     'departments',
@@ -410,6 +411,7 @@ const DASHBOARD_ALLOWLIST_ENTRIES: Record<NormalizedRole, readonly string[]> = {
     'payroll-records',
     'employee-salary',
     'geofencing',
+    'job-requisitions',
   ],
   admin: [
     '',
@@ -430,7 +432,6 @@ const DASHBOARD_ALLOWLIST_ENTRIES: Record<NormalizedRole, readonly string[]> = {
     'teams/list',
     'teams/tasks',
     'manager-tasks',
-    'my-tasks',
     'assets',
     'assets/request-management',
     'EmployeeProfileView',
@@ -446,6 +447,7 @@ const DASHBOARD_ALLOWLIST_ENTRIES: Record<NormalizedRole, readonly string[]> = {
     'payroll-records',
     'employee-salary',
     'geofencing',
+    'job-requisitions',
   ],
   manager: [
     'EmployeeManager',
@@ -473,6 +475,7 @@ const DASHBOARD_ALLOWLIST_ENTRIES: Record<NormalizedRole, readonly string[]> = {
     'employee-salary',
     'my-salary',
     'EmployeeProfileView',
+    'job-requisitions',
   ],
   employee: [
     'AttendanceCheck',
@@ -486,6 +489,7 @@ const DASHBOARD_ALLOWLIST_ENTRIES: Record<NormalizedRole, readonly string[]> = {
     'settings',
     'benefit-details',
     'my-salary',
+    'job-requisitions',
   ],
   user: [
     'AttendanceCheck',
@@ -502,6 +506,7 @@ const DASHBOARD_ALLOWLIST_ENTRIES: Record<NormalizedRole, readonly string[]> = {
     'benefits/reporting',
     'my-benefits',
     'my-salary',
+    'job-requisitions',
   ],
   unknown: [],
 };

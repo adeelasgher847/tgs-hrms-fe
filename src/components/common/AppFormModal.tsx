@@ -9,6 +9,7 @@ import {
   IconButton,
   useMediaQuery,
   useTheme,
+  CircularProgress,
 } from '@mui/material';
 import { Close as CloseIcon } from '@mui/icons-material';
 import AppInputField from './AppInputField';
@@ -303,7 +304,13 @@ const AppFormModal: React.FC<AppFormModalProps> = ({
                   : isSubmitting || !hasChanges
               }
               onClick={wrapInForm ? handleSubmit : onSubmit}
-              startIcon={submitStartIcon}
+              startIcon={
+                isSubmitting ? (
+                  <CircularProgress size={18} color='inherit' />
+                ) : (
+                  submitStartIcon
+                )
+              }
               title={submitTitle}
               sx={{ px: 4 }}
             >

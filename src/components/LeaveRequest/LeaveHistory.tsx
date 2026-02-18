@@ -12,7 +12,6 @@ import {
   IconButton,
   Tooltip,
   CircularProgress,
-  TextField,
   Dialog,
   DialogTitle,
   DialogContent,
@@ -43,6 +42,7 @@ import { env } from '../../config/env';
 import { authService } from '../../api/authService';
 import ErrorSnackbar from '../common/ErrorSnackbar';
 import { useErrorHandler } from '../../hooks/useErrorHandler';
+import MonthPicker from '../common/MonthPicker';
 
 const ITEMS_PER_PAGE = PAGINATION.DEFAULT_PAGE_SIZE;
 
@@ -152,6 +152,8 @@ const LeaveHistory: React.FC<LeaveHistoryProps> = ({
   dateFilter,
   onDateFilterChange,
 }) => {
+  const hideActionColumn = userRole === 'hr-admin';
+
   const [selectedEmployee, setSelectedEmployee] = useState<string>('');
   const [page, setPage] = useState(1);
   const [allLeavesForFilter, setAllLeavesForFilter] = useState<Leave[]>([]);
@@ -438,6 +440,7 @@ const LeaveHistory: React.FC<LeaveHistoryProps> = ({
           justifyContent: 'space-between',
           flexWrap: 'wrap',
           gap: 2,
+          mt:1,
           mb: 2,
           width: '100%',
         }}
@@ -466,18 +469,10 @@ const LeaveHistory: React.FC<LeaveHistoryProps> = ({
           }}
         >
           {isAdmin && onDateFilterChange && (
-            <TextField
-              type='month'
-              size='small'
-              value={dateFilter}
-              onChange={e => onDateFilterChange(e.target.value)}
-              sx={{
-                width: { xs: '100%', sm: 220 },
-                bgcolor: 'background.paper',
-                borderRadius: 1,
-                '& .MuiInputBase-input': { padding: '10px 14px' },
-              }}
-              InputLabelProps={{ shrink: true }}
+            <MonthPicker
+              value={dateFilter ?? ''}
+              onChange={onDateFilterChange}
+              label='Month'
             />
           )}
 
@@ -579,7 +574,7 @@ const LeaveHistory: React.FC<LeaveHistoryProps> = ({
               <TableCell>Documents</TableCell>
               <TableCell>Status</TableCell>
               <TableCell>Remarks</TableCell>
-              <TableCell>Actions</TableCell>
+              {!hideActionColumn && <TableCell>Actions</TableCell>}
             </TableRow>
           </TableHead>
 
@@ -702,20 +697,21 @@ const LeaveHistory: React.FC<LeaveHistoryProps> = ({
                     );
                   })()}
                 </TableCell>
-                <TableCell>
-                  <Box
-                    sx={{
-                      display: 'flex',
-                      flexDirection: 'column',
-                      gap: 1,
-                      alignItems: 'flex-start',
-                    }}
-                  >
-                    {/* Remarks moved to dedicated column */}
+                {!hideActionColumn && (
+                  <TableCell>
+                    <Box
+                      sx={{
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: 1,
+                        alignItems: 'flex-start',
+                      }}
+                    >
+                      {/* Remarks moved to dedicated column */}
 
-                    {/* Show action menu icon if there are any actions available */}
-                    {(() => {
-                      const isManagerOwnLeave =
+                      {/* Show action menu icon if there are any actions available */}
+                      {(() => {
+                        const isManagerOwnLeave =
                         isManager &&
                         viewMode === 'you' &&
                         (leave.employee?.id === currentUserId ||
@@ -941,6 +937,7 @@ const LeaveHistory: React.FC<LeaveHistoryProps> = ({
                     })()}
                   </Box>
                 </TableCell>
+                )}
               </TableRow>
             ))}
           </TableBody>

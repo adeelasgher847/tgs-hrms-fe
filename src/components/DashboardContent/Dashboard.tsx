@@ -3,6 +3,7 @@ import {
   Box,
   Typography,
   useTheme,
+  useMediaQuery,
   Grid,
   TableHead,
   TableRow,
@@ -73,6 +74,7 @@ const Dashboard: React.FC = () => {
   const { language } = useLanguage();
   const lang = labels[language];
   const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
   const currentUser = getCurrentUser();
   const userRole = currentUser?.role;
@@ -1110,8 +1112,10 @@ const Dashboard: React.FC = () => {
             sx={{
               display: 'flex',
               flexDirection: { xs: 'column', md: 'row' },
-              gap: 3,
+              gap: { xs: 2, md: 3 },
               alignItems: 'stretch',
+              minWidth: 0,
+              maxWidth: '100%',
             }}
           >
             <Box sx={{ flex: 1, minWidth: { xs: '100%', md: 0 } }}>
@@ -1131,15 +1135,39 @@ const Dashboard: React.FC = () => {
                 <EmployeeGrowthChart />
               </Paper>
             </Box>
-            <Box sx={{ width: { xs: '100%', md: '45%', lg: '33%' } }}>
+            <Box
+              sx={{
+                width: { xs: '100%', md: '45%', lg: '35%' },
+                minWidth: 0,
+                maxWidth: '100%',
+                order: { xs: 2, md: 0 },
+              }}
+            >
               <Paper
                 elevation={0}
-                sx={{ p: 2, borderRadius: '20px', height: '100%' }}
+                sx={{
+                  p: { xs: 1.5, sm: 2 },
+                  borderRadius: { xs: '16px', sm: '20px' },
+                  height: '100%',
+                  overflow: 'hidden',
+                  maxWidth: '100%',
+                }}
               >
-                <Typography variant='h6' mb={1} sx={{ fontWeight: 600 }}>
+                <Typography
+                  variant='h6'
+                  mb={1}
+                  sx={{ fontWeight: 600, fontSize: { xs: '1rem', sm: '1.25rem' } }}
+                >
                   Salary Overview
                 </Typography>
-                <Box sx={{ width: '100%', height: { xs: 200, md: 320 } }}>
+                <Box
+                  sx={{
+                    width: '100%',
+                    maxWidth: '100%',
+                    height: { xs: 220, sm: 260, md: 320 },
+                    minHeight: 180,
+                  }}
+                >
                   <ResponsiveContainer width='100%' height='100%'>
                     <PieChart
                       margin={{ top: 0, right: 0, bottom: 20, left: 0 }}
@@ -1148,8 +1176,8 @@ const Dashboard: React.FC = () => {
                         data={salaryOverview}
                         dataKey='value'
                         nameKey='name'
-                        innerRadius={60}
-                        outerRadius={90}
+                        innerRadius={isMobile ? 45 : 60}
+                        outerRadius={isMobile ? 70 : 90}
                         paddingAngle={3}
                         label={({ percent }) =>
                           `${(percent * 100).toFixed(0)}%`
@@ -1176,7 +1204,11 @@ const Dashboard: React.FC = () => {
                   </ResponsiveContainer>
                 </Box>
                 <Box mt={1}>
-                  <Typography variant='caption' color='text.secondary'>
+                  <Typography
+                    variant='caption'
+                    color='text.secondary'
+                    sx={{ fontSize: { xs: '0.7rem', sm: '0.75rem' } }}
+                  >
                     Total payroll and unpaid summary for current cycle
                   </Typography>
                 </Box>

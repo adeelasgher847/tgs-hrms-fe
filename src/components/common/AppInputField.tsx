@@ -3,7 +3,6 @@ import {
   TextField,
   Typography,
   Box,
-  FormHelperText,
   useTheme,
   InputAdornment,
   IconButton,
@@ -253,24 +252,6 @@ const AppInputField = React.forwardRef<HTMLDivElement, AppInputFieldProps>(
             }}
           />
         </Box>
-        {rest.error && rest.helperText && !hideErrorsOnSmallScreen && (
-          <FormHelperText
-            title={String(rest.helperText)}
-            error={rest.error}
-            sx={{
-              display: { xs: 'block', sm: 'none' },
-              // margin: '4px 0 0 0',
-              fontSize: { xs: '12px', sm: 'var(--label-font-size)' },
-              lineHeight: 'var(--label-line-height)',
-              color: theme.palette.error.main,
-              whiteSpace: 'nowrap',
-              overflow: 'visible',
-              textOverflow: 'clip',
-            }}
-          >
-            {rest.helperText}
-          </FormHelperText>
-        )}
       </Box>
     );
   }

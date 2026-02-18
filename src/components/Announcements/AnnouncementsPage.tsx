@@ -24,7 +24,9 @@ import DeleteConfirmationDialog from '../common/DeleteConfirmationDialog';
 import AnnouncementModal from './AnnouncementModal';
 
 import { useLanguage } from '../../hooks/useLanguage';
+import { useUser } from '../../hooks/useUser';
 import { useErrorHandler } from '../../hooks/useErrorHandler';
+import { isSystemAdmin } from '../../utils/roleUtils';
 import {
   announcementsApiService,
   type Announcement,
@@ -40,7 +42,9 @@ function formatDate(value: string | null): string {
 export default function AnnouncementsPage() {
   const theme = useTheme();
   const { language } = useLanguage();
+  const { user } = useUser();
   const isRtl = language === 'ar';
+  const canCreate = !isSystemAdmin(user?.role);
 
   const { snackbar, showError, showSuccess, closeSnackbar } = useErrorHandler();
 
@@ -124,14 +128,16 @@ export default function AnnouncementsPage() {
           {titleText}
         </AppPageTitle>
 
-        <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' , paddingBottom:"10px"}}>
-          <AppButton
-            variantType='primary'
-            onClick={handleOpenCreate}
-            startIcon={<AddIcon />}
-            text={isRtl ? 'إنشاء إعلان' : 'Create announcement'}
-          />
-        </Box>
+        {canCreate && (
+          <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', paddingBottom: '10px' }}>
+            <AppButton
+              variantType='primary'
+              onClick={handleOpenCreate}
+              startIcon={<AddIcon />}
+              text={isRtl ? 'إنشاء إعلان' : 'Create announcement'}
+            />
+          </Box>
+        )}
       </Box>
 
       <Box>
@@ -162,7 +168,9 @@ export default function AnnouncementsPage() {
                 <TableCell>{isRtl ? 'الحالة' : 'Status'}</TableCell>
                 <TableCell>{isRtl ? 'مجدول في' : 'Scheduled at'}</TableCell>
                 <TableCell>{isRtl ? 'تم الإنشاء' : 'Created at'}</TableCell>
-                <TableCell>{isRtl ? 'إجراءات' : 'Actions'}</TableCell>
+                {canCreate && (
+                  <TableCell>{isRtl ? 'إجراءات' : 'Actions'}</TableCell>
+                )}
               </TableRow>
             </TableHead>
             <TableBody>
@@ -199,44 +207,46 @@ export default function AnnouncementsPage() {
                   </TableCell>
                   <TableCell>{formatDate(a.scheduled_at)}</TableCell>
                   <TableCell>{formatDate(a.created_at)}</TableCell>
-                  <TableCell>
-                    <Box display='flex' alignItems='center' gap={0.5}>
-                      <Tooltip title={isRtl ? 'تعديل' : 'Edit'}>
-                        <IconButton
-                          color='primary'
-                          size='small'
-                          onClick={() => handleOpenEdit(a)}
-                          aria-label={
-                            isRtl ? 'تعديل الإعلان' : 'Edit announcement'
-                          }
-                        >
-                          <Box
-                            component='img'
-                            src={Icons.edit}
-                            alt='Edit'
-                            sx={{ width: { xs: 16, sm: 20 }, height: { xs: 16, sm: 20 } }}
-                          />
-                        </IconButton>
-                      </Tooltip>
-                      <Tooltip title={isRtl ? 'حذف' : 'Delete'}>
-                        <IconButton
-                          color='error'
-                          size='small'
-                          onClick={() => setDeleting(a)}
-                          aria-label={
-                            isRtl ? 'حذف الإعلان' : 'Delete announcement'
-                          }
-                        >
-                          <Box
-                            component='img'
-                            src={Icons.delete}
-                            alt='Delete'
-                            sx={{ width: { xs: 16, sm: 20 }, height: { xs: 16, sm: 20 } }}
-                          />
-                        </IconButton>
-                      </Tooltip>
-                    </Box>
-                  </TableCell>
+                  {canCreate && (
+                    <TableCell>
+                      <Box display='flex' alignItems='center' gap={0.5}>
+                        <Tooltip title={isRtl ? 'تعديل' : 'Edit'}>
+                          <IconButton
+                            color='primary'
+                            size='small'
+                            onClick={() => handleOpenEdit(a)}
+                            aria-label={
+                              isRtl ? 'تعديل الإعلان' : 'Edit announcement'
+                            }
+                          >
+                            <Box
+                              component='img'
+                              src={Icons.edit}
+                              alt='Edit'
+                              sx={{ width: { xs: 16, sm: 20 }, height: { xs: 16, sm: 20 } }}
+                            />
+                          </IconButton>
+                        </Tooltip>
+                        <Tooltip title={isRtl ? 'حذف' : 'Delete'}>
+                          <IconButton
+                            color='error'
+                            size='small'
+                            onClick={() => setDeleting(a)}
+                            aria-label={
+                              isRtl ? 'حذف الإعلان' : 'Delete announcement'
+                            }
+                          >
+                            <Box
+                              component='img'
+                              src={Icons.delete}
+                              alt='Delete'
+                              sx={{ width: { xs: 16, sm: 20 }, height: { xs: 16, sm: 20 } }}
+                            />
+                          </IconButton>
+                        </Tooltip>
+                      </Box>
+                    </TableCell>
+                  )}
                 </TableRow>
               ))}
             </TableBody>
