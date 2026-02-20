@@ -474,7 +474,7 @@ export default function DesignationManager() {
         setDesignations(prev =>
           prev.filter(d => d.id !== designationToDelete.id)
         );
-        showSuccess('Designation deleted successfully');
+        showError(new Error('Designation deleted successfully'));
       } catch (error: unknown) {
         showError(error, { operation: 'delete', resource: 'designation' });
       }

@@ -495,16 +495,20 @@ class LeaveApiService {
           if (!notif.ok) {
             console.warn('Notification send failed for approveLeaveByManager', notif.message, notif.correlationId);
           }
-          try {
-            const detail = {
-              title: 'Leave Approved',
-              message,
-              data: res,
-            };
-            const ev = new CustomEvent<Record<string, unknown>>('hrms:notification', { detail });
-            window.dispatchEvent(ev);
-          } catch {
-            // ignore
+          // Only show in-app notification to the employee (recipient), not to the manager who approved
+          const currentUserId = getCurrentUser()?.id;
+          if (currentUserId && String(currentUserId) === String(recipient)) {
+            try {
+              const detail = {
+                title: 'Leave Approved',
+                message,
+                data: res,
+              };
+              const ev = new CustomEvent<Record<string, unknown>>('hrms:notification', { detail });
+              window.dispatchEvent(ev);
+            } catch {
+              // ignore
+            }
           }
         }
       } catch (e) {
@@ -552,16 +556,20 @@ class LeaveApiService {
           if (!notif.ok) {
             console.warn('Notification send failed for rejectLeaveByManager', notif.message, notif.correlationId);
           }
-          try {
-            const detail = {
-              title: 'Leave Rejected',
-              message,
-              data: res,
-            };
-            const ev = new CustomEvent<Record<string, unknown>>('hrms:notification', { detail });
-            window.dispatchEvent(ev);
-          } catch {
-            // ignore
+          // Only show in-app notification to the employee (recipient), not to the manager who rejected
+          const currentUserId = getCurrentUser()?.id;
+          if (currentUserId && String(currentUserId) === String(recipient)) {
+            try {
+              const detail = {
+                title: 'Leave Rejected',
+                message,
+                data: res,
+              };
+              const ev = new CustomEvent<Record<string, unknown>>('hrms:notification', { detail });
+              window.dispatchEvent(ev);
+            } catch {
+              // ignore
+            }
           }
         }
       } catch (e) {

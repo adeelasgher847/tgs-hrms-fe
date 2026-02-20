@@ -466,7 +466,9 @@ const NotificationButton: React.FC = () => {
           </Button>
         </Box>
         <Divider />
-        {notifications.length === 0 ? (
+        {(() => {
+          const unreadList = notifications.filter(n => !n.read);
+          return unreadList.length === 0 ? (
           <List sx={{ p: 2 }}>
             <ListItem>
               <ListItemText
@@ -477,7 +479,7 @@ const NotificationButton: React.FC = () => {
           </List>
         ) : (
           <List>
-            {notifications.map(n => (
+            {unreadList.map(n => (
               <ListItemButton
                 key={n.id}
                 onClick={() => {
@@ -524,7 +526,8 @@ const NotificationButton: React.FC = () => {
               </ListItemButton>
             ))}
           </List>
-        )}
+        );
+        })()}
       </Menu>
     </>
   );

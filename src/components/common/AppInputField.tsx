@@ -76,7 +76,9 @@ const AppInputField = React.forwardRef<HTMLDivElement, AppInputFieldProps>(
           sx={{
             display: 'flex',
             justifyContent: 'space-between',
-            alignItems: 'flex-start',
+            alignItems: 'center',
+            flexWrap: 'nowrap',
+            // gap: 1,
           }}
         >
           <Typography

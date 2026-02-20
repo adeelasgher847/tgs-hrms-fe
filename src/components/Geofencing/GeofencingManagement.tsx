@@ -179,7 +179,7 @@ const GeofencingManagement = () => {
 
     try {
       await geofencingApi.deleteGeofence(deletingGeofence.id);
-      showSnackbar('Geofence deleted successfully', 'success');
+      showSnackbar('Geofence deleted successfully', 'error');
       setDeletingGeofence(null);
       setDeletingGeofence(null);
       fetchGeofences();
@@ -654,7 +654,19 @@ const GeofencingManagement = () => {
         <Alert
           onClose={handleCloseSnackbar}
           severity={snackbar.severity}
-          sx={{ width: '100%' }}
+          variant="standard"
+          sx={{
+            width: '100%',
+            ...(snackbar.severity === 'error'
+              ? {
+                  backgroundColor: 'rgb(253, 237, 237)',
+                  color: 'rgb(95, 33, 32)',
+                  '& .MuiAlert-icon': { color: 'rgb(95, 33, 32)' },
+                  '& .MuiAlert-message': { color: 'rgb(95, 33, 32)' },
+                  '& .MuiIconButton-root': { color: 'rgb(95, 33, 32)' },
+                }
+              : {}),
+          }}
         >
           {snackbar.message}
         </Alert>

@@ -17,7 +17,8 @@ import systemEmployeeApiService, {
   type SystemEmployee,
 } from '../../api/systemEmployeeApi';
 import { useIsDarkMode } from '../../theme';
-import { snackbar } from '../../utils/snackbar';
+import { useErrorHandler } from '../../hooks/useErrorHandler';
+import ErrorSnackbar from '../common/ErrorSnackbar';
 import AppDropdown from '../common/AppDropdown';
 // SelectChangeEvent import removed (unused)
 import AppPageTitle from '../common/AppPageTitle';
@@ -82,7 +83,7 @@ const PayrollReports: React.FC = () => {
         });
         setStatistics(stats);
       } catch {
-        snackbar.error('Failed to load payroll data');
+        showError(new Error('Failed to load payroll data'));
       } finally {
         setLoadingTenants(false);
         setStatsLoading(false);
@@ -103,7 +104,7 @@ const PayrollReports: React.FC = () => {
         });
         setStatistics(stats);
       } catch {
-        snackbar.error('Failed to load payroll statistics');
+        showError(new Error('Failed to load payroll statistics'));
       } finally {
         setStatsLoading(false);
       }
@@ -362,6 +363,13 @@ const PayrollReports: React.FC = () => {
           </Box>
         )}
       </Paper>
+      <ErrorSnackbar
+        open={snackbar.open}
+        message={snackbar.message}
+        severity={snackbar.severity}
+        onClose={closeSnackbar}
+        anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
+      />
     </Box>
   );
 };

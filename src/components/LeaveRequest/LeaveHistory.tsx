@@ -584,7 +584,12 @@ const LeaveHistory: React.FC<LeaveHistoryProps> = ({
                 {!hideNameColumn && (isAdmin || isManager || showNames) && (
                   <TableCell>{leave.employee?.first_name || 'N/A'}</TableCell>
                 )}
-                <TableCell>{leave.leaveType?.name || 'Unknown'}</TableCell>
+                <TableCell>
+                  {(leave.leaveType?.name || 'Unknown').replace(
+                    /^./,
+                    c => c.toUpperCase()
+                  )}
+                </TableCell>
                 <TableCell>{formatDate(leave.startDate)}</TableCell>
                 <TableCell>{formatDate(leave.endDate)}</TableCell>
                 <TableCell>{formatDate(leave.createdAt)}</TableCell>

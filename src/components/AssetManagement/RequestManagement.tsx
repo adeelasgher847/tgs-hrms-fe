@@ -1119,8 +1119,10 @@ const RequestManagement: React.FC = () => {
             false
           );
 
-          showSuccess(
-            `Request from ${selectedRequest.employeeName} has been rejected successfully`
+          showError(
+            new Error(
+              `Request from ${selectedRequest.employeeName} has been rejected successfully`
+            )
           );
 
           // Close modal and return early for rejection - no need to refresh from API
@@ -2105,12 +2107,13 @@ const RequestManagement: React.FC = () => {
         </Box>
       )}
 
-      {/* Pagination Info */}
+      {/* Pagination Info - when searching, show filtered count */}
       {requests.length > 0 && (
         <Box display='flex' justifyContent='center' mt={1}>
           <Typography variant='body2' color='textSecondary'>
             Showing page {pagination.page} of {pagination.totalPages} (
-            {pagination.total} total records)
+            {searchTerm ? filteredRequests.length : pagination.total} total
+            records)
           </Typography>
         </Box>
       )}

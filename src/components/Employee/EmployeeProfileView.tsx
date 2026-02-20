@@ -392,8 +392,11 @@ const EmployeeProfileView: React.FC = () => {
                     <TableCell>
                       {loadingLeaveTypes && isUUID ? (
                         <CircularProgress size={16} />
+                      ) : leaveTypeName ? (
+                        leaveTypeName.charAt(0).toUpperCase() +
+                        leaveTypeName.slice(1)
                       ) : (
-                        leaveTypeName
+                        ''
                       )}
                     </TableCell>
                     <TableCell>{formatDate(lv.fromDate)}</TableCell>

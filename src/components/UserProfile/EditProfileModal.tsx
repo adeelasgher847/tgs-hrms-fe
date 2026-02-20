@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import {
   Box,
-  Alert,
   CircularProgress,
   InputAdornment,
   useTheme,
@@ -19,6 +18,8 @@ import { useProfilePicture } from '../../context/ProfilePictureContext';
 import { validateEmailAddress } from '../../utils/validation';
 import { env } from '../../config/env';
 import { TIMEOUTS, ERROR_MESSAGES } from '../../constants/appConstants';
+import { useErrorHandler } from '../../hooks/useErrorHandler';
+import ErrorSnackbar from '../common/ErrorSnackbar';
 import AppFormModal from '../common/AppFormModal';
 import AppInputField from '../common/AppInputField';
 
@@ -36,6 +37,7 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({
   onProfileUpdated,
 }) => {
   const theme = useTheme();
+  const { snackbar, showSuccess, showError, closeSnackbar } = useErrorHandler();
   const { updateProfilePicture, clearProfilePicture } = useProfilePicture();
   const [formData, setFormData] = useState({
     first_name: '',
@@ -193,10 +195,12 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({
 
     try {
       const token = localStorage.getItem('accessToken');
+      let successMessage: string | null = null;
 
       // 1) If delete requested, remove first and clear global picture context
       if (removeRequested) {
-        await profileApiService.removeProfilePicture();
+        const removeRes = await profileApiService.removeProfilePicture();
+        if (removeRes.message) successMessage = removeRes.message;
         clearProfilePicture();
       }
 
@@ -209,6 +213,7 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({
           correctUserId,
           selectedPictureFile
         );
+        if (response.message) successMessage = response.message;
         const profilePicUrl = response.user.profile_pic
           ? `${env.apiBaseUrl}/users/${correctUserId}/profile-picture?t=${Date.now()}`
           : null;
@@ -225,27 +230,16 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({
 
       const updatedUser = await profileApiService.updateProfile(updateData);
 
-      // Immediately update the profile and close modal for better performance
       onProfileUpdated(updatedUser);
+      showSuccess(successMessage || 'Profile updated successfully');
       onClose();
     } catch (err: unknown) {
-      // Handle specific error messages from backend
-      const error = err as {
-        response?: { data?: { message?: string }; status?: number };
-      };
-      if (error?.response?.data?.message) {
-        setError(error.response.data.message);
-      } else if (error?.response?.status === 400) {
-        setError(
-          'Invalid data provided. Please check your input and try again.'
-        );
-      } else if (error?.response?.status === 401) {
-        setError('You are not authorized to perform this action.');
-      } else if (error?.response?.status === 404) {
-        setError('User profile not found.');
-      } else {
-        setError('Failed to update profile. Please try again.');
-      }
+      const apiError = err as { response?: { data?: { message?: string } } };
+      const message =
+        apiError?.response?.data?.message ||
+        (err instanceof Error ? err.message : 'Failed to update profile. Please try again.');
+      setError(null);
+      showError(err);
     } finally {
       // Clear timeout and ensure loading state is always reset
       clearTimeout(timeoutId);
@@ -279,10 +273,11 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({
       : undefined;
 
   return (
-    <AppFormModal
-      open={open}
-      onClose={handleClose}
-      title='Edit Profile'
+    <>
+      <AppFormModal
+        open={open}
+        onClose={handleClose}
+        title='Edit Profile'
       onSubmit={handleSubmit}
       submitLabel={loading ? 'Updating...' : 'Update Profile'}
       cancelLabel='Cancel'
@@ -294,12 +289,6 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({
       maxWidth='sm'
     >
       <Box sx={{ pt: 1 }}>
-        {error && (
-          <Alert severity='error' sx={{ mb: 2 }}>
-            {error}
-          </Alert>
-        )}
-
         <Box sx={{ display: 'flex', justifyContent: 'center', mb: 3 }}>
           <ProfilePictureUpload
             user={user}
@@ -424,6 +413,14 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({
         </Box>
       </Box>
     </AppFormModal>
+      <ErrorSnackbar
+        open={snackbar.open}
+        message={snackbar.message}
+        severity={snackbar.severity}
+        onClose={closeSnackbar}
+        anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
+      />
+    </>
   );
 };
 

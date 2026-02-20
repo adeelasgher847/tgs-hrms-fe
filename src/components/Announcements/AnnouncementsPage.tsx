@@ -104,7 +104,7 @@ export default function AnnouncementsPage() {
     try {
       await announcementsApiService.deleteAnnouncement(deleting.id);
       setAnnouncements(prev => prev.filter(a => a.id !== deleting.id));
-      showSuccess(isRtl ? 'تم حذف الإعلان' : 'Announcement deleted.');
+      showError(new Error(isRtl ? 'تم حذف الإعلان' : 'Announcement deleted.'));
       setDeleting(null);
     } catch (err: unknown) {
       showError(err);
@@ -291,6 +291,7 @@ export default function AnnouncementsPage() {
         message={snackbar.message}
         severity={snackbar.severity}
         onClose={closeSnackbar}
+        anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
       />
     </Box>
   );

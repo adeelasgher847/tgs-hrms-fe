@@ -306,13 +306,7 @@ const EmployeeGrowthChart: React.FC = () => {
               const num = typeof v === 'number' ? v : parseInt(v as string);
               if (!isNaN(num)) setSelectedYear(num);
             }}
-            options={[
-              {
-                value: 'all',
-                label: language === 'ar' ? 'كل الوقت' : 'All Time',
-              },
-              ...yearOptions.map(y => ({ value: y, label: String(y) })),
-            ]}
+            options={yearOptions.map(y => ({ value: y, label: String(y) }))}
             containerSx={{
               minWidth: { xs: '100%', sm: 120 },
               width: { xs: '100%', sm: 'auto' },
@@ -327,14 +321,19 @@ const EmployeeGrowthChart: React.FC = () => {
 
       <Box
         sx={{
+          position: 'relative',
+          zIndex: 1,
           flexGrow: 1,
           alignItems: 'center',
           minHeight: { xs: 250, sm: 300 },
-          overflow: 'hidden',
+          overflow: 'visible',
           width: '100%',
           display: 'flex',
           justifyContent: 'center',
           padding: 0,
+          '& .apexcharts-tooltip': {
+            zIndex: 9999,
+          },
         }}
       >
         <Box

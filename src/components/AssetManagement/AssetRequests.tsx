@@ -18,12 +18,14 @@ import {
   Pagination,
   Button,
   Tooltip,
+  useTheme,
 } from '@mui/material';
 import {
   Add as AddIcon,
   Search as SearchIcon,
   Delete as DeleteIcon,
   CheckCircle as CheckCircleIcon,
+  ArrowBack as ArrowBackIcon,
 } from '@mui/icons-material';
 import AppTable from '../common/AppTable';
 import AppButton from '../common/AppButton';
@@ -836,9 +838,11 @@ const AssetRequests: React.FC = () => {
       // Refresh the current page to update counts (not initial load)
       fetchRequests(pagination.page, pagination.limit, false);
 
-      // Show success snackbar
-      showSuccess(
-        `Asset request for "${requestToCancel.category.name}" has been deleted successfully`
+      // Show success in same red alert style as other deletes
+      showError(
+        new Error(
+          `Asset request for "${requestToCancel.category.name}" has been deleted successfully`
+        )
       );
 
       setIsCancelDialogOpen(false);
@@ -1042,8 +1046,23 @@ const AssetRequests: React.FC = () => {
     </TableRow>
   );
 
+  const theme = useTheme();
+
   return (
     <Box>
+      {/* Back arrow when on Team Asset Requests (manager only) - like Timesheet */}
+      {roleIsManager() && viewMode === 'team_requests' && (
+        <IconButton
+          sx={{ p: 0, mb: 2, color: theme.palette.text.primary }}
+          onClick={() => {
+            setViewMode('my_requests');
+            setPagination(prev => ({ ...prev, page: 1 }));
+          }}
+          aria-label='Back to my requests'
+        >
+          <ArrowBackIcon />
+        </IconButton>
+      )}
       <Box
         sx={{
           display: 'flex',
@@ -1062,7 +1081,12 @@ const AssetRequests: React.FC = () => {
           Asset Requests
         </Typography>
         <Box
-          sx={{ display: 'flex', gap: 1, width: { xs: '100%', sm: 'auto' } }}
+          sx={{
+            display: 'flex',
+            gap: 1,
+            width: { xs: '100%', sm: 'auto' },
+            flexWrap: 'wrap',
+          }}
         >
           {(!roleIsManager() || viewMode === 'my_requests') && (
             <AppButton
@@ -1078,40 +1102,22 @@ const AssetRequests: React.FC = () => {
               }}
             />
           )}
+          {roleIsManager() && (
+            <AppButton
+              variant={viewMode === 'team_requests' ? 'contained' : 'outlined'}
+              variantType='primary'
+              onClick={() => {
+                setViewMode('team_requests');
+                setPagination(prev => ({ ...prev, page: 1 }));
+              }}
+              text='Team Asset Requests'
+              sx={{
+                width: { xs: '100%', sm: 'auto' },
+              }}
+            />
+          )}
         </Box>
       </Box>
-
-      {/* View Mode Toggles for Manager */}
-      {roleIsManager() && (
-        <Box
-          sx={{
-            display: 'flex',
-            justifyContent: 'flex-end',
-            mb: 3,
-            gap: 1,
-            flexWrap: 'wrap',
-          }}
-        >
-          <AppButton
-            variant={viewMode === 'my_requests' ? 'contained' : 'outlined'}
-            variantType='primary'
-            onClick={() => {
-              setViewMode('my_requests');
-              setPagination(prev => ({ ...prev, page: 1 }));
-            }}
-            text='My Asset Requests'
-          />
-          <AppButton
-            variant={viewMode === 'team_requests' ? 'contained' : 'outlined'}
-            variantType='primary'
-            onClick={() => {
-              setViewMode('team_requests');
-              setPagination(prev => ({ ...prev, page: 1 }));
-            }}
-            text='Team Asset Requests'
-          />
-        </Box>
-      )}
 
       {/* Statistics Cards */}
       <Box sx={{ mb: 3, display: 'flex', gap: 1, flexWrap: 'wrap' }}>

@@ -90,7 +90,7 @@ const Signup: React.FC = () => {
         // Keep confirmPassword in sync when user changes main password
         if (formData.confirmPassword) {
           next.confirmPassword =
-            pwd === formData.confirmPassword ? '' : 'Passwords do not match';
+            pwd === formData.confirmPassword ? '' : 'Password do not match';
         }
       }
 
@@ -102,7 +102,7 @@ const Signup: React.FC = () => {
         if (!confirm) {
           next.confirmPassword = 'Please confirm your password';
         } else if (confirm !== pwd) {
-          next.confirmPassword = 'Passwords do not match';
+          next.confirmPassword = 'Password do not match';
         } else {
           next.confirmPassword = '';
         }
@@ -164,7 +164,7 @@ const Signup: React.FC = () => {
     if (!formData.confirmPassword) {
       nextErrors.confirmPassword = 'Please confirm your password';
     } else if (formData.password !== formData.confirmPassword) {
-      nextErrors.confirmPassword = 'Passwords do not match';
+      nextErrors.confirmPassword = 'Password do not match';
     }
 
     setFieldErrors(nextErrors);
@@ -398,15 +398,15 @@ const Signup: React.FC = () => {
             flexDirection: 'column',
             alignItems: 'center',
             justifyContent: 'center',
-            padding: { xs: '16px 12px', sm: '24px 16px', md: '48px' },
+            padding: { xs: '16px 12px', sm: '24px 16px', md: '30px' },
             backgroundColor: { xs: '#3083DC', lg: 'var(--white-100-color)' },
             overflowY: 'auto',
             overflowX: 'hidden',
             position: 'relative',
             zIndex: 1,
             marginLeft: { xs: 0, lg: '-24px' },
-            paddingLeft: { xs: '12px', sm: '16px', lg: 'calc(48px + 12px)' },
-            paddingRight: { xs: '12px', sm: '16px', lg: '48px' },
+            // paddingLeft: { xs: '12px', sm: '16px', lg: 'calc(48px + 12px)' },
+            // paddingRight: { xs: '12px', sm: '16px', lg: '48px' },
             marginTop: { xs: 'auto', lg: 0 },
             pt: { xs: '30px', lg: '48px' },
             boxSizing: 'border-box',

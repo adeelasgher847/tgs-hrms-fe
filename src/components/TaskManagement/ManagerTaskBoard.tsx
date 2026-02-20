@@ -544,7 +544,7 @@ export default function ManagerTaskBoard() {
           setTasks(prev => prev.filter(task => task.id !== deleteTargetId));
           setTaskDetailTasks(prev => prev.filter(t => t.id !== deleteTargetId));
           const msg = res.message ?? 'Task deleted successfully!';
-          showSuccess(msg);
+          showError(new Error(msg));
         }
       } catch (err) {
         showError(err, { operation: 'delete', resource: 'employee' });

@@ -679,7 +679,10 @@ const Reports: React.FC = () => {
                           <TableCell
                             sx={{ color: theme.palette.text.secondary }}
                           >
-                            {row.summary.leaveTypeName}
+                            {row.summary.leaveTypeName
+                              ? row.summary.leaveTypeName.charAt(0).toUpperCase() +
+                                row.summary.leaveTypeName.slice(1)
+                              : ''}
                           </TableCell>
                           <TableCell
                             align='center'
@@ -883,7 +886,10 @@ const Reports: React.FC = () => {
                       sx={{ color: theme.palette.text.primary }}
                       gutterBottom
                     >
-                      {item.leaveTypeName}
+                      {item.leaveTypeName
+                      ? item.leaveTypeName.charAt(0).toUpperCase() +
+                        item.leaveTypeName.slice(1)
+                      : ''}
                     </Typography>
                     <Typography
                       variant='h4'
@@ -942,7 +948,10 @@ const Reports: React.FC = () => {
                         }}
                       >
                         <TableCell sx={{ color: theme.palette.text.primary }}>
-                          {item.leaveTypeName}
+                          {item.leaveTypeName
+                            ? item.leaveTypeName.charAt(0).toUpperCase() +
+                              item.leaveTypeName.slice(1)
+                            : ''}
                         </TableCell>
                         <TableCell sx={{ color: theme.palette.text.primary }}>
                           {item.maxDaysPerYear}

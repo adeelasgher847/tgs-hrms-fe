@@ -752,7 +752,12 @@ const CrossTenantLeaveManagement: React.FC = () => {
                 <TableRow key={leave.id}>
                   <TableCell>{leave.employeeName}</TableCell>
                   <TableCell>{leave.departmentName || '-'}</TableCell>
-                  <TableCell>{leave.leaveType}</TableCell>
+                  <TableCell>
+                  {leave.leaveType
+                    ? leave.leaveType.charAt(0).toUpperCase() +
+                      leave.leaveType.slice(1)
+                    : '-'}
+                </TableCell>
                   <TableCell>{formatDate(leave.startDate)}</TableCell>
                   <TableCell>{formatDate(leave.endDate)}</TableCell>
                   <TableCell>{leave.totalDays}</TableCell>

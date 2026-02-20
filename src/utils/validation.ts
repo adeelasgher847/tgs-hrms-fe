@@ -87,7 +87,7 @@ export const validatePasswordStrength = (password: string): string | null => {
   const hasSpecial = /[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?`~]/.test(pwd);
 
   if (!hasMinLength) {
-    return 'Password must be at least 8 characters long.';
+    return 'Password must be at least 8 characters.';
   }
   if (!hasUpper) {
     return 'Password must include at least 1 uppercase letter (A-Z).';

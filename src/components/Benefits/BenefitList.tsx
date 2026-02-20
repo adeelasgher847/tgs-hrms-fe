@@ -120,7 +120,7 @@ const BenefitList: React.FC = () => {
     try {
       const res = await benefitsApi.deleteBenefit(selectedBenefit.id);
       if (res.deleted) {
-        showSuccess('Benefit deleted successfully!');
+        showError(new Error('Benefit deleted successfully!'));
         setDeleteDialogOpen(false);
         setSelectedBenefit(null);
         fetchBenefits();

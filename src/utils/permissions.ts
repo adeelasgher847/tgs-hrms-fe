@@ -201,12 +201,12 @@ const ROLE_SUBMENU_POLICIES: Record<
     assets: { allowOnly: ['assets overview'] },
     employees: { deny: ['employee list'] },
     teams: { deny: ['my tasks'] }, // Admins see Team Management and Manager Tasks only
-    attendance: { deny: ['leave request'] },
+    attendance: { deny: ['leave request', 'geofencing'] },
   },
   'network-admin': {
     employees: { deny: ['tenant employees'] },
     department: { deny: ['user list', 'policies', 'holidays'] },
-    attendance: { deny: ['reports', 'leave request'] },
+    attendance: { deny: ['reports', 'leave request', 'geofencing'] },
     benefits: { deny: ['benefits report', 'benefit details'] },
     'audit logs': { denyAll: true },
     assets: { deny: ['asset requests', 'assets overview'] },
@@ -220,13 +220,14 @@ const ROLE_SUBMENU_POLICIES: Record<
     assets: { deny: ['assets overview', 'asset requests'] },
     benefits: { deny: ['benefits report', 'benefit details'] },
     'leave-analytics': { deny: ['cross tenant leaves'] },
+    attendance: { deny: ['geofencing'] },
     teams: { deny: ['my tasks'] }, // Admins see Team Management and Manager Tasks only
   },
   admin: {
     employees: { deny: ['tenant employees'] },
     department: { deny: ['user list', 'policies', 'holidays'] },
     'leave-analytics': { deny: ['cross tenant leaves'] },
-    attendance: { deny: ['reports'] },
+    attendance: { deny: ['reports', 'geofencing'] },
     'audit logs': { denyAll: true },
     benefits: { deny: ['benefits report', 'benefit details'] },
     payroll: { deny: ['payroll reports', 'my salary'] },
@@ -407,7 +408,6 @@ const DASHBOARD_ALLOWLIST_ENTRIES: Record<NormalizedRole, readonly string[]> = {
     'payroll-configuration',
     'payroll-records',
     'employee-salary',
-    'geofencing',
   ],
   admin: [
     '',
@@ -442,7 +442,6 @@ const DASHBOARD_ALLOWLIST_ENTRIES: Record<NormalizedRole, readonly string[]> = {
     'payroll-configuration',
     'payroll-records',
     'employee-salary',
-    'geofencing',
   ],
   manager: [
     'EmployeeManager',

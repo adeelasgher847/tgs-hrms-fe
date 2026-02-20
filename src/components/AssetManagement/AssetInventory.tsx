@@ -615,7 +615,7 @@ const AssetInventory: React.FC = () => {
     try {
       await assetApi.deleteAsset(assetToDelete.id);
 
-      showSuccess('Asset deleted successfully');
+      showError(new Error('Asset deleted successfully'));
       setDeleteDialogOpen(false);
       setAssetToDelete(null);
       // Refresh the current page to update counts

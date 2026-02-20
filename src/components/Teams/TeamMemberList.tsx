@@ -27,7 +27,8 @@ import {
 import { useLanguage } from '../../hooks/useLanguage';
 import { teamApiService } from '../../api/teamApi';
 import type { TeamMember } from '../../api/teamApi';
-import { snackbar } from '../../utils/snackbar';
+import { useErrorHandler } from '../../hooks/useErrorHandler';
+import ErrorSnackbar from '../common/ErrorSnackbar';
 import AppButton from '../common/AppButton';
 import UserAvatar from '../common/UserAvatar';
 import AppTable from '../common/AppTable';
@@ -42,6 +43,7 @@ const TeamMemberList: React.FC<TeamMemberListProps> = ({
   teamId,
   darkMode = false,
 }) => {
+  const { snackbar, showSuccess, showError, closeSnackbar } = useErrorHandler();
   const [members, setMembers] = useState<TeamMember[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -232,7 +234,7 @@ const TeamMemberList: React.FC<TeamMemberListProps> = ({
         prev.filter(member => member.id !== memberToDelete.id)
       );
       setTotal(prev => prev - 1);
-      snackbar.success(lang.memberRemoved);
+      showSuccess(lang.memberRemoved);
 
       // Trigger auto-render for other components
       window.dispatchEvent(new CustomEvent('teamUpdated'));
@@ -512,6 +514,13 @@ const TeamMemberList: React.FC<TeamMemberListProps> = ({
           />
         </DialogActions>
       </Dialog>
+      <ErrorSnackbar
+        open={snackbar.open}
+        message={snackbar.message}
+        severity={snackbar.severity}
+        onClose={closeSnackbar}
+        anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
+      />
     </Box>
   );
 };

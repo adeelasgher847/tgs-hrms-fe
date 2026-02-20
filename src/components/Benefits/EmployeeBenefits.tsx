@@ -287,7 +287,7 @@ const EmployeeBenefits: React.FC = () => {
       await employeeBenefitApi.cancelEmployeeBenefit(
         selectedBenefit.benefitAssignmentId
       );
-      showSuccess('Benefit cancelled successfully!');
+      showError(new Error('Benefit cancelled successfully!'));
       setOpenBenefitDialog(false);
       await fetchEmployees();
     } catch {

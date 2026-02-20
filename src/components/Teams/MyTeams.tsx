@@ -20,7 +20,8 @@ import {
 import { useLanguage } from '../../hooks/useLanguage';
 import type { Team, TeamMember } from '../../api/teamApi';
 import { teamApiService } from '../../api/teamApi';
-import { snackbar } from '../../utils/snackbar';
+import { useErrorHandler } from '../../hooks/useErrorHandler';
+import ErrorSnackbar from '../common/ErrorSnackbar';
 import { isAdmin } from '../../utils/auth';
 import TeamMemberList from './TeamMemberList';
 import AppButton from '../common/AppButton';
@@ -34,6 +35,7 @@ interface MyTeamsProps {
 }
 
 const MyTeams: React.FC<MyTeamsProps> = ({ teams, darkMode = false }) => {
+  const { snackbar, showSuccess, showError, closeSnackbar } = useErrorHandler();
   const [selectedTeam, setSelectedTeam] = useState<Team | null>(null);
   const [showMemberDialog, setShowMemberDialog] = useState(false);
   const [showAddMemberDialog, setShowAddMemberDialog] = useState(false);
@@ -122,7 +124,7 @@ const MyTeams: React.FC<MyTeamsProps> = ({ teams, darkMode = false }) => {
           const response = await teamApiService.getAvailableEmployees(1, 25);
           setAvailableEmployees(response.items || []);
         } catch {
-          snackbar.error('Failed to load available employees.');
+          showError(new Error('Failed to load available employees.'));
         } finally {
           setLoadingEmployees(false);
         }
@@ -148,7 +150,7 @@ const MyTeams: React.FC<MyTeamsProps> = ({ teams, darkMode = false }) => {
       setSelectedEmployeeId('');
 
       // Show success message
-      snackbar.success(lang.memberAdded);
+      showSuccess(lang.memberAdded);
 
       // Trigger auto-render for other components
       window.dispatchEvent(new CustomEvent('teamUpdated'));
@@ -421,6 +423,13 @@ const MyTeams: React.FC<MyTeamsProps> = ({ teams, darkMode = false }) => {
           </AppButton>
         </DialogActions>
       </Dialog>
+      <ErrorSnackbar
+        open={snackbar.open}
+        message={snackbar.message}
+        severity={snackbar.severity}
+        onClose={closeSnackbar}
+        anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
+      />
     </Box>
   );
 };

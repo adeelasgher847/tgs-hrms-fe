@@ -20,7 +20,8 @@ import {
   type PayrollConfig,
   type Allowance,
 } from '../../api/payrollApi';
-import { snackbar } from '../../utils/snackbar';
+import { useErrorHandler } from '../../hooks/useErrorHandler';
+import ErrorSnackbar from '../common/ErrorSnackbar';
 import AppDropdown from '../common/AppDropdown';
 import type { SelectChangeEvent } from '@mui/material/Select';
 import AppFormModal from '../common/AppFormModal';
@@ -31,6 +32,7 @@ import AppInputField from '../common/AppInputField';
 const PayrollConfiguration: React.FC = () => {
   const theme = useTheme();
   const darkMode = useIsDarkMode();
+  const { snackbar, showSuccess, showError, closeSnackbar } = useErrorHandler();
 
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -398,7 +400,7 @@ const PayrollConfiguration: React.FC = () => {
       }
 
       setConfig(savedConfig);
-      snackbar.success(
+      showSuccess(
         config
           ? 'Payroll configuration updated successfully'
           : 'Payroll configuration created successfully'
@@ -411,7 +413,7 @@ const PayrollConfiguration: React.FC = () => {
               ?.data?.message || 'Failed to save payroll configuration'
           : 'Failed to save payroll configuration';
       setError(errorMessage);
-      snackbar.error(errorMessage);
+      showError(err instanceof Error ? err : new Error(errorMessage));
     } finally {
       setSaving(false);
     }
@@ -1961,6 +1963,13 @@ const PayrollConfiguration: React.FC = () => {
           </Box>
         </Box>
       </AppFormModal>
+      <ErrorSnackbar
+        open={snackbar.open}
+        message={snackbar.message}
+        severity={snackbar.severity}
+        onClose={closeSnackbar}
+        anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
+      />
     </Box>
   );
 };

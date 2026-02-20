@@ -25,7 +25,8 @@ import {
 import { useLanguage } from '../../hooks/useLanguage';
 import type { Team, UpdateTeamDto } from '../../api/teamApi';
 import { teamApiService } from '../../api/teamApi';
-import { snackbar } from '../../utils/snackbar';
+import { useErrorHandler } from '../../hooks/useErrorHandler';
+import ErrorSnackbar from '../common/ErrorSnackbar';
 import AppButton from '../common/AppButton';
 import TeamMemberList from './TeamMemberList';
 import EditTeamForm from './EditTeamForm';
@@ -47,6 +48,7 @@ const TeamList: React.FC<TeamListProps> = ({
   darkMode = false,
   onTeamUpdated,
 }) => {
+  const { snackbar, showSuccess, showError, closeSnackbar } = useErrorHandler();
   const [selectedTeam, setSelectedTeam] = useState<Team | null>(null);
   const [showMemberDialog, setShowMemberDialog] = useState(false);
   const [showEditDialog, setShowEditDialog] = useState(false);
@@ -198,7 +200,7 @@ const TeamList: React.FC<TeamListProps> = ({
         currentTeam.description = updatedTeam.description;
       }
 
-      snackbar.success(
+      showSuccess(
         (updatedTeam as { message?: string }).message ?? lang.teamUpdated
       );
       setShowEditDialog(false);
@@ -213,7 +215,7 @@ const TeamList: React.FC<TeamListProps> = ({
       // Show error message to user
       const errorMessage =
         error instanceof Error ? error.message : 'Failed to update team';
-      snackbar.error(errorMessage);
+      showError(error instanceof Error ? error : new Error(errorMessage));
 
       // Don't close the dialog, let user try again
       throw error;
@@ -722,6 +724,13 @@ const TeamList: React.FC<TeamListProps> = ({
           error={deleteError}
         />
       </Box>
+      <ErrorSnackbar
+        open={snackbar.open}
+        message={snackbar.message}
+        severity={snackbar.severity}
+        onClose={closeSnackbar}
+        anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
+      />
     </>
   );
 };

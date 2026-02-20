@@ -32,7 +32,8 @@ import AppButton from '../common/AppButton';
 import AppDropdown from '../common/AppDropdown';
 import AppTable from '../common/AppTable';
 import type { TeamMember, Team } from '../../api/teamApi';
-import { snackbar } from '../../utils/snackbar';
+import { useErrorHandler } from '../../hooks/useErrorHandler';
+import ErrorSnackbar from '../common/ErrorSnackbar';
 
 type SelectedTeamInfo = Pick<Team, 'id' | 'name' | 'description'>;
 
@@ -53,6 +54,7 @@ const AvailableEmployees: React.FC<AvailableEmployeesProps> = ({
   isEmployeePool = false,
   preselectedTeamId,
 }) => {
+  const { snackbar, showSuccess, showError, closeSnackbar } = useErrorHandler();
   const [employees, setEmployees] = useState<TeamMember[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -290,7 +292,7 @@ const AvailableEmployees: React.FC<AvailableEmployeesProps> = ({
 
   const handleConfirmAddToTeam = async () => {
     if (!selectedTeamId) {
-      snackbar.error('Please select a team');
+      showError(new Error('Please select a team'));
       return;
     }
 
@@ -309,7 +311,7 @@ const AvailableEmployees: React.FC<AvailableEmployeesProps> = ({
 
   const handleConfirmAddToTeamFinal = async () => {
     if (!selectedTeamId || !selectedEmployeeId) {
-      snackbar.error('Missing required data');
+      showError(new Error('Missing required data'));
       return;
     }
 
@@ -326,7 +328,7 @@ const AvailableEmployees: React.FC<AvailableEmployeesProps> = ({
       setSelectedEmployee(null);
       setSelectedTeam(null);
 
-      snackbar.success(lang.employeeAdded);
+      showSuccess(lang.employeeAdded);
 
       window.dispatchEvent(new CustomEvent('teamUpdated'));
     } catch {
@@ -688,6 +690,13 @@ const AvailableEmployees: React.FC<AvailableEmployeesProps> = ({
           />
         </DialogActions>
       </Dialog>
+      <ErrorSnackbar
+        open={snackbar.open}
+        message={snackbar.message}
+        severity={snackbar.severity}
+        onClose={closeSnackbar}
+        anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
+      />
     </Box>
   );
 };

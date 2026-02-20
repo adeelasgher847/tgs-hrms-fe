@@ -441,11 +441,11 @@ const LeaveRequestPage = () => {
         );
       }
 
-      showSuccess(
-        actionType === 'approved'
-          ? 'Leave action applied successfully!'
-          : 'Leave rejected successfully!'
-      );
+      if (actionType === 'approved') {
+        showSuccess('Leave action applied successfully!');
+      } else {
+        showError(new Error('Leave rejected successfully!'));
+      }
     } catch (error: unknown) {
       // Revert optimistic update on error
       setLeaves(prevLeavesSnapshot);

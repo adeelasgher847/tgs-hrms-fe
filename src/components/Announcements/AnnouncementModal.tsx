@@ -13,6 +13,7 @@ import {
 
 type DatetimeLocalString = string; // "YYYY-MM-DDTHH:mm"
 
+const MIN_TITLE_LENGTH = 5;
 const MIN_CONTENT_LENGTH = 10;
 
 const CATEGORY_OPTIONS: Array<{ value: string; label: string }> = [
@@ -80,6 +81,11 @@ export default function AnnouncementModal({
   const [sendNow, setSendNow] = useState(true);
   const [scheduledAt, setScheduledAt] = useState<DatetimeLocalString>('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [titleApiError, setTitleApiError] = useState<string | null>(null);
+  const [titleTouched, setTitleTouched] = useState(false);
+  const [contentTouched, setContentTouched] = useState(false);
+  const [scheduledAtTouched, setScheduledAtTouched] = useState(false);
+  const [submitAttempted, setSubmitAttempted] = useState(false);
 
   const isEditing = Boolean(announcement?.id);
   const isSent = Boolean(
@@ -131,6 +137,7 @@ export default function AnnouncementModal({
         sendNow: initSendNow,
         scheduledAt: initScheduledAt,
       });
+      setTitleApiError(null);
     } else {
       setTitle('');
       setContent('');
@@ -147,10 +154,18 @@ export default function AnnouncementModal({
         scheduledAt: '',
       });
     }
+    setTitleTouched(false);
+    setContentTouched(false);
+    setScheduledAtTouched(false);
+    setSubmitAttempted(false);
   }, [open, announcement, isSent]);
 
   const titleError = useMemo(() => {
-    if (!title.trim()) return isRtl ? 'العنوان مطلوب' : 'Title is required';
+    const trimmed = title.trim();
+    if (!trimmed) return isRtl ? 'العنوان مطلوب' : 'Title is required';
+    if (trimmed.length < MIN_TITLE_LENGTH) {
+      return 'title must be longer than or equal to 5 characters';
+    }
     return undefined;
   }, [title, isRtl]);
 
@@ -213,6 +228,7 @@ export default function AnnouncementModal({
   };
 
   const handleSubmit = async () => {
+    setSubmitAttempted(true);
     if (!isFormValid || isSubmitting) return;
     setIsSubmitting(true);
     try {
@@ -255,6 +271,17 @@ export default function AnnouncementModal({
         handleClose();
       }
     } catch (err: unknown) {
+      const axiosData = err && typeof err === 'object' && 'response' in err
+        ? (err as { response?: { data?: { errors?: Array<{ field?: string; message?: string }> } } }).response?.data
+        : undefined;
+      const errors = axiosData?.errors;
+      const titleErr = Array.isArray(errors) && errors.length > 0
+        ? errors.find(e => (e.field || '').toLowerCase() === 'title')
+        : undefined;
+      if (titleErr?.message) {
+        setTitleApiError(titleErr.message);
+        return;
+      }
       showError(err);
     } finally {
       setIsSubmitting(false);
@@ -296,11 +323,13 @@ export default function AnnouncementModal({
         value={title}
         placeholder={isRtl ? 'اكتب عنوان الإعلان' : 'Enter announcement title'}
         required
-        error={Boolean(titleError)}
-        helperText={titleError}
-        onChange={(e: unknown) =>
-          setTitle(typeof e === 'string' ? e : (e as any).target?.value || '')
-        }
+        error={Boolean((titleTouched || submitAttempted) && (titleError || titleApiError))}
+        helperText={(titleTouched || submitAttempted) ? (titleError || titleApiError || undefined) : undefined}
+        onBlur={() => setTitleTouched(true)}
+        onChange={(e: unknown) => {
+          setTitle(typeof e === 'string' ? e : (e as any).target?.value || '');
+          setTitleApiError(null);
+        }}
         inputBackgroundColor={
           theme.palette.mode === 'dark' ? theme.palette.background.default : '#F8F8F8'
         }
@@ -312,8 +341,9 @@ export default function AnnouncementModal({
         value={content}
         placeholder={isRtl ? 'اكتب محتوى الإعلان' : 'Enter announcement content'}
         required
-        error={Boolean(contentError)}
-        helperText={contentError}
+        error={Boolean((contentTouched || submitAttempted) && contentError)}
+        helperText={(contentTouched || submitAttempted) ? contentError : undefined}
+        onBlur={() => setContentTouched(true)}
         multiline
         rows={4}
         onChange={(e: unknown) =>
@@ -365,8 +395,8 @@ export default function AnnouncementModal({
             value={scheduledAt}
             onChange={setScheduledAt}
             required
-            error={Boolean(scheduledAtError)}
-            helperText={scheduledAtError}
+            error={Boolean((scheduledAtTouched || submitAttempted) && scheduledAtError)}
+            helperText={(scheduledAtTouched || submitAttempted) ? scheduledAtError : undefined}
           />
         )}
       </Box>

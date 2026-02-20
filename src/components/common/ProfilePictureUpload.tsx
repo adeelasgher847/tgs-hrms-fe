@@ -17,7 +17,8 @@ import { PhotoCamera, Delete, Close, Edit } from '@mui/icons-material';
 import { profileApiService, type UserProfile } from '../../api/profileApi';
 import { useUser } from '../../hooks/useUser';
 import { useProfilePicture } from '../../context/ProfilePictureContext';
-import { snackbar } from '../../utils/snackbar';
+import { useErrorHandler } from '../../hooks/useErrorHandler';
+import ErrorSnackbar from './ErrorSnackbar';
 import AppButton from './AppButton';
 
 interface ProfilePictureUploadProps {
@@ -55,6 +56,7 @@ const ProfilePictureUpload: React.FC<ProfilePictureUploadProps> = React.memo(
     suppressExistingImage = false,
   }) => {
     const { updateUser } = useUser();
+    const { snackbar, showSuccess, showError, closeSnackbar } = useErrorHandler();
     const { updateProfilePicture, clearProfilePicture } = useProfilePicture();
     const [uploading, setUploading] = useState(false);
     const [removing, setRemoving] = useState(false);
@@ -107,7 +109,7 @@ const ProfilePictureUpload: React.FC<ProfilePictureUploadProps> = React.memo(
       const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif'];
       if (!validTypes.includes(file.type)) {
         setError('Please select a valid image file (JPG, PNG, or GIF)');
-        snackbar.error('Please select a valid image file (JPG, PNG, or GIF)');
+        showError(new Error('Please select a valid image file (JPG, PNG, or GIF)'));
         return;
       }
 
@@ -118,8 +120,10 @@ const ProfilePictureUpload: React.FC<ProfilePictureUploadProps> = React.memo(
         setError(
           `File size (${fileSizeMB} MB) must be less than 5MB. Please select a smaller image.`
         );
-        snackbar.error(
-          `File size (${fileSizeMB} MB) must be less than 5MB. Please select a smaller image.`
+        showError(
+          new Error(
+            `File size (${fileSizeMB} MB) must be less than 5MB. Please select a smaller image.`
+          )
         );
         return;
       }
@@ -176,7 +180,7 @@ const ProfilePictureUpload: React.FC<ProfilePictureUploadProps> = React.memo(
         // ✅ Removed refreshUser() call - this causes full page re-render
         // The profile picture context update is sufficient for UI updates
 
-        snackbar.success('Profile picture uploaded successfully!');
+        showSuccess('Profile picture uploaded successfully!');
         setShowUploadDialog(false);
         setSelectedFile(null);
         setPreviewUrl(null);
@@ -203,7 +207,7 @@ const ProfilePictureUpload: React.FC<ProfilePictureUploadProps> = React.memo(
         }
 
         setError(errorMessage);
-        snackbar.error(errorMessage);
+        showError(err);
       } finally {
         setUploading(false);
       }
@@ -235,7 +239,7 @@ const ProfilePictureUpload: React.FC<ProfilePictureUploadProps> = React.memo(
         // ✅ Removed refreshUser() call - this causes full page re-render
         // The profile picture context update is sufficient for UI updates
 
-        snackbar.success('Profile picture removed successfully!');
+        showError(new Error('Profile picture removed successfully!'));
         if (onPictureChanged) onPictureChanged(true);
       } catch (err: unknown) {
         const errorMessage =
@@ -244,7 +248,7 @@ const ProfilePictureUpload: React.FC<ProfilePictureUploadProps> = React.memo(
                 .data?.message
             : null) || 'Failed to remove profile picture';
         setError(errorMessage);
-        snackbar.error(errorMessage);
+        showError(err);
       } finally {
         setRemoving(false);
       }
@@ -490,13 +494,6 @@ const ProfilePictureUpload: React.FC<ProfilePictureUploadProps> = React.memo(
           )}
         </Box>
 
-        {/* Error Display */}
-        {error && (
-          <Alert severity='error' sx={{ width: '100%', maxWidth: 400 }}>
-            {error}
-          </Alert>
-        )}
-
         {/* Hidden File Input */}
         <input
           ref={fileInputRef}
@@ -623,6 +620,14 @@ const ProfilePictureUpload: React.FC<ProfilePictureUploadProps> = React.memo(
             </AppButton>
           </DialogActions>
         </Dialog>
+
+        <ErrorSnackbar
+          open={snackbar.open}
+          message={snackbar.message}
+          severity={snackbar.severity}
+          onClose={closeSnackbar}
+          anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
+        />
       </Box>
     );
   }

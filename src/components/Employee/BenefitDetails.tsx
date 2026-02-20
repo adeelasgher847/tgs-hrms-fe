@@ -35,7 +35,8 @@ import { IoEyeOutline } from 'react-icons/io5';
 import { env } from '../../config/env';
 import AppFormModal from '../common/AppFormModal';
 import AppButton from '../common/AppButton';
-import { snackbar } from '../../utils/snackbar';
+import { useErrorHandler } from '../../hooks/useErrorHandler';
+import ErrorSnackbar from '../common/ErrorSnackbar';
 
 const ITEMS_PER_PAGE = 10;
 
@@ -54,6 +55,8 @@ interface BenefitRow {
 
 const BenefitDetails: React.FC = () => {
   const theme = useTheme();
+  const { snackbar, showSuccess, showError, showInfo, closeSnackbar } =
+    useErrorHandler();
   const [benefits, setBenefits] = useState<BenefitRow[]>([]);
   const [selectedBenefit, setSelectedBenefit] = useState<BenefitRow | null>(
     null
@@ -160,7 +163,7 @@ const BenefitDetails: React.FC = () => {
 
   const handleDownload = () => {
     if (benefits.length === 0) {
-      snackbar.info('No data to download.');
+      showInfo('No data to download.');
       return;
     }
 
@@ -257,7 +260,7 @@ const BenefitDetails: React.FC = () => {
 
     try {
       await employeeBenefitApi.cancelBenefitReimbursement(requestId);
-      snackbar.success('Reimbursement request cancelled successfully.');
+      showSuccess('Reimbursement request cancelled successfully.');
 
       // Refresh history
       if (selectedBenefit) {
@@ -268,7 +271,7 @@ const BenefitDetails: React.FC = () => {
       }
     } catch (error) {
       console.error('Error cancelling request:', error);
-      snackbar.error('Failed to cancel request.');
+      showError(new Error('Failed to cancel request.'));
     }
   };
 
@@ -279,7 +282,7 @@ const BenefitDetails: React.FC = () => {
       const validImageTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
 
       if (!validImageTypes.includes(file.type)) {
-        snackbar.error('Invalid file type. Only image files are allowed (JPG, JPEG, PNG, GIF, WebP)');
+        showError(new Error('Invalid file type. Only image files are allowed (JPG, JPEG, PNG, GIF, WebP)'));
         event.target.value = '';
         return;
       }
@@ -305,7 +308,7 @@ const BenefitDetails: React.FC = () => {
     const benefitId = selectedBenefit.benefitAssignmentId || selectedBenefit.id;
 
     if (!benefitId) {
-      snackbar.error('Benefit ID is missing, cannot submit reimbursement.');
+      showError(new Error('Benefit ID is missing, cannot submit reimbursement.'));
       return;
     }
 
@@ -327,10 +330,10 @@ const BenefitDetails: React.FC = () => {
 
       if (pendingRequest) {
         await employeeBenefitApi.updateBenefitReimbursement(pendingRequest.id, formData);
-        snackbar.success('Reimbursement request updated successfully!');
+        showSuccess('Reimbursement request updated successfully!');
       } else {
         await employeeBenefitApi.createBenefitReimbursement(formData);
-        snackbar.success('Reimbursement request submitted successfully!');
+        showSuccess('Reimbursement request submitted successfully!');
       }
 
       handleReimburseClose();
@@ -368,9 +371,9 @@ const BenefitDetails: React.FC = () => {
           errorMessage = serverData.error;
         }
 
-        snackbar.error(`Server Error: ${errorMessage}`);
+        showError(new Error(`Server Error: ${errorMessage}`));
       } else {
-        snackbar.error(errorMessage);
+        showError(new Error(errorMessage));
       }
     } finally {
       setSubmittingReimbursement(false);
@@ -830,7 +833,14 @@ const BenefitDetails: React.FC = () => {
           </Box>
         </Stack>
       </AppFormModal>
-    </Box >
+      <ErrorSnackbar
+        open={snackbar.open}
+        message={snackbar.message}
+        severity={snackbar.severity}
+        onClose={closeSnackbar}
+        anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
+      />
+    </Box>
   );
 };
 
