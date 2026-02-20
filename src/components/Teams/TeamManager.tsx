@@ -35,7 +35,7 @@ import SystemAdminTenantTeams from './SystemAdminTenantTeams';
 
 import CreateTeamForm from './CreateTeamForm';
 import { useOutletContext } from 'react-router-dom';
-
+import type { AppOutletContext } from '../../types/outletContexts';
 interface TabPanelProps {
   children?: React.ReactNode;
   index: number;
@@ -62,22 +62,18 @@ interface TeamManagerProps {
   darkMode?: boolean;
 }
 
-interface OutletContext {
-  darkMode: boolean;
-}
-
 const TeamManager: React.FC<TeamManagerProps> = ({
   darkMode: darkModeProp = false,
 }) => {
-  const { darkMode: outletDarkMode } = useOutletContext<OutletContext>();
+  const { darkMode: outletDarkMode } = useOutletContext<AppOutletContext>();
   const darkMode = outletDarkMode ?? darkModeProp;
   const { snackbar, showSuccess, closeSnackbar } = useErrorHandler();
 
   const [tabValue, setTabValue] = useState(0);
-  const [teams, setTeams] = useState<Team[]>([]);
   const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
   const [tenantsWithTeams, setTenantsWithTeams] =
     useState<AllTenantsTeamsResponse>({ tenants: [] });
+  const [teams, setTeams] = useState<Team[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showCreateForm, setShowCreateForm] = useState(false);
@@ -130,16 +126,16 @@ const TeamManager: React.FC<TeamManagerProps> = ({
             teamApiService.getMyTeams(),
             teamApiService.getMyTeamMembers(1),
           ]);
-          setTeams(teamsData);
-          setTeamMembers(membersData.items || []);
+          setTeams((teamsData as any)?.items || (teamsData as any) || []);
+          setTeamMembers((membersData as any)?.items || []);
         } else if (isAdmin()) {
           // Load all teams for admin with members included
           const teamsData = await teamApiService.getAllTeams(1);
-          setTeams(teamsData.items || []);
+          setTeams((teamsData as any)?.items || (teamsData as any) || []);
         } else if (isHRAdmin()) {
           // Load all teams for HR admin without members
           const teamsData = await teamApiService.getAllTeams(1);
-          setTeams(teamsData.items || []);
+          setTeams((teamsData as any)?.items || (teamsData as any) || []);
         }
       } catch {
         setError('Failed to load team data');
@@ -169,16 +165,16 @@ const TeamManager: React.FC<TeamManagerProps> = ({
               teamApiService.getMyTeams(),
               teamApiService.getMyTeamMembers(1),
             ]);
-            setTeams(teamsData);
-            setTeamMembers(membersData.items || []);
+            setTeams((teamsData as any)?.items || (teamsData as any) || []);
+            setTeamMembers((membersData as any)?.items || []);
           } else if (isAdmin()) {
             // Load all teams for admin with members included
             const teamsData = await teamApiService.getAllTeams(1);
-            setTeams(teamsData.items || []);
+            setTeams((teamsData as any)?.items || (teamsData as any) || []);
           } else if (isHRAdmin()) {
             // Load all teams of the current tenant (view-only)
             const teamsData = await teamApiService.getAllTeams(1);
-            setTeams(teamsData.items || []);
+            setTeams((teamsData as any)?.items || (teamsData as any) || []);
           }
         } catch {
           setError('Failed to refresh team data');
@@ -230,12 +226,12 @@ const TeamManager: React.FC<TeamManagerProps> = ({
           teamApiService.getMyTeams(),
           teamApiService.getMyTeamMembers(1),
         ]);
-        setTeams(teamsData);
-        setTeamMembers(membersData.items || []);
+        setTeams((teamsData as any)?.items || (teamsData as any) || []);
+        setTeamMembers((membersData as any)?.items || []);
       } else if (isAdmin()) {
         // Load all teams for admin with members included
         const teamsData = await teamApiService.getAllTeams(1);
-        setTeams(teamsData.items || []);
+        setTeams((teamsData as any)?.items || (teamsData as any) || []);
       }
     } catch {
       setError('Failed to refresh team data');
