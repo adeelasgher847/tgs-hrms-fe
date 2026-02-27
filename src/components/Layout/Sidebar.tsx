@@ -529,47 +529,63 @@ export default function Sidebar({
       >
         <List>
           {filteredMenuItems.map(item => {
+            const visibleSubItems = (item.subItems || []).filter(sub =>
+              !!(sub.label && String(sub.label).trim())
+            );
+            const hasSubMenu = visibleSubItems.length > 1;
+            const isSingleSubItem = visibleSubItems.length === 1;
             const isParentActive = openItem === item.label;
-            const hasSubMenu = item.subItems && item.subItems.length > 0;
-            const isDirectLink = !hasSubMenu && item.path;
+            const isDirectLink =
+              (!item.subItems?.length && item.path) || isSingleSubItem;
+            const directPath = isSingleSubItem
+              ? visibleSubItems[0].path
+              : item.path;
+            const directLabel = isSingleSubItem
+              ? visibleSubItems[0].label
+              : item.label;
+
+            // Match current route for highlight (same logic as useEffect)
+            const currentPath =
+              location.pathname === '/dashboard'
+                ? ''
+                : location.pathname.replace('/dashboard/', '');
+            const isDirectLinkActive = Boolean(
+              isDirectLink && directPath === currentPath
+            );
 
             return (
               <Box key={item.label}>
                 {isDirectLink ? (
                   <ListItemButton
                     component={NavLink}
-                    to={`/dashboard/${item.path}`}
+                    to={`/dashboard/${directPath}`}
                     onClick={() => {
                       setOpenItem(item.label);
-                      setActiveSubItem('');
+                      setActiveSubItem(isSingleSubItem ? directLabel : '');
                       onMenuItemClick?.();
                     }}
                     sx={{
-                      color:
-                        item.path && location.pathname.includes(item.path)
-                          ? theme.palette.mode === 'dark'
-                            ? 'var(--primary-light-color)'
-                            : theme.palette.primary.main
-                          : theme.palette.text.primary,
+                      color: isDirectLinkActive
+                        ? theme.palette.mode === 'dark'
+                          ? 'var(--primary-light-color)'
+                          : theme.palette.primary.main
+                        : theme.palette.text.primary,
                       pl: 2,
                       py: 1.5,
                       mx: 1.5,
                       mb: 0.5,
-                      backgroundColor:
-                        item.path && location.pathname.includes(item.path)
-                          ? theme.palette.mode === 'dark'
-                            ? theme.palette.action.selected
-                            : '#efefef'
-                          : 'transparent',
-                      borderRadius:
-                        item.path && location.pathname.includes(item.path)
-                          ? 'var(--border-radius-lg)'
-                          : 0,
+                      backgroundColor: isDirectLinkActive
+                        ? theme.palette.mode === 'dark'
+                          ? theme.palette.action.selected
+                          : '#efefef'
+                        : 'transparent',
+                      borderRadius: isDirectLinkActive
+                        ? 'var(--border-radius-lg)'
+                        : 0,
                       // '&:hover': {
-                      //   backgroundColor:
-                      //     item.path && location.pathname.includes(item.path)
-                      //       ? 'var(--light-grey-200-color)'
-                      //       : 'var(--white-100-color)',
+                      //   backgroundColor: isDirectLinkActive
+                      //     ? 'var(--light-grey-200-color)'
+                      //     : 'var(--white-100-color)',
                       //   borderRadius: 'var(--border-radius-lg)',
                       // },
                     }}
@@ -585,26 +601,20 @@ export default function Sidebar({
                       <MenuIcon
                         icon={item.icon}
                         iconFill={item.iconFill}
-                        isActive={
-                          !!(item.path && location.pathname.includes(item.path))
-                        }
+                        isActive={isDirectLinkActive}
                         size={{ xs: '18px', lg: '18px' }}
                       />
                     </ListItemIcon>
                     <ListItemText
-                      primary={item.label}
+                      primary={directLabel}
                       primaryTypographyProps={{
                         fontSize: { xs: '14px', lg: 'var(--body-font-size)' },
-                        fontWeight:
-                          item.path && location.pathname.includes(item.path)
-                            ? 600
-                            : 400,
-                        color:
-                          item.path && location.pathname.includes(item.path)
-                            ? theme.palette.mode === 'dark'
-                              ? 'var(--primary-light-color)'
-                              : theme.palette.primary.main
-                            : theme.palette.text.primary,
+                        fontWeight: isDirectLinkActive ? 600 : 400,
+                        color: isDirectLinkActive
+                          ? theme.palette.mode === 'dark'
+                            ? 'var(--primary-light-color)'
+                            : theme.palette.primary.main
+                          : theme.palette.text.primary,
                       }}
                     />
                   </ListItemButton>
@@ -871,7 +881,7 @@ export default function Sidebar({
             />
           </ListItemIcon>
           <ListItemText
-            primary='Logout'
+            primary='Log out'
             primaryTypographyProps={{
               fontSize: { xs: '14px', lg: 'var(--body-font-size)' },
               fontWeight: 500,

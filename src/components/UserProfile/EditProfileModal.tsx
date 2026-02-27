@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useLayoutEffect, useRef, useCallback } from 'react';
 import {
   Box,
   CircularProgress,
@@ -56,10 +56,15 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({
   );
   const [previewImageUrl, setPreviewImageUrl] = useState<string | null>(null);
   const [removeRequested, setRemoveRequested] = useState(false);
+  const hasSyncedRef = useRef(false);
 
-  // Initialize form data when modal opens
-  useEffect(() => {
-    if (open && user) {
+  // Sync form data when modal opens (useLayoutEffect = before paint, no empty flash)
+  useLayoutEffect(() => {
+    if (!open) {
+      hasSyncedRef.current = false;
+      return;
+    }
+    if (user) {
       setFormData({
         first_name: user.first_name || '',
         last_name: user.last_name || '',
@@ -72,9 +77,21 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({
       setSelectedPictureFile(null);
       setPreviewImageUrl(null);
       setRemoveRequested(false);
-      setLoading(false); // Reset loading state when modal opens
+      setLoading(false);
+      hasSyncedRef.current = true;
     }
   }, [open, user]);
+
+  // Show user data on first paint when opening (before state update) so fields don't appear empty
+  const displayData =
+    open && user && !hasSyncedRef.current
+      ? {
+          first_name: user.first_name || '',
+          last_name: user.last_name || '',
+          email: user.email || '',
+          phone: user.phone || '',
+        }
+      : formData;
 
   // Check if form has changes compared to original user data
   const checkForChanges = useCallback(
@@ -319,7 +336,7 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
           <AppInputField
             label='First Name'
-            value={formData.first_name}
+            value={displayData.first_name}
             onChange={handleInputChange('first_name')}
             error={!!validationErrors.first_name}
             helperText={validationErrors.first_name}
@@ -331,7 +348,7 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({
 
           <AppInputField
             label='Last Name'
-            value={formData.last_name}
+            value={displayData.last_name}
             onChange={handleInputChange('last_name')}
             error={!!validationErrors.last_name}
             helperText={validationErrors.last_name}
@@ -343,7 +360,7 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({
 
           <AppInputField
             label='Phone Number'
-            value={formData.phone}
+            value={displayData.phone}
             onChange={e => handlePhoneChange(e.target.value)}
             error={!!validationErrors.phone}
             helperText={validationErrors.phone}
@@ -357,7 +374,7 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({
                 >
                   <PhoneInput
                     defaultCountry='pk'
-                    value={formData.phone}
+                    value={displayData.phone}
                     onChange={handlePhoneChange}
                     disabled={loading}
                     style={{
@@ -402,7 +419,7 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({
           <AppInputField
             label='Email Address'
             type='email'
-            value={formData.email}
+            value={displayData.email}
             onChange={handleInputChange('email')}
             error={!!validationErrors.email}
             helperText={validationErrors.email}

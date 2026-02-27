@@ -370,6 +370,7 @@ export const DepartmentList: React.FC = () => {
       label: isRtl ? 'الوصف (اختياري)' : 'Description (Optional)',
       type: 'textarea',
       placeholder: 'Description',
+      maxLength: VALIDATION_LIMITS.MAX_DESCRIPTION_LENGTH,
       value: formData.description || '',
       error: errors.description,
       onChange: value => {

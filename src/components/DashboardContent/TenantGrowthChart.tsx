@@ -205,23 +205,17 @@ const TenantGrowthChart: React.FC = () => {
             value={selectedYear}
             onChange={e => {
               const v = e.target.value as string | number;
-              if (v === '' || v === 'all') return;
+              if (v === '') return;
               const num = typeof v === 'number' ? v : parseInt(v as string);
               if (!isNaN(num)) setSelectedYear(num);
             }}
-            options={[
-              {
-                value: 'all',
-                label: language === 'ar' ? 'كل الوقت' : 'All Time',
-              },
-              ...Array.from(
-                { length: 6 },
-                (_, i) => {
-                  const year = currentYear - 4 + i;
-                  return { value: year, label: String(year) };
-                }
-              ),
-            ]}
+            options={Array.from(
+              { length: 6 },
+              (_, i) => {
+                const year = currentYear - 4 + i;
+                return { value: year, label: String(year) };
+              }
+            )}
             containerSx={{ minWidth: 120 }}
             sx={{
               width: { xs: '100%', sm: 120 },
@@ -237,13 +231,11 @@ const TenantGrowthChart: React.FC = () => {
             sx={{
               width: { xs: '100%', sm: 120 },
               '& .MuiOutlinedInput-root': {
+                minHeight: '48px',
                 color: theme.palette.text.primary,
                 '& fieldset': {
                   borderColor: theme.palette.divider,
                 },
-                // '&:hover fieldset': {
-                //   borderColor: theme.palette.divider,
-                // },
                 '&.Mui-focused fieldset': {
                   borderColor: theme.palette.divider,
                 },

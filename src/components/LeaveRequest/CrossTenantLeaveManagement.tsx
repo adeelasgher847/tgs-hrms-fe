@@ -772,7 +772,6 @@ const CrossTenantLeaveManagement: React.FC = () => {
                                 leave.status === 'cancelled'
                               ? '#607d8b'
                               : '#ff9800',
-                      fontWeight: 600,
                     }}
                   >
                     {leave.status === 'cancelled' ? 'withdrawn' : leave.status}
@@ -839,7 +838,7 @@ const CrossTenantLeaveManagement: React.FC = () => {
         {leaves.length > 0 && (
           <Box display='flex' justifyContent='center' mt={1}>
             <Typography variant='body2' color='textSecondary'>
-              Showing page {currentPage} of {totalPages} ({totalRecords} total
+              Showing page {currentPage} of {totalPages} ({leaves.length}{' '}
               records)
             </Typography>
           </Box>

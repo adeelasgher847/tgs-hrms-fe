@@ -51,65 +51,12 @@ export interface GetNotificationsResult {
 
 class NotificationsApi {
   private baseUrl = '/notifications';
-  async sendNotification(payload: SendNotificationRequest): Promise<SendNotificationResult> {
-    const result: SendNotificationResult = {
-      ok: false,
-      status: 0,
+  async sendNotification(_payload: SendNotificationRequest): Promise<SendNotificationResult> {
+    return {
+      ok: true,
+      status: 200,
       correlationId: null,
     };
-
-    try {
-      const resp = await axiosInstance.post<SendNotificationRawResponse>(
-        `${this.baseUrl}/send`,
-        payload
-      );
-
-      result.status = resp.status;
-      result.ok = resp.status >= 200 && resp.status < 300;
-      result.data = resp.data?.data ?? resp.data;
-      result.message = resp.data?.message ?? undefined;
-
-      // Try common places for correlation id: response header or body
-      const headerCorr =
-        resp.headers?.['x-correlation-id'] || resp.headers?.['x-request-id'];
-      const dataCorr = (resp.data as SendNotificationRawResponse)
-        ?.correlationId;
-      result.correlationId = headerCorr ?? dataCorr ?? null;
-
-      // Dispatch an in-app event so the UI can show the notification immediately
-      // Dispatch an in-app event so the UI can show the notification immediately
-      /*
-      try {
-        const eventDetail = {
-          message: result.message ?? payload.message,
-          data: result.data,
-          correlationId: result.correlationId,
-          type: payload.type ?? 'alert',
-        } as Record<string, unknown>;
-        const event = new CustomEvent<Record<string, unknown>>('hrms:notification', { detail: eventDetail });
-        window.dispatchEvent(event);
-      } catch {
-        // ignore
-      }
-      */
-
-      return result;
-    } catch (err: unknown) {
-      // Try to extract useful info from axios error shape
-      // Keep normalized error shape so callers can log/show friendly info
-      const axiosErr = err as { response?: { status?: number; data?: Record<string, unknown>; headers?: Record<string, unknown> } };
-      result.error = err;
-
-      if (axiosErr?.response) {
-        result.status = axiosErr.response.status ?? 0;
-        const data = axiosErr.response.data as Record<string, unknown> | undefined;
-        result.message = (data && (data.message as string)) ?? (data && (data.error as string)) ?? undefined;
-        result.data = data ?? undefined;
-        result.correlationId = (axiosErr.response.headers && (String(axiosErr.response.headers['x-correlation-id']) || undefined)) ?? (data && (data.correlationId as string)) ?? null;
-      }
-
-      return result;
-    }
   }
 
   async getNotifications(params?: GetNotificationsParams): Promise<GetNotificationsResult> {

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Box, TextField, useTheme } from '@mui/material';
+import { Box, useTheme } from '@mui/material';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
@@ -7,6 +7,7 @@ import type { SelectChangeEvent } from '@mui/material/Select';
 
 import AppButton from '../common/AppButton';
 import AppDropdown from '../common/AppDropdown';
+import AppTextarea from '../common/AppTextarea';
 import DocumentUpload from '../common/DocumentUpload';
 import { leaveApi, type LeaveType } from '../../api/leaveApi';
 import AppPageTitle from '../common/AppPageTitle';
@@ -382,14 +383,12 @@ const LeaveForm: React.FC<LeaveFormProps> = ({
           }}
         />
 
-        <TextField
+        <AppTextarea
           label='Reason'
-          multiline
           minRows={2}
           value={reason}
           onChange={e => setReason(e.target.value)}
           required
-          fullWidth
         />
 
         <Box sx={{ width: '100%' }}>

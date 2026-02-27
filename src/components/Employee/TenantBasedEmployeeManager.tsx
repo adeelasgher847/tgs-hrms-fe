@@ -476,7 +476,7 @@ const TenantBasedEmployeeManager: React.FC = () => {
             <TableCell>Tenant</TableCell>
             <TableCell>Department</TableCell>
             <TableCell>Designation</TableCell>
-            <TableCell>Status</TableCell>
+            <TableCell>Invite Status</TableCell>
             <TableCell>Created At</TableCell>
             <TableCell align='center'>Actions</TableCell>
           </TableRow>
@@ -500,17 +500,19 @@ const TenantBasedEmployeeManager: React.FC = () => {
                   {emp.createdAt ? formatDate(emp.createdAt) : 'N/A'}
                 </TableCell>
                 <TableCell align='center'>
-                  <IconButton onClick={() => handleOpenProfile(emp)}>
-                    <Box
-                      component='img'
-                      src={Icons.password}
-                      alt='View'
-                      sx={{
-                        width: { xs: 16, sm: 20 },
-                        height: { xs: 16, sm: 20 },
-                      }}
-                    />
-                  </IconButton>
+                  <Tooltip title='View'>
+                    <IconButton onClick={() => handleOpenProfile(emp)}>
+                      <Box
+                        component='img'
+                        src={Icons.password}
+                        alt='View'
+                        sx={{
+                          width: { xs: 16, sm: 20 },
+                          height: { xs: 16, sm: 20 },
+                        }}
+                      />
+                    </IconButton>
+                  </Tooltip>
                 </TableCell>
               </TableRow>
             ))

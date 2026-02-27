@@ -3,6 +3,7 @@ import { Box, Checkbox, FormControlLabel, useTheme } from '@mui/material';
 import AppFormModal from '../common/AppFormModal';
 import DateTimePickerField from '../common/DateTimePickerField';
 import AppInputField from '../common/AppInputField';
+import AppTextarea from '../common/AppTextarea';
 import AppDropdown from '../common/AppDropdown';
 import {
   announcementsApiService,
@@ -14,6 +15,7 @@ import {
 type DatetimeLocalString = string; // "YYYY-MM-DDTHH:mm"
 
 const MIN_TITLE_LENGTH = 5;
+const MAX_TITLE_LENGTH = 70;
 const MIN_CONTENT_LENGTH = 10;
 
 const CATEGORY_OPTIONS: Array<{ value: string; label: string }> = [
@@ -164,7 +166,12 @@ export default function AnnouncementModal({
     const trimmed = title.trim();
     if (!trimmed) return isRtl ? 'العنوان مطلوب' : 'Title is required';
     if (trimmed.length < MIN_TITLE_LENGTH) {
-      return 'title must be longer than or equal to 5 characters';
+      return isRtl ? 'العنوان 5 أحرف على الأقل' : 'Title must be at least 5 characters';
+    }
+    if (trimmed.length > MAX_TITLE_LENGTH) {
+      return isRtl
+        ? `العنوان بحد أقصى ${MAX_TITLE_LENGTH} حرف`
+        : `Title must be at most ${MAX_TITLE_LENGTH} characters`;
     }
     return undefined;
   }, [title, isRtl]);
@@ -323,11 +330,17 @@ export default function AnnouncementModal({
         value={title}
         placeholder={isRtl ? 'اكتب عنوان الإعلان' : 'Enter announcement title'}
         required
+        inputProps={{ maxLength: MAX_TITLE_LENGTH }}
         error={Boolean((titleTouched || submitAttempted) && (titleError || titleApiError))}
-        helperText={(titleTouched || submitAttempted) ? (titleError || titleApiError || undefined) : undefined}
+        helperText={
+          (titleTouched || submitAttempted) && (titleError || titleApiError)
+            ? (titleError || titleApiError)
+            : undefined
+        }
         onBlur={() => setTitleTouched(true)}
         onChange={(e: unknown) => {
-          setTitle(typeof e === 'string' ? e : (e as any).target?.value || '');
+          const raw = typeof e === 'string' ? e : (e as any).target?.value || '';
+          setTitle(raw.slice(0, MAX_TITLE_LENGTH));
           setTitleApiError(null);
         }}
         inputBackgroundColor={
@@ -335,7 +348,7 @@ export default function AnnouncementModal({
         }
       />
 
-      <AppInputField
+      <AppTextarea
         label={isRtl ? 'المحتوى' : 'Content'}
         name='content'
         value={content}
@@ -344,10 +357,9 @@ export default function AnnouncementModal({
         error={Boolean((contentTouched || submitAttempted) && contentError)}
         helperText={(contentTouched || submitAttempted) ? contentError : undefined}
         onBlur={() => setContentTouched(true)}
-        multiline
         rows={4}
-        onChange={(e: unknown) =>
-          setContent(typeof e === 'string' ? e : (e as any).target?.value || '')
+        onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+          setContent(e.target.value)
         }
         inputBackgroundColor={
           theme.palette.mode === 'dark' ? theme.palette.background.default : '#F8F8F8'

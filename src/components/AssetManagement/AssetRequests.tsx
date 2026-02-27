@@ -32,6 +32,7 @@ import AppButton from '../common/AppButton';
 import Icon from '../common/Icon';
 import AppDropdown from '../common/AppDropdown';
 import AppFormModal from '../common/AppFormModal';
+import AppTextarea from '../common/AppTextarea';
 import { useForm, Controller } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import * as yup from 'yup';
@@ -590,44 +591,6 @@ const AssetRequests: React.FC = () => {
     },
     [currentUserId, transformApiRequests, showError, viewMode]
   );
-
-  // Fetch comments for team requests
-  React.useEffect(() => {
-    const fetchCommentsForRequests = async () => {
-      if (viewMode !== 'team_requests' || requests.length === 0) return;
-
-      const commentsMap: Record<string, string> = {};
-
-      // We only need to fetch comments for pending requests or requests where we want to distinctively show them
-      // For optimization, we can fetch only for visible requests.
-      // However, iterating all requests on current page is fine.
-
-      const promises = requests.map(async (request) => {
-        try {
-          const response = await assetApi.getAssetRequestComments(request.id);
-          if (Array.isArray(response) && response.length > 0) {
-            // Assuming we want the latest comment or just the first one. 
-            // The API returns an array. Let's take the last one or simply the first found if multiple.
-            // Based on the user request "show in Manager Remarks that comments putt by manager", 
-            // we'll take the most recent one if multiple, or just the first one.
-            // Sorting by created_at descending just in case.
-            const sorted = response.sort((a: { created_at: string }, b: { created_at: string }) =>
-              new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
-            );
-            commentsMap[request.id] = sorted[0].comment;
-          }
-        } catch (error) {
-          // Ignore errors for individual comment fetches to not break the page
-          console.error(`Failed to fetch comments for request ${request.id}`, error);
-        }
-      });
-
-      await Promise.all(promises);
-      setRequestComments(prev => ({ ...prev, ...commentsMap }));
-    };
-
-    fetchCommentsForRequests();
-  }, [requests, viewMode]);
 
   // Re-transform requests when categories are loaded to update category names
   React.useEffect(() => {
@@ -1477,11 +1440,9 @@ const AssetRequests: React.FC = () => {
                 name='remarks'
                 control={control}
                 render={({ field }) => (
-                  <TextField
+                  <AppTextarea
                     {...field}
-                    fullWidth
                     label='Remarks (Optional)'
-                    multiline
                     rows={3}
                     placeholder='Please provide details about why you need this asset...'
                     disabled={loading}

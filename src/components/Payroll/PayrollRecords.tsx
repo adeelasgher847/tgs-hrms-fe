@@ -13,7 +13,6 @@ import {
   TableCell,
   TableHead,
   TableRow,
-  TextField,
   Tooltip,
   Typography,
   Chip,
@@ -44,6 +43,7 @@ import AppDropdown from '../common/AppDropdown';
 import AppFormModal from '../common/AppFormModal';
 import AppPageTitle from '../common/AppPageTitle';
 import AppInputField from '../common/AppInputField';
+import AppTextarea from '../common/AppTextarea';
 
 dayjs.extend(dayjsPluginLocalizedFormat);
 
@@ -1453,14 +1453,11 @@ const PayrollRecords: React.FC = () => {
                 },
               }}
             />
-            <TextField
+            <AppTextarea
               label='Remarks'
-              multiline
               minRows={3}
               value={statusRemarks}
-              onChange={(event: React.ChangeEvent<HTMLInputElement>) =>
-                setStatusRemarks(event.target.value)
-              }
+              onChange={e => setStatusRemarks(e.target.value)}
               placeholder='Optional remarks (e.g. payment method)'
             />
           </Stack>

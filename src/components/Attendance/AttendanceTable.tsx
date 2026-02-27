@@ -2057,15 +2057,15 @@ const AttendanceTable = () => {
                         buildExportFilters()
                       );
                     }
-                    // Everyone else (including System Admin in "My Attendance") → use /attendance/export/self
+                    // Everyone else (non-admin) → use /attendance/export/all with startDate & endDate
                     else {
                       const selfParams: Record<string, string> = {};
                       if (startDate) selfParams.startDate = startDate;
                       if (endDate) selfParams.endDate = endDate;
 
                       exportCSV(
-                        '/attendance/export/self',
-                        'attendance-self.csv',
+                        '/attendance/export/all',
+                        'attendance-all.csv',
                         token || '',
                         selfParams
                       );

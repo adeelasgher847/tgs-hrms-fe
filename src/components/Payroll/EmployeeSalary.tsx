@@ -14,6 +14,7 @@ import {
   Alert,
   Stack,
   Pagination,
+  Tooltip,
 } from '@mui/material';
 import type { SelectChangeEvent } from '@mui/material/Select';
 import { useTheme } from '@mui/material/styles';
@@ -45,6 +46,7 @@ import AppFormModal from '../common/AppFormModal';
 import AppPageTitle from '../common/AppPageTitle';
 import AppButton from '../common/AppButton';
 import AppInputField from '../common/AppInputField';
+import AppTextarea from '../common/AppTextarea';
 
 const monthOptions = [
   { label: 'January', value: 1 },
@@ -1321,25 +1323,29 @@ const EmployeeSalaryPage: React.FC = () => {
                     <Stack direction='row' spacing={1}>
                       {item.salary ? (
                         <>
-                          <IconButton
-                            size='small'
-                            onClick={() => handleViewSalary(item)}
-                            sx={{ color: theme.palette.text.primary }}
-                          >
-                            <IoEyeOutline size={20} />
-                          </IconButton>
-                          <IconButton
-                            size='small'
-                            onClick={() => handleEditSalary(item)}
-                            sx={{ color: theme.palette.primary.main }}
-                          >
-                            <Box
-                              component='img'
-                              src={Icons.edit}
-                              alt='Edit'
-                              sx={{ width: 20, height: 20 }}
-                            />
-                          </IconButton>
+                          <Tooltip title='View'>
+                            <IconButton
+                              size='small'
+                              onClick={() => handleViewSalary(item)}
+                              sx={{ color: theme.palette.text.primary }}
+                            >
+                              <IoEyeOutline size={20} />
+                            </IconButton>
+                          </Tooltip>
+                          <Tooltip title='Edit'>
+                            <IconButton
+                              size='small'
+                              onClick={() => handleEditSalary(item)}
+                              sx={{ color: theme.palette.primary.main }}
+                            >
+                              <Box
+                                component='img'
+                                src={Icons.edit}
+                                alt='Edit'
+                                sx={{ width: 20, height: 20 }}
+                              />
+                            </IconButton>
+                          </Tooltip>
                         </>
                       ) : (
                         <AppButton
@@ -2090,16 +2096,13 @@ const EmployeeSalaryPage: React.FC = () => {
                       <CloseIcon />
                     </IconButton>
                   </Box>
-                  <AppInputField
-                    fullWidth
+                  <AppTextarea
                     label='Description'
                     value={allowance.description || ''}
-                    onChange={val =>
-                      handleUpdateAllowance(index, 'description', val)
+                    onChange={e =>
+                      handleUpdateAllowance(index, 'description', e.target.value)
                     }
-                    multiline
                     rows={2}
-                    darkMode={darkMode}
                   />
                 </Paper>
               ))}
@@ -2195,16 +2198,13 @@ const EmployeeSalaryPage: React.FC = () => {
                       <CloseIcon />
                     </IconButton>
                   </Box>
-                  <AppInputField
-                    fullWidth
+                  <AppTextarea
                     label='Description'
                     value={deduction.description || ''}
-                    onChange={val =>
-                      handleUpdateDeduction(index, 'description', val)
+                    onChange={e =>
+                      handleUpdateDeduction(index, 'description', e.target.value)
                     }
-                    multiline
                     rows={2}
-                    darkMode={darkMode}
                   />
                 </Paper>
               ))}
@@ -2291,13 +2291,11 @@ const EmployeeSalaryPage: React.FC = () => {
             />
 
             {/* Notes */}
-            <AppInputField
+            <AppTextarea
               label='Notes (Optional)'
               value={notes}
-              onChange={val => setNotes(val)}
-              multiline
+              onChange={e => setNotes(e.target.value)}
               rows={3}
-              darkMode={darkMode}
             />
           </Box>
         </Box>

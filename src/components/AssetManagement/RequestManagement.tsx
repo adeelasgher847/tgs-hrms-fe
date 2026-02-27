@@ -10,7 +10,6 @@ import {
   MenuItem,
   Tabs,
   Tab,
-  TextField,
   Avatar,
   Tooltip,
   Menu,
@@ -51,6 +50,7 @@ import AppTable from '../common/AppTable';
 import AppCard from '../common/AppCard';
 import AppSearch from '../common/AppSearch';
 import AppFormModal, { type FormField } from '../common/AppFormModal';
+import AppTextarea from '../common/AppTextarea';
 import { PAGINATION } from '../../constants/appConstants';
 import { useUser } from '../../hooks/useUser';
 import { isAdmin, isHRAdmin } from '../../utils/roleUtils';
@@ -1668,11 +1668,9 @@ const RequestManagement: React.FC = () => {
             name='rejectionReason'
             control={control}
             render={({ field }) => (
-              <TextField
+              <AppTextarea
                 {...field}
                 label='Rejection Reason (Optional)'
-                sx={{ width: '100%' }}
-                multiline
                 rows={3}
                 placeholder='Optionally provide a reason for rejection...'
                 error={!!errors.rejectionReason}
@@ -1698,34 +1696,6 @@ const RequestManagement: React.FC = () => {
       },
     ];
   }, [control, errors, loading, availableAssets, selectedRequest, selectedAction]);
-
-  // Fetch comments for requests
-  React.useEffect(() => {
-    const fetchCommentsForRequests = async () => {
-      if (requests.length === 0) return;
-
-      const commentsMap: Record<string, string> = {};
-
-      const promises = requests.map(async (request) => {
-        try {
-          const response = await assetApi.getAssetRequestComments(request.id);
-          if (Array.isArray(response) && response.length > 0) {
-            const sorted = response.sort((a: { created_at: string }, b: { created_at: string }) =>
-              new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
-            );
-            commentsMap[request.id] = sorted[0].comment;
-          }
-        } catch (error) {
-          console.error(`Failed to fetch comments for request ${request.id}`, error);
-        }
-      });
-
-      await Promise.all(promises);
-      setRequestComments(prev => ({ ...prev, ...commentsMap }));
-    };
-
-    fetchCommentsForRequests();
-  }, [requests]);
 
   if (initialLoading) {
     return (

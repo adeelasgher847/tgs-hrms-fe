@@ -349,7 +349,18 @@ const LeaveHistory: React.FC<LeaveHistoryProps> = ({
 
       if (isAdminRole) {
         // Admin/HR Admin/Network Admin - export all leaves for tenant
-        blob = await leaveApi.exportAllLeavesCSV();
+        let month: number | undefined;
+        let year: number | undefined;
+        if (dateFilter && /^\d{4}-\d{2}$/.test(dateFilter)) {
+          const [y, m] = dateFilter.split('-').map(Number);
+          year = y;
+          month = m;
+        }
+        blob = await leaveApi.exportAllLeavesCSV({
+          month,
+          year,
+          name: selectedEmployee?.trim() || undefined,
+        });
         filename = 'all-leaves-export.csv';
       } else if (isManager && viewMode === 'team') {
         // Manager viewing team leaves - export team leave requests
@@ -598,14 +609,6 @@ const LeaveHistory: React.FC<LeaveHistoryProps> = ({
                     title={leave.reason || 'N/A'}
                     placement='top'
                     arrow
-                    slotProps={{
-                      tooltip: {
-                        sx: {
-                          position: 'relative',
-                          left: '-115px',
-                        },
-                      },
-                    }}
                   >
                     <Typography
                       sx={{

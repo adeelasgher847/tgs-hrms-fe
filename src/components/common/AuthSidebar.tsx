@@ -6,12 +6,12 @@ const AuthSidebar: React.FC = () => {
     <Box
       sx={{
         display: { xs: 'none', lg: 'flex' },
-        width: '40%',
+        width: '45%',
         backgroundColor: 'var(--primary-dark-color)',
         justifyContent: 'center',
         alignItems: 'center',
-        minHeight: '100vh',
-        position: 'sticky',
+        // minHeight: '100vh',
+        // position: 'sticky',
         top: 0,
       }}
     >
@@ -19,22 +19,17 @@ const AuthSidebar: React.FC = () => {
         sx={{
           width: '100%',
           maxWidth: { lg: '720px', xl: '800px' },
-          pl: { lg: '86px', xl: '100px' },
+          pl: { lg: '50px', xl: '100px' },
           pr: { lg: 4, xl: 5 },
           display: 'flex',
           flexDirection: 'column',
+          justifyContent: 'center',
+          alignItems: 'start',
           height: '100%',
           minHeight: '100vh',
         }}
       >
-        <Box
-          sx={{
-            alignSelf: 'flex-start',
-            mt: { lg: '88px', xl: '100px' },
-            flexShrink: 0,
-          }}
-        >
-          <Box
+            <Box
             component='img'
             src={Icons.logoWhite}
             alt='Logo'
@@ -43,6 +38,14 @@ const AuthSidebar: React.FC = () => {
               width: 'auto',
             }}
           />
+        <Box>
+        <Box
+          sx={{
+            alignSelf: 'flex-start',
+            flexShrink: 0,
+          }}
+        >
+      
         </Box>
 
         <Box
@@ -80,6 +83,7 @@ const AuthSidebar: React.FC = () => {
               height: 'auto',
             }}
           />
+        </Box>
         </Box>
       </Box>
     </Box>

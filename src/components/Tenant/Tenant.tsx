@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import {
   Box,
   Typography,
@@ -94,25 +94,86 @@ export const TenantPage: React.FC = () => {
   const [totalRecords, setTotalRecords] = useState(0);
   const itemsPerPage = PAGINATION.DEFAULT_PAGE_SIZE;
 
+  const filteredTenants = useMemo(() => {
+    if (statusFilter === 'all') return tenants;
+    if (statusFilter === 'deleted') return tenants.filter(t => t.isDeleted);
+    if (statusFilter === 'active') return tenants.filter(t => !t.isDeleted && t.status === 'active');
+    if (statusFilter === 'suspended') return tenants.filter(t => !t.isDeleted && t.status === 'suspended');
+    return tenants;
+  }, [tenants, statusFilter]);
+
+  const isStatusFilterWithClientPagination =
+    (statusFilter === 'deleted' ||
+      statusFilter === 'suspended' ||
+      statusFilter === 'active') &&
+    filteredTenants.length > 0;
+
+  const effectiveTotalPages = isStatusFilterWithClientPagination
+    ? Math.max(1, Math.ceil(filteredTenants.length / itemsPerPage))
+    : totalPages;
+
+  const displayedTenants = useMemo(() => {
+    if (!isStatusFilterWithClientPagination) return filteredTenants;
+    const start = (currentPage - 1) * itemsPerPage;
+    return filteredTenants.slice(start, start + itemsPerPage);
+  }, [
+    filteredTenants,
+    isStatusFilterWithClientPagination,
+    currentPage,
+    itemsPerPage,
+  ]);
+
   const fetchTenants = useCallback(async () => {
     try {
       setIsLoading(true);
 
-      const res = await SystemTenantApi.getAll({
-        page: currentPage,
-        limit: itemsPerPage,
-        includeDeleted: true,
-      });
+      const fetchAllForFilter =
+        statusFilter === 'deleted' ||
+        statusFilter === 'suspended' ||
+        statusFilter === 'active';
 
-      setTenants(res.data);
-      setTotalRecords(res.total);
-      setTotalPages(res.totalPages);
+      if (fetchAllForFilter) {
+        const first = await SystemTenantApi.getAll({
+          page: 1,
+          limit: itemsPerPage,
+          includeDeleted: true,
+        });
+        const totalPagesFromApi = first.totalPages || 1;
+        const allData = [...(first.data || [])];
+
+        if (totalPagesFromApi > 1) {
+          const rest = await Promise.all(
+            Array.from({ length: totalPagesFromApi - 1 }, (_, i) =>
+              SystemTenantApi.getAll({
+                page: i + 2,
+                limit: itemsPerPage,
+                includeDeleted: true,
+              })
+            )
+          );
+          rest.forEach(r => allData.push(...(r.data || [])));
+        }
+
+        setTenants(allData);
+        setTotalRecords(first.total ?? allData.length);
+        setTotalPages(1);
+      } else {
+        const res = await SystemTenantApi.getAll({
+          page: currentPage,
+          limit: itemsPerPage,
+          includeDeleted: true,
+        });
+
+        setTenants(res.data);
+        setTotalRecords(res.total);
+        setTotalPages(res.totalPages);
+      }
     } catch {
       showError('Failed to fetch tenants');
     } finally {
       setIsLoading(false);
     }
-  }, [currentPage, itemsPerPage, showError]);
+  }, [currentPage, itemsPerPage, showError, statusFilter]);
 
   useEffect(() => {
     fetchTenants();
@@ -176,7 +237,7 @@ export const TenantPage: React.FC = () => {
 
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(adminEmail.trim())) {
-      showError('Please enter a valid admin email');
+      showError('Admin email must be a valid email');
       return;
     }
 
@@ -224,10 +285,7 @@ export const TenantPage: React.FC = () => {
 
       if (maybeAxiosError.response?.data?.errors) {
         const errors = maybeAxiosError.response.data.errors;
-        const errorMessages = errors
-          .map(e => `${e.field}: ${e.message}`)
-          .join(', ');
-        errorMessage = `Validation errors: ${errorMessages}`;
+        errorMessage = errors.map(e => e.message).join(', ');
       } else if (maybeAxiosError.response?.data?.message) {
         errorMessage = maybeAxiosError.response.data.message;
       }
@@ -449,6 +507,7 @@ export const TenantPage: React.FC = () => {
           alignItems={isMobile ? 'stretch' : 'center'}
         >
           <AppDropdown
+            label='Status'
             options={[
               { value: 'all', label: 'All Status' },
               { value: 'active', label: 'Active' },
@@ -457,7 +516,10 @@ export const TenantPage: React.FC = () => {
             ]}
             value={statusFilter}
             onChange={(e: SelectChangeEvent<string | number>) => {
-              setStatusFilter(String(e.target.value) as StatusFilterOption);
+              const v = e.target.value;
+              setStatusFilter(
+                (v === '' || v === 'all' ? 'all' : String(v)) as StatusFilterOption
+              );
             }}
             showLabel={false}
             containerSx={{
@@ -513,7 +575,7 @@ export const TenantPage: React.FC = () => {
             </TableRow>
           </TableHead>
           <TableBody>
-            {tenants.map(t => (
+            {displayedTenants.map(t => (
               <TableRow key={t.id} hover>
                 <TableCell>{t.name}</TableCell>
                 <TableCell>
@@ -616,12 +678,12 @@ export const TenantPage: React.FC = () => {
               </TableRow>
             ))}
 
-            {tenants.length === 0 && (
+            {displayedTenants.length === 0 && (
               <TableRow>
                 <TableCell colSpan={4} align='center'>
-                  <Alert severity='info' sx={{ my: 2, borderRadius: 2 }}>
-                    No tenants found.
-                  </Alert>
+                  <Typography sx={{ py: 3, color: 'text.secondary' }}>
+                    No tenant records found.
+                  </Typography>
                 </TableCell>
               </TableRow>
             )}
@@ -629,10 +691,10 @@ export const TenantPage: React.FC = () => {
         </AppTable>
         // </AppCard>
       )}
-      {totalPages > 1 && (
+      {effectiveTotalPages > 1 && displayedTenants.length > 0 && (
         <Box display='flex' justifyContent='center' mt={2}>
           <Pagination
-            count={totalPages}
+            count={effectiveTotalPages}
             page={currentPage}
             onChange={(_, page) => setCurrentPage(page)}
             color='primary'
@@ -641,11 +703,11 @@ export const TenantPage: React.FC = () => {
           />
         </Box>
       )}
-      {totalRecords > 0 && (
+      {displayedTenants.length > 0 && (
         <Box display='flex' justifyContent='center' mt={1}>
           <Typography variant='body2' color='textSecondary'>
-            Showing page {currentPage} of {totalPages} ({totalRecords} total
-            records)
+            Showing page {currentPage} of {effectiveTotalPages} (
+            {displayedTenants.length} records)
           </Typography>
         </Box>
       )}
@@ -902,7 +964,7 @@ export const TenantPage: React.FC = () => {
             name: 'name',
             label: 'Tenant Name',
             type: 'text',
-            placeholder: 'Trans Gloal Services',
+            placeholder: 'Enter tenant name',
             required: true,
             value: tenantForm.name,
             onChange: value =>
@@ -916,7 +978,7 @@ export const TenantPage: React.FC = () => {
             value: tenantForm.domain,
             onChange: value =>
               setTenantForm(prev => ({ ...prev, domain: String(value) })),
-            placeholder: 'example.com',
+            placeholder: 'Enter domain name',
           },
           {
             name: 'logo',
@@ -1009,7 +1071,7 @@ export const TenantPage: React.FC = () => {
             name: 'adminName',
             label: 'Admin Name',
             type: 'text',
-            placeholder: 'Waleed Ahmed',
+            placeholder: 'Enter admin name',
             value: tenantForm.adminName,
             onChange: value =>
               setTenantForm(prev => ({ ...prev, adminName: String(value) })),
@@ -1018,7 +1080,7 @@ export const TenantPage: React.FC = () => {
             name: 'adminEmail',
             label: 'Admin Email',
             type: 'text',
-            placeholder: 'waleed@tgs.com',
+            placeholder: 'Enter admin email',
             value: tenantForm.adminEmail,
             onChange: value =>
               setTenantForm(prev => ({ ...prev, adminEmail: String(value) })),

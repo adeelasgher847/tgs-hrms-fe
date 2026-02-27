@@ -69,6 +69,9 @@ export const DepartmentCard: React.FC<DepartmentCardProps> = ({
               color: theme.palette.text.primary,
               textAlign: isRtl ? 'right' : 'left',
               mt: '10px',
+              whiteSpace: 'pre-wrap',
+              wordBreak: 'break-word',
+              overflowWrap: 'break-word',
             }}
           >
             {isRtl ? department.descriptionAr : department.description}

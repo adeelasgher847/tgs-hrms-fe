@@ -35,6 +35,7 @@ import { IoEyeOutline } from 'react-icons/io5';
 import { env } from '../../config/env';
 import AppFormModal from '../common/AppFormModal';
 import AppButton from '../common/AppButton';
+import AppTextarea from '../common/AppTextarea';
 import { useErrorHandler } from '../../hooks/useErrorHandler';
 import ErrorSnackbar from '../common/ErrorSnackbar';
 
@@ -788,11 +789,10 @@ const BenefitDetails: React.FC = () => {
             required
           />
 
-          <TextField
+          <AppTextarea
             label='Payment Details / Description'
-            multiline
-            rows={4}
             fullWidth
+            rows={4}
             value={reimbursementDescription}
             onChange={(e) => setReimbursementDescription(e.target.value)}
             placeholder='Enter bank details or expense description...'

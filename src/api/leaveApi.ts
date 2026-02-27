@@ -165,7 +165,7 @@ class LeaveApiService {
         try {
           // Dynamic import to avoid circular dependency
           const { searchApiService } = await import('./searchApi');
-          const adminsResp = await searchApiService.searchAdmin({ limit: 10 });
+          const adminsResp = await searchApiService.search({ limit: 10 });
           const adminItems = adminsResp?.results?.employees ?? [];
           const adminIds = (adminItems as Array<Record<string, unknown>>).map(it => String(it.id)).filter(Boolean).slice(0, 5);
           if (adminIds.length > 0) {
@@ -617,8 +617,20 @@ class LeaveApiService {
     return response.data;
   }
 
-  async exportAllLeavesCSV(): Promise<Blob> {
+  async exportAllLeavesCSV(params?: {
+    month?: number;
+    year?: number;
+    status?: string;
+    name?: string;
+  }): Promise<Blob> {
+    const query: Record<string, number | string> = {};
+    if (params?.month != null && params.month >= 1 && params.month <= 12)
+      query.month = params.month;
+    if (params?.year != null) query.year = params.year;
+    if (params?.status?.trim()) query.status = params.status.trim();
+    if (params?.name?.trim()) query.name = params.name.trim();
     const response = await axiosInstance.get(`${this.baseUrl}/export/all`, {
+      params: query,
       responseType: 'blob',
     });
     return response.data;

@@ -35,7 +35,7 @@ export const validateEmailAddress = (rawEmail: string): string | null => {
   // Must contain exactly one "@"
   const atMatches = email.match(/@/g) ?? [];
   if (atMatches.length !== 1) {
-    return 'Email must contain exactly one "@" symbol';
+    return 'Email must include one “@” symbol';
   }
 
   const [localPart, domainPart] = email.split('@');
@@ -52,14 +52,14 @@ export const validateEmailAddress = (rawEmail: string): string | null => {
 
   // At least one "." after "@"
   if (!domainPart.includes('.')) {
-    return 'Email domain must contain at least one "." after "@"';
+    return 'Email domain must include a “.” after “@”';
   }
 
   // Domain extension (TLD) at least 2 characters
   const lastDotIndex = domainPart.lastIndexOf('.');
   const tld = lastDotIndex >= 0 ? domainPart.slice(lastDotIndex + 1) : '';
   if (!tld || tld.length < 2) {
-    return 'Domain extension must be at least 2 characters (e.g. .com, .pk)';
+    return 'Domain extension must be at least 2 characters';
   }
 
   // Basic regex format check
@@ -87,7 +87,7 @@ export const validatePasswordStrength = (password: string): string | null => {
   const hasSpecial = /[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?`~]/.test(pwd);
 
   if (!hasMinLength) {
-    return 'Password must be at least 8 characters.';
+    return 'Password must be at least 8 characters';
   }
   if (!hasUpper) {
     return 'Password must include at least 1 uppercase letter (A-Z).';
@@ -96,7 +96,7 @@ export const validatePasswordStrength = (password: string): string | null => {
     return 'Password must include at least 1 lowercase letter (a-z).';
   }
   if (!hasNumber) {
-    return 'Password must include at least 1 number (0-9).';
+    return 'Password must include at least 1 number';
   }
   if (!hasSpecial) {
     return 'At least 1 special character(@-$)';

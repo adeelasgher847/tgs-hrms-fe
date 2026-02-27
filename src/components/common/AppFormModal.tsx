@@ -13,6 +13,7 @@ import {
 } from '@mui/material';
 import { Close as CloseIcon } from '@mui/icons-material';
 import AppInputField from './AppInputField';
+import AppTextarea from './AppTextarea';
 import AppDropdown from './AppDropdown';
 import type { SelectChangeEvent } from '@mui/material/Select';
 import AppButton from './AppButton';
@@ -23,6 +24,8 @@ export interface FormField {
   type?: 'text' | 'textarea' | 'dropdown';
   required?: boolean;
   placeholder?: string;
+  disabled?: boolean;
+  maxLength?: number;
   multiline?: boolean;
   rows?: number;
   options?: Array<{ value: string | number; label: string }>;
@@ -228,6 +231,33 @@ const AppFormModal: React.FC<AppFormModalProps> = ({
                         placeholder={field.placeholder}
                         error={!!field.error}
                         helperText={field.error}
+                        disabled={field.disabled}
+                        inputBackgroundColor={
+                          theme.palette.mode === 'dark'
+                            ? theme.palette.background.default
+                            : '#F8F8F8'
+                        }
+                      />
+                    ) : field.type === 'textarea' ? (
+                      <AppTextarea
+                        label={field.label}
+                        name={field.name}
+                        value={field.value as string}
+                        onChange={e => field.onChange(e.target.value)}
+                        placeholder={field.placeholder}
+                        rows={field.rows ?? 3}
+                        error={!!field.error}
+                        helperText={
+                          field.error ??
+                          (field.maxLength != null
+                            ? `${String(field.value).length}/${field.maxLength}`
+                            : undefined)
+                        }
+                        inputProps={
+                          field.maxLength != null
+                            ? { maxLength: field.maxLength }
+                            : undefined
+                        }
                         inputBackgroundColor={
                           theme.palette.mode === 'dark'
                             ? theme.palette.background.default
@@ -241,14 +271,21 @@ const AppFormModal: React.FC<AppFormModalProps> = ({
                         value={field.value as string}
                         onChange={e => field.onChange(e.target.value)}
                         placeholder={field.placeholder}
-                        multiline={field.multiline || field.type === 'textarea'}
-                        rows={
-                          field.rows ||
-                          (field.type === 'textarea' ? 3 : undefined)
-                        }
+                        multiline={field.multiline}
+                        rows={field.rows}
                         error={!!field.error}
-                        helperText={field.error}
+                        helperText={
+                          field.error ??
+                          (field.maxLength != null
+                            ? `${String(field.value).length}/${field.maxLength}`
+                            : undefined)
+                        }
                         required={field.required}
+                        inputProps={
+                          field.maxLength != null
+                            ? { maxLength: field.maxLength }
+                            : undefined
+                        }
                         inputBackgroundColor={
                           theme.palette.mode === 'dark'
                             ? theme.palette.background.default

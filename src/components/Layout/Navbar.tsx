@@ -61,14 +61,13 @@ import {
   isMenuVisibleForRole,
 } from '../../utils/permissions';
 import { isSystemAdmin as roleIsSystemAdmin } from '../../utils/roleUtils';
-import { searchApiService, type SearchResultItem } from '../../api/searchApi';
 
 const labels = {
   en: {
     search: 'Search',
     members: 'Members',
     settings: 'Settings',
-    signout: 'Sign Out',
+    signout: 'Log out',
     adminProfile: 'Admin Profile',
     dylan: 'Dylan Hunter',
     email: 'Dylan.hunter@gmail.com',
@@ -941,106 +940,6 @@ const Navbar: React.FC<NavbarProps> = ({
     [isRouteAllowed]
   );
 
-  const mapApiResultToSearchResult = (
-    item: SearchResultItem,
-    module: string
-  ): SearchResult | null => {
-    const metadata = item.metadata || {};
-
-    switch (module) {
-      case 'employees': {
-        return {
-          label: item.title,
-          path: 'EmployeeManager',
-          category: (metadata.designation as string) || 'Employee',
-          type: 'employee',
-          id: item.id,
-          icon: <PersonIcon fontSize='small' />,
-          subtitle: item.description,
-        };
-      }
-      case 'leaves': {
-        return {
-          label: item.title,
-          path: 'leaves',
-          category: 'Leave Request',
-          type: 'leave',
-          id: item.id,
-          icon: <EventIcon fontSize='small' />,
-          subtitle: item.description,
-        };
-      }
-      case 'assets': {
-        return {
-          label: item.title,
-          path: 'assets',
-          category: 'Asset',
-          type: 'asset',
-          id: item.id,
-          icon: <InventoryIcon fontSize='small' />,
-          subtitle: item.description,
-        };
-      }
-      case 'asset-requests': {
-        return {
-          label: item.title,
-          path: 'assets/requests',
-          category: 'Asset Request',
-          type: 'asset-request',
-          id: item.id,
-          icon: <InventoryIcon fontSize='small' />,
-          subtitle: item.description,
-        };
-      }
-      case 'teams': {
-        return {
-          label: item.title,
-          path: 'teams',
-          category: 'Team',
-          type: 'team',
-          id: item.id,
-          icon: <GroupIcon fontSize='small' />,
-          subtitle: item.description,
-        };
-      }
-      case 'attendance': {
-        return {
-          label: item.title,
-          path: 'AttendanceCheck',
-          category: 'Attendance',
-          type: 'attendance',
-          id: item.id,
-          icon: <EventIcon fontSize='small' />,
-          subtitle: item.description,
-        };
-      }
-      case 'benefits': {
-        return {
-          label: item.title,
-          path: 'benefits-list',
-          category: 'Benefit',
-          type: 'benefit',
-          id: item.id,
-          icon: <CardGiftcardIcon fontSize='small' />,
-          subtitle: item.description,
-        };
-      }
-      case 'payroll': {
-        return {
-          label: item.title,
-          path: 'payroll-records',
-          category: 'Payroll',
-          type: 'payroll',
-          id: item.id,
-          icon: <DescriptionIcon fontSize='small' />,
-          subtitle: item.description,
-        };
-      }
-      default:
-        return null;
-    }
-  };
-
   React.useEffect(() => {
     // Cancel previous request
     if (abortControllerRef.current) {
@@ -1074,258 +973,33 @@ const Navbar: React.FC<NavbarProps> = ({
     const abortController = new AbortController();
     abortControllerRef.current = abortController;
 
-    searchTimeoutRef.current = setTimeout(async () => {
-      // Check if request was cancelled
+    searchTimeoutRef.current = setTimeout(() => {
       if (abortController.signal.aborted) return;
 
       setIsSearching(true);
-      const results: SearchResult[] = [];
       const MAX_RESULTS = 15;
-      const startTime = performance.now();
 
       try {
+        // Search only navbar/menu routes (no backend API)
         const routeResults = searchRoutes(query.toLowerCase());
-        if (routeResults.length > 0) {
-          results.push(...routeResults);
-        }
-
-        // Early exit if we have enough results
-        if (
-          results.length >= MAX_RESULTS &&
-          abortController.signal.aborted === false
-        ) {
-          setSearchResults(results.slice(0, MAX_RESULTS));
-          setShowSearchResults(true);
-          setSelectedResultIndex(-1);
-          setIsSearching(false);
-          return;
-        }
-
-        // 2. Call backend search API
-        if (!abortController.signal.aborted) {
-          try {
-            const currentTenantId = getCurrentTenantId();
-            const searchParams: {
-              query: string;
-              limit?: number;
-              tenantId?: string;
-            } = {
-              query: query,
-              limit: 10, // Default limit per module
-            };
-            if (canSearchTenants() && currentTenantId) {
-              searchParams.tenantId = currentTenantId;
-            }
-
-            let apiResponse;
-
-            try {
-              const isNetAdmin =
-                isNetworkAdmin && isNetworkAdmin(currentUserRole);
-              const isSysAdmin =
-                roleIsSystemAdmin && roleIsSystemAdmin(currentUserRole);
-              // Check for Admin role
-              const isRoleAdmin = isAdmin && isAdmin(currentUserRole);
-              // Check for HR Admin role
-              const isRoleHRAdmin = isHRAdmin && isHRAdmin(currentUserRole);
-              // Check for Employee role
-              const isRoleEmployee = isEmployee && isEmployee(currentUserRole);
-              // Check for Manager role
-              const isRoleManager = isManager && isManager(currentUserRole);
-
-              if (isSysAdmin) {
-                apiResponse =
-                  await searchApiService.searchSystemAdmin(searchParams);
-              } else if (isRoleHRAdmin) {
-                apiResponse =
-                  await searchApiService.searchHrAdmin(searchParams);
-              } else if (isRoleAdmin) {
-                apiResponse = await searchApiService.searchAdmin(searchParams);
-              } else if (isRoleManager) {
-                apiResponse =
-                  await searchApiService.searchManager(searchParams);
-              } else if (isRoleEmployee) {
-                apiResponse =
-                  await searchApiService.searchEmployee(searchParams);
-
-                // Strict filtering for Employee role
-                if (user?.id && apiResponse?.results) {
-                  const userId = user.id;
-                  const userEmail = user.email;
-
-                  // Filter employees (only self)
-                  if (apiResponse.results.employees) {
-                    apiResponse.results.employees =
-                      apiResponse.results.employees.filter(
-                        item => item.metadata?.userId === userId
-                      );
-                  }
-                  if (apiResponse.results.leaves) {
-                    apiResponse.results.leaves =
-                      apiResponse.results.leaves.filter(
-                        item => item.metadata?.userId === userId
-                      );
-                  }
-                  if (apiResponse.results.payroll) {
-                    apiResponse.results.payroll =
-                      apiResponse.results.payroll.filter(
-                        item => item.metadata?.userId === userId
-                      );
-                  }
-                  if (apiResponse.results.benefits) {
-                    apiResponse.results.benefits =
-                      apiResponse.results.benefits.filter(
-                        item => item.metadata?.userId === userId
-                      );
-                  }
-                  if (apiResponse.results.attendance && userEmail) {
-                    apiResponse.results.attendance =
-                      apiResponse.results.attendance.filter(
-                        item => item.metadata?.userEmail === userEmail
-                      );
-                  }
-                }
-              } else if (isManager(currentUserRole)) {
-                apiResponse =
-                  await searchApiService.searchManager(searchParams);
-                if (
-                  managerTeamMembersRef.current.length > 0 &&
-                  apiResponse.results &&
-                  apiResponse.results.employees
-                ) {
-                  const teamMemberIds = new Set(
-                    managerTeamMembersRef.current.map(m => m.user.id)
-                  );
-
-                  apiResponse.results.employees =
-                    apiResponse.results.employees.filter(employee => {
-                      const empUserId = employee.metadata?.userId as string;
-                      return empUserId && teamMemberIds.has(empUserId);
-                    });
-                }
-              } else if (isNetAdmin) {
-                if (typeof searchApiService.searchNetworkAdmin === 'function') {
-                  apiResponse =
-                    await searchApiService.searchNetworkAdmin(searchParams);
-                } else {
-                  apiResponse = await searchApiService.search(searchParams);
-                }
-              } else {
-                apiResponse = await searchApiService.search(searchParams);
-              }
-            } catch {
-              apiResponse = await searchApiService.search(searchParams);
-            }
-
-            if (apiResponse && apiResponse.results) {
-              // Employees
-              if (apiResponse.results.employees) {
-                apiResponse.results.employees.forEach(item => {
-                  const mapped = mapApiResultToSearchResult(item, 'employees');
-                  if (mapped && results.length < MAX_RESULTS) {
-                    results.push(mapped);
-                  }
-                });
-              }
-
-              // Leaves
-              if (apiResponse.results.leaves && canSearchLeaves()) {
-                apiResponse.results.leaves.forEach(item => {
-                  const mapped = mapApiResultToSearchResult(item, 'leaves');
-                  if (mapped && results.length < MAX_RESULTS) {
-                    results.push(mapped);
-                  }
-                });
-              }
-
-              // Assets
-              if (apiResponse.results.assets && canSearchAssets()) {
-                apiResponse.results.assets.forEach(item => {
-                  const mapped = mapApiResultToSearchResult(item, 'assets');
-                  if (mapped && results.length < MAX_RESULTS) {
-                    results.push(mapped);
-                  }
-                });
-              }
-
-              // Asset Requests
-              if (apiResponse.results.assetRequests && canSearchAssets()) {
-                apiResponse.results.assetRequests.forEach(item => {
-                  const mapped = mapApiResultToSearchResult(
-                    item,
-                    'asset-requests'
-                  );
-                  if (mapped && results.length < MAX_RESULTS) {
-                    results.push(mapped);
-                  }
-                });
-              }
-
-              // Teams
-              if (apiResponse.results.teams && canSearchTeams()) {
-                apiResponse.results.teams.forEach(item => {
-                  const mapped = mapApiResultToSearchResult(item, 'teams');
-                  if (mapped && results.length < MAX_RESULTS) {
-                    results.push(mapped);
-                  }
-                });
-              }
-
-              // Attendance
-              if (apiResponse.results.attendance && canSearchLeaves()) {
-                apiResponse.results.attendance.forEach(item => {
-                  const mapped = mapApiResultToSearchResult(item, 'attendance');
-                  if (mapped && results.length < MAX_RESULTS) {
-                    results.push(mapped);
-                  }
-                });
-              }
-
-              // Benefits
-              if (apiResponse.results.benefits && canSearchBenefits()) {
-                apiResponse.results.benefits.forEach(item => {
-                  const mapped = mapApiResultToSearchResult(item, 'benefits');
-                  if (mapped && results.length < MAX_RESULTS) {
-                    results.push(mapped);
-                  }
-                });
-              }
-
-              // Payroll
-              if (apiResponse.results.payroll) {
-                apiResponse.results.payroll.forEach(item => {
-                  const mapped = mapApiResultToSearchResult(item, 'payroll');
-                  if (mapped && results.length < MAX_RESULTS) {
-                    results.push(mapped);
-                  }
-                });
-              }
-            }
-          } catch (error) {
-            if (!abortController.signal.aborted) {
-              console.error('Error calling search API:', error);
-            }
-          }
-        }
+        const results = routeResults.slice(0, MAX_RESULTS);
 
         if (!abortController.signal.aborted) {
-          const endTime = performance.now();
-          console.log(
-            `Search completed in ${(endTime - startTime).toFixed(2)}ms`
-          );
-
-          setSearchResults(results.slice(0, MAX_RESULTS));
+          setSearchResults(results);
           setShowSearchResults(results.length > 0);
           setSelectedResultIndex(-1);
-          setIsSearching(false);
         }
       } catch (error) {
         if (!abortController.signal.aborted) {
-          console.error('Search error:', error);
+          setSearchResults([]);
+          setShowSearchResults(false);
+        }
+      } finally {
+        if (!abortController.signal.aborted) {
           setIsSearching(false);
         }
       }
-    }, 400); // Debounce: 400ms for better performance
+    }, 400); // Debounce: 400ms
 
     return () => {
       if (searchTimeoutRef.current) {
@@ -1335,21 +1009,7 @@ const Navbar: React.FC<NavbarProps> = ({
         abortControllerRef.current.abort();
       }
     };
-  }, [
-    searchQuery,
-    searchRoutes,
-    getCurrentTenantId,
-    canSearchEmployees,
-    canSearchTeams,
-    canSearchAssets,
-    canSearchDepartments,
-    canSearchBenefits,
-    canSearchLeaves,
-    canSearchTenants,
-    currentUserRole,
-    user?.id,
-    user?.email,
-  ]);
+  }, [searchQuery, searchRoutes]);
 
   const handleSearchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     setSearchQuery(event.target.value);
@@ -2392,7 +2052,7 @@ const Navbar: React.FC<NavbarProps> = ({
         </MenuItem>
         <MenuItem
           onClick={handleLogout}
-          aria-label='Sign out'
+          aria-label='Log out'
           sx={{
             px: { xs: 1, sm: 1.25 },
             py: { xs: 0.75, sm: 1 },

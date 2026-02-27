@@ -178,10 +178,10 @@ const Layout = () => {
               lg: '20px',
             },
             zIndex: { xs: 1000, lg: 'auto' },
-            boxShadow:
-              muiTheme.palette.mode === 'dark'
-                ? '0 1px 3px rgba(0,0,0,0.3)'
-                : '0 1px 3px rgba(0,0,0,0.1)',
+            // boxShadow:
+            //   muiTheme.palette.mode === 'dark'
+            //     ? '0 1px 3px rgba(0,0,0,0.3)'
+            //     : '0 1px 3px rgba(0,0,0,0.1)',
           }}
         >
           <Sidebar

@@ -251,6 +251,7 @@ const EmployeeGrowthChart: React.FC = () => {
                 width: { xs: '100%', sm: 'auto' },
               }}
               sx={{
+                '& .MuiOutlinedInput-root': { minHeight: '40px' },
                 '& .MuiSelect-select': {
                   color: theme.palette.text.primary,
                   display: 'flex',
@@ -284,9 +285,10 @@ const EmployeeGrowthChart: React.FC = () => {
             ]}
             containerSx={{
               minWidth: { xs: '100%', sm: 120 },
-              width: { xs: '100%', sm: 'auto' },
+              width: { xs: '100%', sm: 120 },
             }}
             sx={{
+              '& .MuiOutlinedInput-root': { minHeight: '40px' },
               '& .MuiSelect-select': {
                 color: theme.palette.text.primary,
               },
@@ -309,10 +311,10 @@ const EmployeeGrowthChart: React.FC = () => {
             options={yearOptions.map(y => ({ value: y, label: String(y) }))}
             containerSx={{
               minWidth: { xs: '100%', sm: 120 },
-              width: { xs: '100%', sm: 'auto' },
+              width: { xs: '100%', sm: 120 },
             }}
             sx={{
-              '& .MuiOutlinedInput-root': { minHeight: '48px' },
+              '& .MuiOutlinedInput-root': { minHeight: '40px' },
               width: { xs: '100%', sm: 120 },
             }}
           />

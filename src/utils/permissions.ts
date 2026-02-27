@@ -310,6 +310,13 @@ export const isSubMenuVisibleForRole = (
   if (parentKey === 'assets' && subKey.includes('system assets overview')) {
     return r === 'system-admin';
   }
+  if (
+    r === 'system-admin' &&
+    parentKey === 'payroll' &&
+    (subKey === 'payroll reports' || subKey.includes('payroll reports'))
+  ) {
+    return true;
+  }
 
   const policy = ROLE_SUBMENU_POLICIES[r]?.[parentKey];
   if (!policy) return true;
@@ -464,7 +471,6 @@ const DASHBOARD_ALLOWLIST_ENTRIES: Record<NormalizedRole, readonly string[]> = {
     'leaves',
     'UserProfile',
     'assets/requests',
-    'attendance-summary',
     'settings',
     'benefits',
     'benefits/assign',
@@ -527,6 +533,13 @@ export const isDashboardPathAllowedForRole = (
   const r = normalizeRole(role);
   const normalizedPath = (pathAfterDashboard || '').replace(/^\/+|\/+$/g, '');
   const allowedSet = DASHBOARD_ALLOWLIST[r];
+
+  if (normalizedPath === 'assets/system-admin') {
+    return r === 'system-admin';
+  }
+  if (normalizedPath === 'assets/requests') {
+    return allowedSet.has('assets/requests');
+  }
 
   if (allowedSet.has(normalizedPath)) {
     return true;

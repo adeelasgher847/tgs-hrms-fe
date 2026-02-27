@@ -43,6 +43,8 @@ const BenefitList: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [benefits, setBenefits] = useState<Benefit[]>([]);
   const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalRecords, setTotalRecords] = useState(0);
   const [filterType, setFilterType] = useState('all');
   const [filterStatus, setFilterStatus] = useState('all');
   const [modalOpen, setModalOpen] = useState(false);
@@ -58,23 +60,52 @@ const BenefitList: React.FC = () => {
   const fetchBenefits = useCallback(async () => {
     setLoading(true);
     try {
-      const resp = (await benefitsApi.getBenefits(null)) as unknown as
-        | Benefit[]
-        | { items?: Benefit[] };
-      const items = Array.isArray(resp) ? resp : resp.items || [];
-      const itemsArr = items as Benefit[];
-      setBenefits(itemsArr);
-
-      setTypes(Array.from(new Set(itemsArr.map(b => b.type))));
-      setStatuses(Array.from(new Set(itemsArr.map(b => b.status))));
+      const typeParam =
+        filterType === 'all' || !filterType ? undefined : filterType;
+      const statusParam =
+        filterStatus === 'all' || !filterStatus
+          ? undefined
+          : (filterStatus.toLowerCase() as 'active' | 'inactive');
+      const resp = await benefitsApi.getBenefits({
+        page,
+        type: typeParam,
+        status: statusParam,
+      });
+      const isPaginated =
+        resp &&
+        typeof resp === 'object' &&
+        !Array.isArray(resp) &&
+        'items' in resp;
+      const items = isPaginated
+        ? (resp as { items: Benefit[] }).items || []
+        : (Array.isArray(resp) ? resp : []) as Benefit[];
+      setBenefits(items);
+      if (isPaginated) {
+        const R = resp as { total?: number; totalPages?: number };
+        setTotalRecords(R.total ?? items.length);
+        setTotalPages(Math.max(1, R.totalPages ?? 1));
+      } else {
+        setTotalRecords(items.length);
+        setTotalPages(1);
+      }
+      setTypes(prev =>
+        Array.from(
+          new Set([...prev, ...items.map(b => b.type).filter(Boolean)])
+        )
+      );
+      setStatuses(prev =>
+        Array.from(
+          new Set([...prev, ...items.map(b => b.status).filter(Boolean)])
+        )
+      );
     } catch {
       setBenefits([]);
-      setTypes([]);
-      setStatuses([]);
+      setTotalRecords(0);
+      setTotalPages(1);
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [page, filterType, filterStatus]);
 
   useEffect(() => {
     fetchBenefits();
@@ -137,69 +168,44 @@ const BenefitList: React.FC = () => {
     }
   };
 
-  const csvEscape = (value: unknown) => {
-    if (value === null || value === undefined) return '';
-    const s = String(value).replace(/"/g, '""');
-    return `"${s}"`;
-  };
+  const [exportLoading, setExportLoading] = useState(false);
 
-  const handleDownload = () => {
-    if (benefits.length === 0) {
-      alert('No data to download.');
-      return;
+  const handleDownload = async () => {
+    setExportLoading(true);
+    try {
+      const typeParam =
+        filterType === 'all' || !filterType ? undefined : filterType;
+      const statusParam =
+        filterStatus === 'all' || !filterStatus
+          ? undefined
+          : filterStatus.toLowerCase();
+      const blob = await benefitsApi.exportBenefits({
+        type: typeParam,
+        status: statusParam,
+      });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.setAttribute('download', 'BenefitsList_Export.csv');
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch {
+      alert('Export failed. Please try again.');
+    } finally {
+      setExportLoading(false);
     }
-
-    const csvHeader = [
-      'Benefit Name',
-      'Type',
-      'Description',
-      'Eligibility Criteria',
-      'Status',
-    ];
-    const rows = benefits.map(row =>
-      [
-        csvEscape(row.name),
-        csvEscape(row.type),
-        csvEscape(row.description),
-        csvEscape(row.eligibilityCriteria),
-        csvEscape(row.status),
-      ].join(',')
-    );
-    const csvContent = [csvHeader.join(','), ...rows].join('\n');
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.setAttribute('download', `BenefitsList_Page${page}.csv`);
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
   };
-
-  const filteredBenefits = useMemo(() => {
-    return benefits.filter(b => {
-      const typeMatch = filterType === 'all' || b.type === filterType;
-      const statusMatch = filterStatus === 'all' || b.status === filterStatus;
-      return typeMatch && statusMatch;
-    });
-  }, [benefits, filterType, filterStatus]);
-
-  const totalRecords = filteredBenefits.length;
-  const totalPages = Math.max(1, Math.ceil(totalRecords / ITEMS_PER_PAGE));
-  const paginatedBenefits = useMemo(() => {
-    const start = (page - 1) * ITEMS_PER_PAGE;
-    return filteredBenefits.slice(start, start + ITEMS_PER_PAGE);
-  }, [filteredBenefits, page]);
 
   // Reset to page 1 when filters change
   useEffect(() => {
     setPage(1);
   }, [filterType, filterStatus]);
 
-  // If current page is out of range after filtering, snap back to page 1
+  // If current page is out of range, snap back to page 1
   useEffect(() => {
-    if (page > totalPages) setPage(1);
+    if (page > totalPages && totalPages >= 1) setPage(1);
   }, [page, totalPages]);
 
   const handlePageChange = (_: React.ChangeEvent<unknown>, value: number) => {
@@ -342,6 +348,7 @@ const BenefitList: React.FC = () => {
               variant='contained'
               variantType='primary'
               onClick={handleDownload}
+              disabled={exportLoading}
               sx={{
                 borderRadius: '6px',
                 minWidth: 0,
@@ -350,32 +357,43 @@ const BenefitList: React.FC = () => {
               }}
               aria-label='Export benefit list'
             >
-              <FileDownloadIcon aria-hidden='true' />
+              {exportLoading ? (
+                <CircularProgress size={20} color='inherit' />
+              ) : (
+                <FileDownloadIcon aria-hidden='true' />
+              )}
             </AppButton>
           ) : (
             <Tooltip title='Export Benefit List'>
-              <IconButton
-                disableRipple
-                onClick={handleDownload}
-                aria-label='Export benefit list'
-                sx={{
-                  backgroundColor: 'var(--primary-dark-color)',
-                  borderRadius: '6px',
-                  padding: '6px',
-                  color: 'white',
-                  transition: 'none',
-                  '&:hover': {
+              <span>
+                <IconButton
+                  disableRipple
+                  onClick={handleDownload}
+                  disabled={exportLoading}
+                  aria-label='Export benefit list'
+                  sx={{
                     backgroundColor: 'var(--primary-dark-color)',
-                    boxShadow: 'none',
-                  },
-                  '&:active': { backgroundColor: 'var(--primary-dark-color)' },
-                  '&.Mui-focusVisible': {
-                    backgroundColor: 'var(--primary-dark-color)',
-                  },
-                }}
-              >
-                <FileDownloadIcon aria-hidden='true' />
-              </IconButton>
+                    borderRadius: '6px',
+                    padding: '6px',
+                    color: 'white',
+                    transition: 'none',
+                    '&:hover': {
+                      backgroundColor: 'var(--primary-dark-color)',
+                      boxShadow: 'none',
+                    },
+                    '&:active': { backgroundColor: 'var(--primary-dark-color)' },
+                    '&.Mui-focusVisible': {
+                      backgroundColor: 'var(--primary-dark-color)',
+                    },
+                  }}
+                >
+                  {exportLoading ? (
+                    <CircularProgress size={20} color='inherit' />
+                  ) : (
+                    <FileDownloadIcon aria-hidden='true' />
+                  )}
+                </IconButton>
+              </span>
             </Tooltip>
           )}
         </Box>
@@ -416,14 +434,14 @@ const BenefitList: React.FC = () => {
               </TableRow>
             </TableHead>
             <TableBody>
-              {paginatedBenefits.length === 0 ? (
+              {benefits.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={6} align='center'>
                     No benefits found
                   </TableCell>
                 </TableRow>
               ) : (
-                paginatedBenefits.map(b => (
+                benefits.map(b => (
                   <TableRow key={b.id}>
                     <TableCell>{b.name}</TableCell>
                     <TableCell>{b.type}</TableCell>

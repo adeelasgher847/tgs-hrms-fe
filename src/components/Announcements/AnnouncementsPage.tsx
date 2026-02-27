@@ -210,15 +210,27 @@ export default function AnnouncementsPage() {
                   {canCreate && (
                     <TableCell>
                       <Box display='flex' alignItems='center' gap={0.5}>
-                        <Tooltip title={isRtl ? 'تعديل' : 'Edit'}>
-                          <IconButton
-                            color='primary'
-                            size='small'
-                            onClick={() => handleOpenEdit(a)}
-                            aria-label={
-                              isRtl ? 'تعديل الإعلان' : 'Edit announcement'
-                            }
-                          >
+                        <Tooltip
+                          title={
+                            a.status === 'sent'
+                              ? isRtl
+                                ? 'لا يمكن تعديل الإعلان المرسل'
+                                : 'Cannot edit sent announcement'
+                              : isRtl
+                                ? 'تعديل'
+                                : 'Edit'
+                          }
+                        >
+                          <span>
+                            <IconButton
+                              color='primary'
+                              size='small'
+                              onClick={() => handleOpenEdit(a)}
+                              disabled={a.status === 'sent'}
+                              aria-label={
+                                isRtl ? 'تعديل الإعلان' : 'Edit announcement'
+                              }
+                            >
                             <Box
                               component='img'
                               src={Icons.edit}
@@ -226,6 +238,7 @@ export default function AnnouncementsPage() {
                               sx={{ width: { xs: 16, sm: 20 }, height: { xs: 16, sm: 20 } }}
                             />
                           </IconButton>
+                          </span>
                         </Tooltip>
                         <Tooltip title={isRtl ? 'حذف' : 'Delete'}>
                           <IconButton

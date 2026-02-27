@@ -413,67 +413,76 @@ const TeamList: React.FC<TeamListProps> = ({
                             flexShrink: 0,
                           }}
                         >
-                          <IconButton
-                            size='small'
-                            onClick={() => handleEditTeam(team)}
-                            sx={{
-                              padding: { xs: 0.5, sm: 1 },
-                            }}
-                          >
-                            <Box
-                              component='img'
-                              src={Icons.edit}
-                              alt='Edit'
+                          <Tooltip title={lang.editTeam} arrow placement='top'>
+                            <IconButton
+                              size='small'
+                              onClick={() => handleEditTeam(team)}
                               sx={{
-                                width: { xs: 18, sm: 20 },
-                                height: { xs: 18, sm: 20 },
+                                padding: { xs: 0.5, sm: 1 },
                               }}
-                            />
-                          </IconButton>
-                          <IconButton
-                            size='small'
-                            onClick={() => handleDeleteTeam(team)}
-                            sx={{
-                              padding: { xs: 0.5, sm: 1 },
-                            }}
-                          >
-                            <Box
-                              component='img'
-                              src={Icons.delete}
-                              alt='Delete'
+                            >
+                              <Box
+                                component='img'
+                                src={Icons.edit}
+                                alt='Edit'
+                                sx={{
+                                  width: { xs: 18, sm: 20 },
+                                  height: { xs: 18, sm: 20 },
+                                }}
+                              />
+                            </IconButton>
+                          </Tooltip>
+                          <Tooltip title={lang.deleteTeam} arrow placement='top'>
+                            <IconButton
+                              size='small'
+                              onClick={() => handleDeleteTeam(team)}
                               sx={{
-                                width: { xs: 18, sm: 20 },
-                                height: { xs: 18, sm: 20 },
+                                padding: { xs: 0.5, sm: 1 },
                               }}
-                            />
-                          </IconButton>
+                            >
+                              <Box
+                                component='img'
+                                src={Icons.delete}
+                                alt='Delete'
+                                sx={{
+                                  width: { xs: 18, sm: 20 },
+                                  height: { xs: 18, sm: 20 },
+                                }}
+                              />
+                            </IconButton>
+                          </Tooltip>
                         </Box>
                       )}
                     </Box>
                   )}
 
-                  {teamDescription && (
-                    <Tooltip title={teamDescription} arrow placement='top'>
-                      <Typography
-                        variant='body2'
-                        sx={{
-                          color: theme => theme.palette.text.secondary,
-                          mb: 3,
-                          lineHeight: 1.6,
-                          fontSize: 'var(--body-font-size)',
-                          display: '-webkit-box',
-                          WebkitLineClamp: 3,
-                          WebkitBoxOrient: 'vertical',
-                          overflow: 'hidden',
-                          textOverflow: 'ellipsis',
-                          minHeight: { xs: '3.6em', sm: '4.2em' },
-                          cursor: 'help',
-                        }}
-                      >
-                        {teamDescription}
-                      </Typography>
-                    </Tooltip>
-                  )}
+                  <Box
+                    sx={{
+                      mb: 3,
+                      minHeight: { xs: '3.6em', sm: '4.2em' },
+                    }}
+                  >
+                    {teamDescription ? (
+                      <Tooltip title={teamDescription} arrow placement='top'>
+                        <Typography
+                          variant='body2'
+                          sx={{
+                            color: theme => theme.palette.text.secondary,
+                            lineHeight: 1.6,
+                            fontSize: 'var(--body-font-size)',
+                            display: '-webkit-box',
+                            WebkitLineClamp: 3,
+                            WebkitBoxOrient: 'vertical',
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                            cursor: 'help',
+                          }}
+                        >
+                          {teamDescription}
+                        </Typography>
+                      </Tooltip>
+                    ) : null}
+                  </Box>
 
                   <Box
                     sx={{

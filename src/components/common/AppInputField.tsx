@@ -95,7 +95,7 @@ const AppInputField = React.forwardRef<HTMLDivElement, AppInputFieldProps>(
           >
             {label}
           </Typography>
-          {rest.error && rest.helperText && (
+          {rest.helperText && (
             <Typography
               title={String(rest.helperText)}
               sx={{
@@ -104,7 +104,9 @@ const AppInputField = React.forwardRef<HTMLDivElement, AppInputFieldProps>(
                   : 'block',
                 fontSize: { xs: '12px', sm: '14px' },
                 lineHeight: '1.2',
-                color: theme.palette.error.main,
+                color: rest.error
+                  ? theme.palette.error.main
+                  : theme.palette.text.secondary,
                 fontWeight: 400,
                 textAlign: 'right',
                 ml: 2,
@@ -135,6 +137,7 @@ const AppInputField = React.forwardRef<HTMLDivElement, AppInputFieldProps>(
             fullWidth
             id={rest.id || (rest.name ? `input-${rest.name}` : undefined)}
             variant='outlined'
+            inputProps={{ maxLength: 50, ...(rest.inputProps || {}) }}
             InputProps={
               // If caller provided InputProps, keep them and merge
               isDateInput

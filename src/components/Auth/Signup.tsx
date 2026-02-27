@@ -8,7 +8,6 @@ import {
   FormControl,
   MenuItem,
   Select,
-  FormControlLabel,
   Checkbox,
   Alert,
   CircularProgress,
@@ -147,8 +146,11 @@ const Signup: React.FC = () => {
         nextErrors.email = emailError;
       }
     }
+    const phoneDigits = formData.phone.replace(/\D/g, '');
     if (!formData.phone.trim()) {
       nextErrors.phone = 'Phone number is required';
+    } else if (phoneDigits.length < 10) {
+      nextErrors.phone = 'Please enter your phone number';
     } else if (formData.phone && formData.phone.trim()) {
       const phoneRegex = /^\+[1-9]\d{1,14}$/;
       if (!phoneRegex.test(formData.phone)) {
@@ -182,12 +184,15 @@ const Signup: React.FC = () => {
     ? validateEmailAddress(formData.email)
     : null;
 
+  const phoneDigitCount = formData.phone.replace(/\D/g, '').length;
+  const hasPhoneNumberEntered = phoneDigitCount >= 10;
+
   const isSubmitDisabled =
     loading ||
     !formData.first_name.trim() ||
     !formData.last_name.trim() ||
     !formData.email.trim() ||
-    !formData.phone.trim() ||
+    !hasPhoneNumberEntered ||
     !formData.password ||
     !formData.confirmPassword ||
     !!emailValidationError ||
@@ -411,8 +416,8 @@ const Signup: React.FC = () => {
             pt: { xs: '30px', lg: '48px' },
             boxSizing: 'border-box',
             minWidth: 0,
-            borderTopLeftRadius: { xs: 0, lg: '30px' },
-            borderBottomLeftRadius: { xs: 0, lg: '30px' },
+            borderTopLeftRadius: { xs: 0, lg: '20px' },
+            borderBottomLeftRadius: { xs: 0, lg: '20px' },
           }}
         >
           <Box
@@ -444,6 +449,7 @@ const Signup: React.FC = () => {
           <Box
             sx={{
               // maxWidth: { xs: '100%', sm: '90%' },
+              maxWidth:"700px",
               width: '100%',
               mx: 'auto',
               backgroundColor: { xs: '#FFFFFF', lg: 'transparent' },
@@ -454,7 +460,7 @@ const Signup: React.FC = () => {
               minWidth: 0,
               display: 'flex',
               flexDirection: 'column',
-              gap: '64px',
+              gap: '40px',
             }}
           >
             {/* Div 1: Language Selector */}
@@ -501,9 +507,14 @@ const Signup: React.FC = () => {
                 maxWidth: '100%',
                 boxSizing: 'border-box',
                 overflowX: 'hidden',
+                overflowY: 'scroll',
                 display: 'flex',
                 flexDirection: 'column',
-                gap: '64px',
+                gap: '40px',
+                scrollbarWidth: 'none',
+                '&::-webkit-scrollbar': {
+                  display: 'none',
+                },
               }}
             >
               <Box
@@ -545,7 +556,7 @@ const Signup: React.FC = () => {
                       disabled={loading}
                       error={Boolean(fieldErrors.first_name)}
                       helperText={fieldErrors.first_name}
-                      placeholder='Waleed'
+                      placeholder='First Name'
                       hideErrorsOnSmallScreen={true}
                     />
                   </Box>
@@ -560,7 +571,7 @@ const Signup: React.FC = () => {
                       disabled={loading}
                       error={Boolean(fieldErrors.last_name)}
                       helperText={fieldErrors.last_name}
-                      placeholder='Ahmed'
+                      placeholder='Last Name'
                       hideErrorsOnSmallScreen={true}
                     />
                   </Box>
@@ -597,7 +608,7 @@ const Signup: React.FC = () => {
                       disabled={loading}
                       error={Boolean(fieldErrors.email)}
                       helperText={fieldErrors.email}
-                      placeholder='Waleed@xyz.com'
+                      placeholder='Enter your email'
                       hideErrorsOnSmallScreen={true}
                     />
                   </Box>
@@ -752,97 +763,89 @@ const Signup: React.FC = () => {
                       display: 'flex',
                       flexDirection: 'column',
                       rowGap: '12px',
-                      '& .MuiFormControlLabel-root': {
-                        margin: 0,
-                        gap: '8px',
-                      },
-                      '& .MuiFormControlLabel-label': {
-                        padding: 0,
-                        margin: 0,
-                      },
                       '& .MuiCheckbox-root': {
                         padding: 0,
                         margin: 0,
                       },
                     }}
                   >
-                    <FormControlLabel
-                      control={
-                        <Checkbox
-                          checked={rememberMe}
-                          onChange={e => setRememberMe(e.target.checked)}
+                    <Box
+                      sx={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '8px',
+                      }}
+                    >
+                      <Checkbox
+                        checked={rememberMe}
+                        onChange={e => setRememberMe(e.target.checked)}
+                        sx={{
+                          color: 'var(--dark-grey-color)',
+                          '&.Mui-checked': {
+                            color: 'var(--primary-dark-color)',
+                          },
+                        }}
+                      />
+                      <Typography
+                        component='span'
+                        sx={{
+                          fontSize: { xs: '14px', sm: '16px' },
+                          fontWeight: 400,
+                        }}
+                      >
+                        Remember me
+                      </Typography>
+                    </Box>
+                    <Box
+                      sx={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '8px',
+                      }}
+                    >
+                      <Checkbox
+                        checked={acceptedTerms}
+                        onChange={e => setAcceptedTerms(e.target.checked)}
+                        sx={{
+                          color: 'var(--dark-grey-color)',
+                          '&.Mui-checked': {
+                            color: 'var(--primary-dark-color)',
+                          },
+                        }}
+                      />
+                      <Typography
+                        component='span'
+                        sx={{
+                          fontSize: { xs: '14px', sm: '16px' },
+                          fontWeight: 400,
+                        }}
+                      >
+                        I agree to all the{' '}
+                        <Link
+                          href='#'
                           sx={{
-                            color: 'var(--dark-grey-color)',
-
-                            '&.Mui-checked': {
-                              color: 'var(--primary-dark-color)',
-                            },
-                          }}
-                        />
-                      }
-                      label={
-                        <Typography
-                          className='label'
-                          sx={{
-                            fontSize: { xs: '14px', sm: '16px' },
-                            fontWeight: 400,
+                            color: 'var(--primary-dark-color)',
+                            textDecoration: 'none',
+                            fontWeight: 500,
+                            fontSize: 'inherit',
                           }}
                         >
-                          Remember me
-                        </Typography>
-                      }
-                    />
-                    <FormControlLabel
-                      control={
-                        <Checkbox
-                          checked={acceptedTerms}
-                          onChange={e => setAcceptedTerms(e.target.checked)}
+                          Terms{' '}
+                        </Link>
+                        and{' '}
+                        <Link
+                          href='#'
                           sx={{
-                            color: 'var(--dark-grey-color)',
-
-                            '&.Mui-checked': {
-                              color: 'var(--primary-dark-color)',
-                            },
-                          }}
-                        />
-                      }
-                      label={
-                        <Typography
-                          className='label'
-                          sx={{
-                            fontSize: { xs: '14px', sm: '16px' },
-                            fontWeight: 400,
+                            color: 'var(--primary-dark-color)',
+                            textDecoration: 'none',
+                            fontWeight: 500,
+                            fontSize: 'inherit',
                           }}
                         >
-                          I agree to all the{' '}
-                          <Link
-                            href='#'
-                            sx={{
-                              color: 'var(--primary-dark-color)',
-                              textDecoration: 'none',
-                              fontWeight: 500,
-                              fontSize: 'inherit',
-                              // '&:hover': { textDecoration: 'underline' },
-                            }}
-                          >
-                            Terms{' '}
-                          </Link>
-                          and{' '}
-                          <Link
-                            href='#'
-                            sx={{
-                              color: 'var(--primary-dark-color)',
-                              textDecoration: 'none',
-                              fontWeight: 500,
-                              fontSize: 'inherit',
-                              // '&:hover': { textDecoration: 'underline' },
-                            }}
-                          >
-                            Privacy policy
-                          </Link>
-                        </Typography>
-                      }
-                    />
+                          Privacy policy
+                        </Link>
+                      </Typography>
+                    </Box>
                   </Box>
                 </Box>
 

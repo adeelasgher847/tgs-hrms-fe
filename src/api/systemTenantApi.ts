@@ -117,8 +117,7 @@ export const SystemTenantApi = {
         await axiosInstance.get(`/system/tenants/${id}`);
 
       const detail = response.data;
-      const baseURL =
-        import.meta.env.VITE_API_BASE_URL || 'http://localhost:5173';
+      const baseURL = env.apiBaseUrl;
 
       const getFullLogoUrl = (
         logoPath: string | undefined | null

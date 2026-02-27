@@ -37,6 +37,7 @@ const formatCurrency = (value: number | string | undefined) => {
 const PayrollReports: React.FC = () => {
   const theme = useTheme();
   const darkMode = useIsDarkMode();
+  const { snackbar, closeSnackbar, showError } = useErrorHandler();
   const { darkMode: outletDarkMode } = useOutletContext<{
     darkMode: boolean;
   }>();

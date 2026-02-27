@@ -10,6 +10,7 @@ import {
   DialogContent,
   DialogActions,
   useTheme,
+  Tooltip,
 } from '@mui/material';
 
 import {
@@ -235,17 +236,26 @@ const MyTeams: React.FC<MyTeamsProps> = ({ teams, darkMode = false }) => {
               </Box>
 
               {team.description && (
-                <Typography
-                  variant='body2'
-                  sx={{
-                    color: theme.palette.text.secondary,
-                    fontSize: 'var(--body-font-size)',
-                    mb: 2,
-                    lineHeight: 1.5,
-                  }}
-                >
-                  {team.description}
-                </Typography>
+                <Tooltip title={team.description} placement='top' arrow>
+                  <Typography
+                    variant='body2'
+                    sx={{
+                      color: theme.palette.text.secondary,
+                      fontSize: 'var(--body-font-size)',
+                      mb: 2,
+                      lineHeight: 1.5,
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      display: '-webkit-box',
+                      WebkitLineClamp: 2,
+                      WebkitBoxOrient: 'vertical',
+                    }}
+                  >
+                    {team.description.length > 80
+                      ? `${team.description.slice(0, 80).trim()}...`
+                      : team.description}
+                  </Typography>
+                </Tooltip>
               )}
 
               <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>

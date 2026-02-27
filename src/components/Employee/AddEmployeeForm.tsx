@@ -15,7 +15,7 @@ import { PhoneInput } from 'react-international-phone';
 import 'react-international-phone/style.css';
 import '../UserProfile/PhoneInput.css';
 import { useOutletContext } from 'react-router-dom';
-import { AppOutletContext } from '../../types/outletContexts';
+import type { AppOutletContext } from '../../types/outletContexts';
 import { env } from '../../config/env';
 import type { EmployeeDto } from '../../api/employeeApi';
 import {
@@ -520,10 +520,10 @@ const AddEmployeeForm: React.FC<AddEmployeeFormProps> = ({
     } else {
       newErrors.email = 'Email is required';
     }
-    if (!values.phone)
+    const phoneDigits = (values.phone || '').replace(/\D/g, '');
+    if (phoneDigits.length < 10)
       newErrors.phone = label('Phone is required', 'رقم الهاتف مطلوب');
     else if (values.phone && values.phone.trim()) {
-      // Basic validation for phone number format
       const phoneRegex = /^\+[1-9]\d{1,14}$/;
       if (!phoneRegex.test(values.phone)) {
         newErrors.phone = label(
@@ -622,13 +622,19 @@ const AddEmployeeForm: React.FC<AddEmployeeFormProps> = ({
     }
   };
 
+  // Phone has actual number digits (not just country code). Require at least 10 digits.
+  const hasPhoneNumber = (phone: string) => {
+    const digits = (phone || '').replace(/\D/g, '');
+    return digits.length >= 10;
+  };
+
   // Helper to check if all required fields are filled
   const isFormComplete = () => {
     if (!values.first_name.trim()) return false;
     if (!values.last_name.trim()) return false;
     if (!values.email.trim()) return false;
     if (validateEmailAddress(values.email)) return false;
-    if (!values.phone.trim()) return false;
+    if (!hasPhoneNumber(values.phone)) return false;
     if (!values.designationId) return false;
     if (!values.departmentId) return false;
     if (!values.cnicNumber) return false;
@@ -716,7 +722,7 @@ const AddEmployeeForm: React.FC<AddEmployeeFormProps> = ({
         </Box>
 
         {/* Email */}
-        <Box flex={isSm ? '1 1 100%' : '1 1 48%'}>
+        <Box flex={isSm ? '1 1 100%' : '1 1 48%'} sx={{ minWidth: 0 }}>
           <AppInputField
             label={label('Email', 'البريد الإلكتروني')}
             value={values.email}
@@ -725,6 +731,13 @@ const AddEmployeeForm: React.FC<AddEmployeeFormProps> = ({
             helperText={errors.email}
             placeholder={label('Enter email address', 'أدخل البريد الإلكتروني')}
             inputBackgroundColor={controlBg}
+            containerSx={{ minWidth: 0, maxWidth: '100%' }}
+            sx={{
+              '& .MuiInputBase-input': {
+                minWidth: 0,
+                maxWidth: '100%',
+              },
+            }}
           />
         </Box>
 
