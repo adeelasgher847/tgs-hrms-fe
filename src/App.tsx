@@ -162,6 +162,12 @@ const EmployeeTasks = lazy(
 const JobRequisitionManager = lazy(
   () => import('./components/JobRequisition/JobRequisitionManager')
 );
+const CandidateTracker = lazy(
+  () => import('./components/JobRequisition/CandidateTracker')
+);
+const CandidateOnboarding = lazy(
+  () => import('./components/JobRequisition/CandidateOnboarding')
+);
 
 function App() {
   return (
@@ -172,191 +178,207 @@ function App() {
             <Router>
               <Suspense fallback={<LoadingFallback />}>
                 <Routes>
-                <Route path='/' element={<Login />} />
-                <Route path='/forget' element={<Forget />} />
-                <Route path='/reset-password' element={<ResetPassword />} />
-                <Route path='/confirm-password' element={<ConfirmPassword />} />
-                <Route path='/Signup' element={<Signup />} />
-                <Route
-                  path='/signup/company-details'
-                  element={<CompanyDetails />}
-                />
-                <Route path='/signup/select-plan' element={<SelectPlan />} />
-                <Route
-                  path='/signup/confirm-payment'
-                  element={<ConfirmPayment />}
-                />
-                <Route path='/signup/success' element={<SignupSuccess />} />
+                  <Route path='/' element={<Login />} />
+                  <Route path='/forget' element={<Forget />} />
+                  <Route path='/reset-password' element={<ResetPassword />} />
+                  <Route path='/confirm-password' element={<ConfirmPassword />} />
+                  <Route path='/Signup' element={<Signup />} />
+                  <Route
+                    path='/signup/company-details'
+                    element={<CompanyDetails />}
+                  />
+                  <Route path='/signup/select-plan' element={<SelectPlan />} />
+                  <Route
+                    path='/signup/confirm-payment'
+                    element={<ConfirmPayment />}
+                  />
+                  <Route path='/signup/success' element={<SignupSuccess />} />
 
-                <Route path='/employees' element={<EmployeePaymentReturn />} />
-
-                <Route
-                  path='/dashboard'
-                  element={
-                    <ProtectedRoute>
-                      <CompanyProvider>
-                        <NotificationProvider>
-                          <ThemeProvider>
-                            <Layout />
-                          </ThemeProvider>
-                        </NotificationProvider>
-                      </CompanyProvider>
-                    </ProtectedRoute>
-                  }
-                >
-                  <Route
-                    index
-                    element={
-                      <RouteErrorBoundary>
-                        <Dashboard />
-                      </RouteErrorBoundary>
-                    }
-                  />
-                  <Route
-                    path='tenant'
-                    element={
-                      <RouteErrorBoundary>
-                        <TenantPage />
-                      </RouteErrorBoundary>
-                    }
-                  />
-                  <Route path='departments' element={<DepartmentList />} />
-                  <Route path='Designations' element={<DesignationManager />} />
-                  <Route path='EmployeeManager' element={<EmployeeManager />} />
-                  <Route path='UserList' element={<UserList />} />
-                  <Route
-                    path='UserProfile'
-                    element={<UserProfileComponent />}
-                  />
-                  <Route path='leaves' element={<LeaveRequestPage />} />
-                  <Route
-                    path='cross-tenant-leaves'
-                    element={<CrossTenantLeaveManagement />}
-                  />
-                  <Route
-                    path='attendance-summary'
-                    element={<AttendanceSummaryReport />}
-                  />
-                  <Route
-                    path='EmployeeProfileView'
-                    element={<EmployeeProfileView />}
-                  />
-                  <Route
-                    path='EmployeeProfileView/:employeeId'
-                    element={<EmployeeProfileView />}
-                  />
-                  <Route
-                    path='TenantEmployees'
-                    element={<TenantBasedEmployeeManager />}
-                  />
-                  <Route path='AttendanceCheck' element={<AttendanceCheck />} />
-                  <Route path='AttendanceTable' element={<AttendanceTable />} />
-                  <Route path='Reports' element={<Reports />} />
-                  <Route path='policies' element={<PolicyList />} />
-                  <Route path='holidays' element={<HolidayList />} />
-                  <Route
-                    path='AttendanceCheck/TimesheetLayout'
-                    element={<TimesheetLayout />}
-                  />
-                  <Route path='teams' element={<TeamManager />} />
-                  <Route
-                    path='teams/list'
-                    element={
-                      <RouteErrorBoundary>
-                        <TeamsTaskList />
-                      </RouteErrorBoundary>
-                    }
-                  />
-                  <Route
-                    path='teams/tasks'
-                    element={
-                      <RouteErrorBoundary>
-                        <TeamTasks />
-                      </RouteErrorBoundary>
-                    }
-                  />
-                  <Route
-                    path='teams/tasks/:teamId'
-                    element={
-                      <RouteErrorBoundary>
-                        <TeamTasks />
-                      </RouteErrorBoundary>
-                    }
-                  />
-                  <Route
-                    path='my-tasks'
-                    element={
-                      <RouteErrorBoundary>
-                        <MyTasks />
-                      </RouteErrorBoundary>
-                    }
-                  />
-                  <Route
-                    path='manager-tasks'
-                    element={
-                      <RouteErrorBoundary>
-                        <ManagerTaskBoard />
-                      </RouteErrorBoundary>
-                    }
-                  />
-                  <Route
-                    path='teams/employee/:employeeId'
-                    element={
-                      <RouteErrorBoundary>
-                        <EmployeeTasks />
-                      </RouteErrorBoundary>
-                    }
-                  />
-                  <Route path='settings' element={<SettingsPage />} />
-                  <Route path='assets' element={<AssetInventory />} />
-                  <Route path='assets/inventory' element={<AssetInventory />} />
-                  <Route path='assets/requests' element={<AssetRequests />} />
-                  <Route
-                    path='assets/request-management'
-                    element={<RequestManagement />}
-                  />
-                  <Route
-                    path='assets/system-admin'
-                    element={<SystemAdminAssets />}
-                  />
-                  <Route path='benefits-list' element={<BenefitList />} />
-                  <Route
-                    path='employee-benefit'
-                    element={<EmployeeBenefits />}
-                  />
-                  <Route path='benefit-details' element={<BenefitDetails />} />
-                  <Route path='benefit-report' element={<BenefitReport />} />
+                  <Route path='/employees' element={<EmployeePaymentReturn />} />
 
                   <Route
-                    path='performance-dashboard'
-                    element={<PerformanceDashboard />}
-                  />
-                  <Route path='audit-logs' element={<AuditLogs />} />
-                  <Route path='announcements' element={<AnnouncementsPage />} />
-
-                  <Route
-                    path='payroll-configuration'
-                    element={<PayrollConfiguration />}
-                  />
-                  <Route path='payroll-records' element={<PayrollRecords />} />
-                  <Route path='payroll-reports' element={<PayrollReports />} />
-                  <Route
-                    path='employee-salary'
-                    element={<EmployeeSalaryPage />}
-                  />
-                  <Route path='my-salary' element={<MySalary />} />
-                  <Route path='geofencing' element={<GeofencingManagement />} />
-                  <Route
-                    path='job-requisitions'
+                    path='/dashboard'
                     element={
-                      <RouteErrorBoundary>
-                        <JobRequisitionManager />
-                      </RouteErrorBoundary>
+                      <ProtectedRoute>
+                        <CompanyProvider>
+                          <NotificationProvider>
+                            <ThemeProvider>
+                              <Layout />
+                            </ThemeProvider>
+                          </NotificationProvider>
+                        </CompanyProvider>
+                      </ProtectedRoute>
                     }
-                  />
-                </Route>
-                <Route path='/company-details' element={<CompanyDetails />} />
-                <Route path='*' element={<Error404 />} />
+                  >
+                    <Route
+                      index
+                      element={
+                        <RouteErrorBoundary>
+                          <Dashboard />
+                        </RouteErrorBoundary>
+                      }
+                    />
+                    <Route
+                      path='tenant'
+                      element={
+                        <RouteErrorBoundary>
+                          <TenantPage />
+                        </RouteErrorBoundary>
+                      }
+                    />
+                    <Route path='departments' element={<DepartmentList />} />
+                    <Route path='Designations' element={<DesignationManager />} />
+                    <Route path='EmployeeManager' element={<EmployeeManager />} />
+                    <Route path='UserList' element={<UserList />} />
+                    <Route
+                      path='UserProfile'
+                      element={<UserProfileComponent />}
+                    />
+                    <Route path='leaves' element={<LeaveRequestPage />} />
+                    <Route
+                      path='cross-tenant-leaves'
+                      element={<CrossTenantLeaveManagement />}
+                    />
+                    <Route
+                      path='attendance-summary'
+                      element={<AttendanceSummaryReport />}
+                    />
+                    <Route
+                      path='EmployeeProfileView'
+                      element={<EmployeeProfileView />}
+                    />
+                    <Route
+                      path='EmployeeProfileView/:employeeId'
+                      element={<EmployeeProfileView />}
+                    />
+                    <Route
+                      path='TenantEmployees'
+                      element={<TenantBasedEmployeeManager />}
+                    />
+                    <Route path='AttendanceCheck' element={<AttendanceCheck />} />
+                    <Route path='AttendanceTable' element={<AttendanceTable />} />
+                    <Route path='Reports' element={<Reports />} />
+                    <Route path='policies' element={<PolicyList />} />
+                    <Route path='holidays' element={<HolidayList />} />
+                    <Route
+                      path='AttendanceCheck/TimesheetLayout'
+                      element={<TimesheetLayout />}
+                    />
+                    <Route path='teams' element={<TeamManager />} />
+                    <Route
+                      path='teams/list'
+                      element={
+                        <RouteErrorBoundary>
+                          <TeamsTaskList />
+                        </RouteErrorBoundary>
+                      }
+                    />
+                    <Route
+                      path='teams/tasks'
+                      element={
+                        <RouteErrorBoundary>
+                          <TeamTasks />
+                        </RouteErrorBoundary>
+                      }
+                    />
+                    <Route
+                      path='teams/tasks/:teamId'
+                      element={
+                        <RouteErrorBoundary>
+                          <TeamTasks />
+                        </RouteErrorBoundary>
+                      }
+                    />
+                    <Route
+                      path='my-tasks'
+                      element={
+                        <RouteErrorBoundary>
+                          <MyTasks />
+                        </RouteErrorBoundary>
+                      }
+                    />
+                    <Route
+                      path='manager-tasks'
+                      element={
+                        <RouteErrorBoundary>
+                          <ManagerTaskBoard />
+                        </RouteErrorBoundary>
+                      }
+                    />
+                    <Route
+                      path='teams/employee/:employeeId'
+                      element={
+                        <RouteErrorBoundary>
+                          <EmployeeTasks />
+                        </RouteErrorBoundary>
+                      }
+                    />
+                    <Route path='settings' element={<SettingsPage />} />
+                    <Route path='assets' element={<AssetInventory />} />
+                    <Route path='assets/inventory' element={<AssetInventory />} />
+                    <Route path='assets/requests' element={<AssetRequests />} />
+                    <Route
+                      path='assets/request-management'
+                      element={<RequestManagement />}
+                    />
+                    <Route
+                      path='assets/system-admin'
+                      element={<SystemAdminAssets />}
+                    />
+                    <Route path='benefits-list' element={<BenefitList />} />
+                    <Route
+                      path='employee-benefit'
+                      element={<EmployeeBenefits />}
+                    />
+                    <Route path='benefit-details' element={<BenefitDetails />} />
+                    <Route path='benefit-report' element={<BenefitReport />} />
+
+                    <Route
+                      path='performance-dashboard'
+                      element={<PerformanceDashboard />}
+                    />
+                    <Route path='audit-logs' element={<AuditLogs />} />
+                    <Route path='announcements' element={<AnnouncementsPage />} />
+
+                    <Route
+                      path='payroll-configuration'
+                      element={<PayrollConfiguration />}
+                    />
+                    <Route path='payroll-records' element={<PayrollRecords />} />
+                    <Route path='payroll-reports' element={<PayrollReports />} />
+                    <Route
+                      path='employee-salary'
+                      element={<EmployeeSalaryPage />}
+                    />
+                    <Route path='my-salary' element={<MySalary />} />
+                    <Route path='geofencing' element={<GeofencingManagement />} />
+                    <Route
+                      path='job-requisitions'
+                      element={
+                        <RouteErrorBoundary>
+                          <JobRequisitionManager />
+                        </RouteErrorBoundary>
+                      }
+                    />
+                    <Route
+                      path='candidate-tracker'
+                      element={
+                        <RouteErrorBoundary>
+                          <CandidateTracker />
+                        </RouteErrorBoundary>
+                      }
+                    />
+                    <Route
+                      path='candidate-onboarding'
+                      element={
+                        <RouteErrorBoundary>
+                          <CandidateOnboarding />
+                        </RouteErrorBoundary>
+                      }
+                    />
+                  </Route>
+                  <Route path='/company-details' element={<CompanyDetails />} />
+                  <Route path='*' element={<Error404 />} />
                 </Routes>
               </Suspense>
             </Router>

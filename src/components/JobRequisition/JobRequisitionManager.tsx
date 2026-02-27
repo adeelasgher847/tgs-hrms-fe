@@ -20,25 +20,31 @@ import {
   ListItemIcon,
   ListItemText,
   Divider,
+  Tabs,
+  Tab,
 } from '@mui/material';
-import { 
-  Add as AddIcon, 
-  Edit as EditIcon, 
-  Delete as DeleteIcon, 
-  ContentCopy as CloneIcon, 
-  Close as CloseIcon, 
+import {
+  Add as AddIcon,
+  Edit as EditIcon,
+  Delete as DeleteIcon,
+  ContentCopy as CloneIcon,
+  Close as CloseIcon,
   Visibility as ViewIcon,
   CheckCircle as ApproveIcon,
   Cancel as RejectIcon,
   Publish as PublishIcon,
-  MoreVert as MoreVertIcon
+  MoreVert as MoreVertIcon,
+  People as PeopleIcon,
+  Work as WorkIcon
 } from '@mui/icons-material';
 import { useOutletContext } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import type { AppOutletContext } from '../../types/outletContexts';
 import jobRequisitionApiService, {
+  type CreateJobRequisitionDto,
   type JobRequisition,
   type RequisitionStatus,
+  type UpdateJobRequisitionDto,
 } from '../../api/jobRequisitionApi';
 import { extractErrorMessage } from '../../utils/errorHandler';
 import { useErrorHandler } from '../../hooks/useErrorHandler';
@@ -51,6 +57,7 @@ import DeleteConfirmationDialog from '../common/DeleteConfirmationDialog';
 import { PAGINATION } from '../../constants/appConstants';
 import JobRequisitionForm from './JobRequisitionForm';
 import RequisitionDetail from './RequisitionDetail';
+import CandidateTracker from './CandidateTracker';
 import { jobRequisitionMockData } from '../../Data/jobRequisitionMockData';
 import dayjs from 'dayjs';
 
@@ -86,7 +93,7 @@ const JobRequisitionManager: React.FC = () => {
   const [selectedRequisition, setSelectedRequisition] = useState<JobRequisition | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
   const [actionTarget, setActionTarget] = useState<string | null>(null);
-  
+
   // Menu state
   const [menuAnchor, setMenuAnchor] = useState<null | HTMLElement>(null);
   const [selectedRequisitionForMenu, setSelectedRequisitionForMenu] = useState<JobRequisition | null>(null);
@@ -99,6 +106,8 @@ const JobRequisitionManager: React.FC = () => {
   // Filters
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<RequisitionStatus | 'All'>('All');
+
+
 
   // TanStack Query for fetching requisitions
   const { data, isLoading, error, refetch } = useQuery({
@@ -392,6 +401,7 @@ const JobRequisitionManager: React.FC = () => {
         </AppButton>
       </Box>
 
+
       <AppTable
         sx={{ backgroundColor: darkMode ? '#1a1a1a' : '#fff', color: theme.palette.text.primary }}
         tableProps={{ stickyHeader: true }}
@@ -461,7 +471,7 @@ const JobRequisitionManager: React.FC = () => {
                           size="small"
                           onClick={() => handlePublishClick(req.id)}
                           disabled={submitting || req.status !== 'Approved'}
-                          sx={{ 
+                          sx={{
                             color: req.status === 'Approved' ? 'info.main' : 'action.disabled',
                             opacity: req.status === 'Approved' ? 1 : 0.5
                           }}
@@ -487,7 +497,6 @@ const JobRequisitionManager: React.FC = () => {
           )}
         </TableBody>
       </AppTable>
-
       {/* Actions Menu */}
       <Menu
         anchorEl={menuAnchor}
@@ -509,7 +518,7 @@ const JobRequisitionManager: React.FC = () => {
           <ListItemText>Edit</ListItemText>
         </MenuItem>
         <Divider />
-        <MenuItem 
+        <MenuItem
           onClick={handleMenuApprove}
           disabled={selectedRequisitionForMenu?.status === 'Approved' || selectedRequisitionForMenu?.status === 'Rejected'}
         >
@@ -518,7 +527,7 @@ const JobRequisitionManager: React.FC = () => {
           </ListItemIcon>
           <ListItemText>Approve</ListItemText>
         </MenuItem>
-        <MenuItem 
+        <MenuItem
           onClick={handleMenuReject}
           disabled={selectedRequisitionForMenu?.status === 'Rejected' || selectedRequisitionForMenu?.status === 'Approved'}
         >
@@ -606,25 +615,25 @@ const JobRequisitionManager: React.FC = () => {
 
       {/* Detail Modal */}
       {selectedRequisition && (
-          <AppFormModal
-            open={detailModalOpen}
+        <AppFormModal
+          open={detailModalOpen}
+          onClose={handleCloseDetail}
+          title="Job Requisition Details"
+          maxWidth="lg"
+          isRtl={false}
+          hideActions
+          wrapInForm={false}
+          paperSx={{
+            width: { xs: '100%', sm: '90%', md: '900px', lg: '900px' },
+            maxWidth: { xs: '100%', sm: '90%', md: '900px', lg: '900px' },
+          }}
+        >
+          <RequisitionDetail
+            requisition={selectedRequisition}
             onClose={handleCloseDetail}
-            title="Job Requisition Details"
-            maxWidth="lg"
-            isRtl={false}
-            hideActions
-            wrapInForm={false}
-            paperSx={{
-              width: { xs: '100%', sm: '90%', md: '900px', lg: '900px' },
-              maxWidth: { xs: '100%', sm: '90%', md: '900px', lg: '900px' },
-            }}
-          >
-            <RequisitionDetail
-              requisition={selectedRequisition}
-              onClose={handleCloseDetail}
-              onRefresh={refetch}
-            />
-          </AppFormModal>
+            onRefresh={refetch}
+          />
+        </AppFormModal>
       )}
 
       {/* Delete Confirmation */}
@@ -698,3 +707,4 @@ const JobRequisitionManager: React.FC = () => {
 };
 
 export default JobRequisitionManager;
+
