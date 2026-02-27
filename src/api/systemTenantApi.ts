@@ -1,6 +1,6 @@
 import axiosInstance from './axiosInstance';
 import type { AxiosResponse } from 'axios';
-// env not used here; remove unused import to satisfy linter
+import { env } from '../config/env';
 
 export interface SystemTenant {
   id: string;
