@@ -39,7 +39,7 @@ import AppTextarea from '../common/AppTextarea';
 import { useErrorHandler } from '../../hooks/useErrorHandler';
 import ErrorSnackbar from '../common/ErrorSnackbar';
 
-const ITEMS_PER_PAGE = 10;
+const ITEMS_PER_PAGE = 25;
 
 interface BenefitRow {
   benefitAssignmentId?: string;
@@ -125,7 +125,7 @@ const BenefitDetails: React.FC = () => {
           return;
         }
 
-        const response = await employeeBenefitApi.getEmployeeBenefits(page);
+        const response = await employeeBenefitApi.getEmployeeBenefits();
 
         const employeeData = (response as unknown as Array<Record<string, unknown>>).find(
           emp => (emp as Record<string, unknown>)['employeeId'] === employeeId
@@ -144,7 +144,7 @@ const BenefitDetails: React.FC = () => {
     };
 
     fetchBenefits();
-  }, [page]);
+  }, []);
 
   const getFileUrl = (path: string) => {
     if (!path) return '';
@@ -162,38 +162,26 @@ const BenefitDetails: React.FC = () => {
     return `"${s}"`;
   };
 
-  const handleDownload = () => {
-    if (benefits.length === 0) {
-      showInfo('No data to download.');
-      return;
-    }
+  const handleDownload = async () => {
+    try {
+      const employeeId = localStorage.getItem('employeeId');
+      if (!employeeId) {
+        showInfo('Employee not found.');
+        return;
+      }
 
-    const csvHeader = [
-      'Benefit Name',
-      'Type',
-      'Start Date',
-      'End Date',
-      'Status',
-    ];
-    const rows = benefits.map((row: BenefitRow) =>
-      [
-        csvEscape(row.name),
-        csvEscape(row.type),
-        csvEscape(formatDate(row.startDate || '')),
-        csvEscape(formatDate((row.endDate as string) || '')),
-        csvEscape(row.statusOfAssignment || row.status),
-      ].join(',')
-    );
-    const csvContent = [csvHeader.join(','), ...rows].join('\n');
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.setAttribute('download', `MyBenefits_Page${page}.csv`);
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
+      const blob = await employeeBenefitApi.exportMyBenefits(employeeId);
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.setAttribute('download', 'MyBenefits.csv');
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch {
+      showError('Failed to download My Benefits.');
+    }
   };
 
   // Reimbursement State

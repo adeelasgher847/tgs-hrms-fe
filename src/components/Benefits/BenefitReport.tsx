@@ -404,13 +404,6 @@ const BenefitReport: React.FC = () => {
     URL.revokeObjectURL(url);
   };
 
-  if (tableLoading)
-    return (
-      <Box display='flex' justifyContent='center' mt={4}>
-        <CircularProgress />
-      </Box>
-    );
-
   // ------------------- Render -------------------
   return (
     <Box py={3}>
@@ -607,7 +600,13 @@ const BenefitReport: React.FC = () => {
           </TableRow>
         </TableHead>
         <TableBody>
-          {paginatedData.length === 0 ? (
+          {tableLoading ? (
+            <TableRow>
+              <TableCell colSpan={isSystemAdmin ? 6 : 5} align='center'>
+                <CircularProgress sx={{ color: 'var(--primary-dark-color)' }} />
+              </TableCell>
+            </TableRow>
+          ) : paginatedData.length === 0 ? (
             <TableRow>
               <TableCell colSpan={isSystemAdmin ? 6 : 5} align='center'>
                 No data available

@@ -670,10 +670,20 @@ class EmployeeApiService {
   // Image blob endpoints removed. Image paths should come directly from list/detail APIs.
 
   // Export employees for all tenants as CSV (System-admin only)
-  async exportSystemEmployeesCSV(tenantId?: string): Promise<Blob> {
+  async exportSystemEmployeesCSV(
+    tenantId?: string,
+    departmentId?: string,
+    designationId?: string
+  ): Promise<Blob> {
     const params: Record<string, string> = {};
     if (tenantId) {
       params.tenantId = tenantId;
+    }
+    if (departmentId) {
+      params.departmentId = departmentId;
+    }
+    if (designationId) {
+      params.designationId = designationId;
     }
     const response = await axiosInstance.get('/employees/system/export', {
       params,

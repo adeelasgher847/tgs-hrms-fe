@@ -320,7 +320,13 @@ const TenantBasedEmployeeManager: React.FC = () => {
     try {
       // Use backend API to export employees CSV
       const tenantId = filters.tenantId || undefined;
-      const blob = await employeeApi.exportSystemEmployeesCSV(tenantId);
+      const departmentId = filters.departmentId || undefined;
+      const designationId = filters.designationId || undefined;
+      const blob = await employeeApi.exportSystemEmployeesCSV(
+        tenantId,
+        departmentId,
+        designationId
+      );
 
       // Create download link
       const url = window.URL.createObjectURL(blob);

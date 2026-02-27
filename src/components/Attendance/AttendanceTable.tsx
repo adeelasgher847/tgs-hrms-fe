@@ -2057,15 +2057,44 @@ const AttendanceTable = () => {
                         buildExportFilters()
                       );
                     }
-                    // Everyone else (non-admin) → use /attendance/export/all with startDate & endDate
+                    // Manager in "My Attendance" view → use /attendance/export/self with startDate & endDate
+                    else if (
+                      isManager &&
+                      !isAdminLike &&
+                      managerView === 'my'
+                    ) {
+                      const selfParams: Record<string, string> = {};
+                      if (startDate) selfParams.startDate = startDate;
+                      if (endDate) selfParams.endDate = endDate;
+
+                      exportCSV(
+                        '/attendance/export/self',
+                        'attendance-self.csv',
+                        token || '',
+                        selfParams
+                      );
+                    }
+                    else if (isAdminLike) {
+                      const allParams: Record<string, string> = {};
+                      if (startDate) allParams.startDate = startDate;
+                      if (endDate) allParams.endDate = endDate;
+
+                      exportCSV(
+                        '/attendance/export/all',
+                        'attendance-all.csv',
+                        token || '',
+                        allParams
+                      );
+                    }
+                    // Everyone else (regular employees) → use /attendance/export/self with startDate & endDate
                     else {
                       const selfParams: Record<string, string> = {};
                       if (startDate) selfParams.startDate = startDate;
                       if (endDate) selfParams.endDate = endDate;
 
                       exportCSV(
-                        '/attendance/export/all',
-                        'attendance-all.csv',
+                        '/attendance/export/self',
+                        'attendance-self.csv',
                         token || '',
                         selfParams
                       );

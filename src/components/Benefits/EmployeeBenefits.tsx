@@ -161,13 +161,15 @@ const EmployeeBenefits: React.FC = () => {
     return `${baseUrl}${relativePath}`;
   };
 
-  const fetchEmployees = useCallback(async (pageNum: number = 1) => {
-    try {
-      setLoading(true);
-      const resp = await employeeBenefitApi.getEmployeesWithBenefits({
-        page: pageNum,
-        limit: ITEMS_PER_PAGE,
-      });
+  const fetchEmployees = useCallback(
+    async (pageNum: number = 1, statusFilter: typeof selectedStatus = selectedStatus) => {
+      try {
+        setLoading(true);
+        const resp = await employeeBenefitApi.getEmployeesWithBenefits({
+          page: pageNum,
+          limit: ITEMS_PER_PAGE,
+          status: statusFilter === 'all' ? undefined : statusFilter,
+        });
 
       // Handle both array and paginated response
       const items = Array.isArray(resp) ? resp : resp.items || [];
@@ -177,39 +179,41 @@ const EmployeeBenefits: React.FC = () => {
           ? resp
           : null;
 
-      setEmployees(items);
+        setEmployees(items);
 
       // Backend returns 25 records per page (fixed page size)
       // If we get 25 records, there might be more pages
       // If we get less than 25, it's the last page
-      const hasMorePages = items.length === ITEMS_PER_PAGE;
-      const employeesCount = items.length;
+        const hasMorePages = items.length === ITEMS_PER_PAGE;
+        const employeesCount = items.length;
 
-      // Use backend pagination info if available, otherwise estimate
-      if (paginationInfo && paginationInfo.total && paginationInfo.totalPages) {
-        setTotalPages(paginationInfo.totalPages);
-        // Use total from backend
-        setTotalRecords(paginationInfo.total);
-      } else {
-        // Fallback: estimate based on current page and records received
-        setTotalPages(hasMorePages ? pageNum + 1 : pageNum);
-        // Count employees across all pages
-        setTotalRecords(
-          hasMorePages
-            ? pageNum * ITEMS_PER_PAGE
-            : (pageNum - 1) * ITEMS_PER_PAGE + employeesCount
-        );
+        // Use backend pagination info if available, otherwise estimate
+        if (paginationInfo && paginationInfo.total && paginationInfo.totalPages) {
+          setTotalPages(paginationInfo.totalPages);
+          // Use total from backend
+          setTotalRecords(paginationInfo.total);
+        } else {
+          // Fallback: estimate based on current page and records received
+          setTotalPages(hasMorePages ? pageNum + 1 : pageNum);
+          // Count employees across all pages
+          setTotalRecords(
+            hasMorePages
+              ? pageNum * ITEMS_PER_PAGE
+              : (pageNum - 1) * ITEMS_PER_PAGE + employeesCount
+          );
+        }
+      } catch {
+        // Keep previous grid state if fetch fails
+      } finally {
+        setLoading(false);
       }
-    } catch {
-      // Keep previous grid state if fetch fails
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+    },
+    [selectedStatus]
+  );
 
   useEffect(() => {
-    fetchEmployees(page);
-  }, [page, fetchEmployees]);
+    fetchEmployees(page, selectedStatus);
+  }, [page, selectedStatus, fetchEmployees]);
 
   const handleBenefitClick = async (
     benefitId: string,
@@ -326,8 +330,26 @@ const EmployeeBenefits: React.FC = () => {
     return `"${s}"`;
   };
 
-  const handleDownload = () => {
+  const handleDownload = async () => {
     try {
+      // Admin-side: use backend export endpoint /employee-benefits/export/employees
+      if (!isManager) {
+        const statusParam = selectedStatus === 'all' ? undefined : selectedStatus;
+        const blob = await employeeBenefitApi.exportEmployeesBenefits({
+          status: statusParam,
+        });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.setAttribute('download', 'Employee_Benefits.csv');
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        return;
+      }
+
+      // Manager side: keep existing frontend-generated CSV behavior
       if (!filteredEmployees.length) {
         alert('No data to download.');
         return;
@@ -628,7 +650,7 @@ const EmployeeBenefits: React.FC = () => {
         open={openForm}
         onClose={() => setOpenForm(false)}
         onAssigned={() => {
-          fetchEmployees();
+          fetchEmployees(page, selectedStatus);
           showSuccess('Benefit assigned successfully!');
         }}
       />

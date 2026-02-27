@@ -244,6 +244,21 @@ class LeaveReportApiService {
     return response.data;
   }
 
+  /** GET /reports/export/all-leave-reports - backend export (year, employeeName) */
+  async exportAllLeaveReports(params?: {
+    year?: number;
+    employeeName?: string;
+  }): Promise<Blob> {
+    const year = params?.year ?? new Date().getFullYear();
+    const requestParams: { year: number; employeeName?: string } = { year };
+    if (params?.employeeName) requestParams.employeeName = params.employeeName;
+    const response = await axiosInstance.get(
+      `${this.baseUrl}/export/all-leave-reports`,
+      { params: requestParams, responseType: 'blob' }
+    );
+    return response.data;
+  }
+
   async getAllLeaveReports(
     page: number = 1,
     month?: number,

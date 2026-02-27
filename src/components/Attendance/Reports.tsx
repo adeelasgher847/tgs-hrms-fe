@@ -164,48 +164,10 @@ const Reports: React.FC = () => {
       let blob;
 
       if (isAdminView) {
-        const headers = [
-          'Employee Name',
-          'Department',
-          'Designation',
-          'Leave Type',
-          'Max Days',
-          'Used',
-          'Remaining',
-          'Approved Days',
-          'Pending Days',
-          'Rejected Days',
-        ];
-
-        const rows = filteredEmployeeReports.flatMap(emp =>
-          emp.leaveSummary.map(summary => [
-            emp.employeeName,
-            emp.department,
-            emp.designation,
-            summary.leaveTypeName,
-            summary.maxDaysPerYear,
-            summary.totalDays ?? 0,
-            summary.remainingDays ?? 0,
-            summary.approvedDays ?? 0,
-            summary.pendingDays ?? 0,
-            summary.rejectedDays ?? 0,
-          ])
-        );
-
-        const csvContent = [
-          headers.join(','),
-          ...rows.map(row =>
-            row
-              .map(value =>
-                typeof value === 'string' && value.includes(',')
-                  ? `"${value}"`
-                  : (value ?? '')
-              )
-              .join(',')
-          ),
-        ].join('\n');
-
-        blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        blob = await leaveReportApi.exportAllLeaveReports({
+          year: selectedYear,
+          employeeName: selectedEmployee || undefined,
+        });
       } else {
         if (tab === 0) blob = await leaveReportApi.exportLeaveBalanceCSV();
         if (isManager && tab === 1)
