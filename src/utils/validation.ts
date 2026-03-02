@@ -90,7 +90,7 @@ export const validatePasswordStrength = (password: string): string | null => {
     return 'Password must be at least 8 characters';
   }
   if (!hasUpper) {
-    return 'Password must include at least 1 uppercase letter (A-Z).';
+    return 'Password requires one uppercase letter';
   }
   if (!hasLower) {
     return 'Password must include at least 1 lowercase letter (a-z).';

@@ -1119,32 +1119,25 @@ const Dashboard: React.FC = () => {
             }}
           >
             <Box sx={{ flex: 1, minWidth: { xs: '100%', md: 0 } }}>
-              <Paper
-                elevation={0}
+              <AppCard
                 sx={{
                   p: 3,
                   minHeight: { xs: 280, md: 420 },
                   borderRadius: '20px',
-                  backgroundColor: theme.palette.background.paper,
-                  boxShadow:
-                    theme.palette.mode === 'dark'
-                      ? '0 1px 3px rgba(0,0,0,0.3)'
-                      : '0 1px 3px rgba(0,0,0,0.1)',
                 }}
               >
                 <EmployeeGrowthChart />
-              </Paper>
+              </AppCard>
             </Box>
             <Box
               sx={{
-                width: { xs: '100%', md: '45%', lg: '35%' },
+                width: { xs: '100%', md: '45%', lg: '33%' },
                 minWidth: 0,
                 maxWidth: '100%',
                 order: { xs: 2, md: 0 },
               }}
             >
-              <Paper
-                elevation={0}
+              <AppCard
                 sx={{
                   p: { xs: 1.5, sm: 2 },
                   borderRadius: { xs: '16px', sm: '20px' },
@@ -1179,6 +1172,8 @@ const Dashboard: React.FC = () => {
                         innerRadius={isMobile ? 45 : 60}
                         outerRadius={isMobile ? 70 : 90}
                         paddingAngle={3}
+                        stroke='none'
+                        strokeWidth={0}
                         label={({ percent }) =>
                           `${(percent * 100).toFixed(0)}%`
                         }
@@ -1192,6 +1187,7 @@ const Dashboard: React.FC = () => {
                                 ? theme.palette.success.main
                                 : theme.palette.error.main
                             }
+                            style={{ outline: 'none' }}
                           />
                         ))}
                       </Pie>
@@ -1200,19 +1196,19 @@ const Dashboard: React.FC = () => {
                         height={36}
                         iconType='circle'
                       />
-                    </PieChart>
-                  </ResponsiveContainer>
-                </Box>
-                <Box mt={1}>
-                  <Typography
-                    variant='caption'
-                    color='text.secondary'
-                    sx={{ fontSize: { xs: '0.7rem', sm: '0.75rem' } }}
-                  >
-                    Total payroll and unpaid summary for current cycle
-                  </Typography>
-                </Box>
-              </Paper>
+                      </PieChart>
+                    </ResponsiveContainer>
+                  </Box>
+                  <Box mt={1}>
+                    <Typography
+                      variant='caption'
+                      color='text.secondary'
+                      sx={{ fontSize: { xs: '0.7rem', sm: '0.75rem' } }}
+                    >
+                      Total payroll and unpaid summary for current cycle
+                    </Typography>
+                  </Box>
+                </AppCard>
             </Box>
           </Box>
 
@@ -1235,8 +1231,7 @@ const Dashboard: React.FC = () => {
                 flexDirection: 'column',
               }}
             >
-              <Paper
-                elevation={0}
+              <AppCard
                 sx={{
                   p: 2,
                   borderRadius: '20px',
@@ -1339,18 +1334,20 @@ const Dashboard: React.FC = () => {
                             dataKey='present'
                             stackId='a'
                             fill={theme.palette.primary.main}
+                            style={{ outline: 'none' }}
                           />
                           <Bar
                             dataKey='absent'
                             stackId='a'
                             fill={theme.palette.error.main}
+                            style={{ outline: 'none' }}
                           />
                         </BarChart>
                       </ResponsiveContainer>
                     )}
                   </Box>
                 </Box>
-              </Paper>
+              </AppCard>
             </Box>
 
             {/* Availability column removed as requested */}
@@ -1364,8 +1361,7 @@ const Dashboard: React.FC = () => {
                 flexDirection: 'column',
               }}
             >
-              <Paper
-                elevation={0}
+              <AppCard
                 sx={{
                   p: 2,
                   borderRadius: '20px',
@@ -1380,7 +1376,7 @@ const Dashboard: React.FC = () => {
                 <Box sx={{ flex: 1, minHeight: 260 }}>
                   <GenderPercentageChart />
                 </Box>
-              </Paper>
+              </AppCard>
             </Box>
           </Box>
         </Box>

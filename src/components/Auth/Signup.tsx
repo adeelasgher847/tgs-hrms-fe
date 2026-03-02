@@ -454,7 +454,7 @@ const Signup: React.FC = () => {
               mx: 'auto',
               backgroundColor: { xs: '#FFFFFF', lg: 'transparent' },
               borderRadius: { xs: '20px', lg: 0 },
-              p: { xs: 2, sm: 3, md: 4 },
+              p: { xs: 2, sm: 3, md: 0 },
               mt: { xs: 0, lg: 0 },
               boxSizing: 'border-box',
               minWidth: 0,

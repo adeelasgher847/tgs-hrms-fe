@@ -6,7 +6,7 @@ const AuthSidebar: React.FC = () => {
     <Box
       sx={{
         display: { xs: 'none', lg: 'flex' },
-        width: '45%',
+        width: '40%',
         backgroundColor: 'var(--primary-dark-color)',
         justifyContent: 'center',
         alignItems: 'center',
