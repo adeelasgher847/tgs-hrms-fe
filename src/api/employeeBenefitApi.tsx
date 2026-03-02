@@ -137,17 +137,20 @@ const employeeBenefitApi = {
     return response.data;
   },
 
-  async getEmployeeBenefits(
-    page: number = 1
-  ): Promise<EmployeeBenefitResponse[]> {
+  async getEmployeeBenefits(page?: number): Promise<EmployeeBenefitResponse[]> {
     try {
       const employeeId = localStorage.getItem('employeeId');
       if (!employeeId) {
         return [];
       }
 
+      const params: Record<string, string | number> = { employeeId };
+      if (typeof page === 'number') {
+        params.page = page;
+      }
+
       const response = await axiosInstance.get('/employee-benefits', {
-        params: { employeeId, page },
+        params,
       });
 
       if (Array.isArray(response.data)) {
@@ -173,6 +176,7 @@ const employeeBenefitApi = {
   async getEmployeesWithBenefits(params?: {
     page?: number;
     limit?: number;
+    status?: string;
   }): Promise<
     | EmployeeWithBenefits[]
     | { items: EmployeeWithBenefits[]; total: number; totalPages: number }
@@ -204,6 +208,7 @@ const employeeBenefitApi = {
     employeeId?: string;
     department?: string;
     designation?: string;
+    status?: string;
     page: number;
     limit?: number;
   }): Promise<EmployeeWithBenefits[] | { items: EmployeeWithBenefits[] } | []> {
@@ -233,11 +238,13 @@ const employeeBenefitApi = {
     mostCommonBenefitType: string;
     totalEmployeesCovered: number;
   }> {
+    const params: Record<string, string> = {};
+    if (tenant_id && tenant_id.trim() !== '' && tenant_id !== 'all') {
+      params.tenant_id = tenant_id;
+    }
     const response = await axiosInstance.get(
       '/employee-benefits/system-admin/summary',
-      {
-        params: { tenant_id: tenant_id || 'all' },
-      }
+      { params }
     );
 
     let raw: Record<string, unknown> = response.data as Record<string, unknown>;
@@ -310,6 +317,8 @@ const employeeBenefitApi = {
     page?: number;
     limit?: number;
     tenant_id?: string;
+    department_id?: string;
+    designation_id?: string;
   }): Promise<
     | {
         items: TenantEmployeeWithBenefits[];
@@ -383,6 +392,48 @@ const employeeBenefitApi = {
       };
     }
   },
+
+  /** System admin: export employee benefits for all tenants (CSV). */
+  async exportAllTenantsEmployeeBenefits(params?: {
+    tenant_id?: string;
+    department_id?: string;
+    designation_id?: string;
+  }): Promise<Blob> {
+    const query: Record<string, string> = {};
+    if (params?.tenant_id?.trim()) query.tenant_id = params.tenant_id.trim();
+    if (params?.department_id?.trim())
+      query.department_id = params.department_id.trim();
+    if (params?.designation_id?.trim())
+      query.designation_id = params.designation_id.trim();
+    const response = await axiosInstance.get(
+      '/employee-benefits/export/all-tenants',
+      { params: query, responseType: 'blob' }
+    );
+    return response.data;
+  },
+
+  /** Admin side: export employees benefits (CSV) with optional status filter. */
+  async exportEmployeesBenefits(params?: { status?: string }): Promise<Blob> {
+    const query: Record<string, string> = {};
+    if (params?.status && params.status !== 'all') {
+      query.status = params.status;
+    }
+    const response = await axiosInstance.get(
+      '/employee-benefits/export/employees',
+      { params: query, responseType: 'blob' }
+    );
+    return response.data;
+  },
+
+  /** Employee side: export current employee benefits (CSV) by employeeId. */
+  async exportMyBenefits(employeeId: string): Promise<Blob> {
+    const response = await axiosInstance.get('/employee-benefits/export', {
+      params: { employeeId },
+      responseType: 'blob',
+    });
+    return response.data;
+  },
+
   async createBenefitReimbursement(
     data: FormData
   ): Promise<Record<string, unknown>> {

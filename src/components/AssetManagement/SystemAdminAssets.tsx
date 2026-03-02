@@ -76,13 +76,14 @@ const SystemAdminAssets: React.FC = () => {
 
   const [categoryFilter, setCategoryFilter] = useState<string>('');
   const [tenantFilter, setTenantFilter] = useState<string>('');
-  const [assignedFilter, setAssignedFilter] = useState<string>('');
+  const [assignedFilter, setAssignedFilter] = useState<string>('all');
 
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalRecords, setTotalRecords] = useState(0);
   const itemsPerPage = PAGINATION.DEFAULT_PAGE_SIZE;
   const theme = useTheme();
+
   const fetchCategories = async () => {
     try {
       const data = await assetApi.getAllAssetCategories();
@@ -130,32 +131,71 @@ const SystemAdminAssets: React.FC = () => {
   const fetchAssets = useCallback(async () => {
     try {
       setLoading(true);
-      const filters: {
+      const hasSearch = !!searchTerm.trim();
+      const hasStatusFilter =
+        assignedFilter === 'retired' || assignedFilter === 'unassigned';
+      const fetchAllPages = hasSearch || hasStatusFilter;
+
+      const baseFilters: {
         category?: string;
         tenantId?: string;
         assigned?: 'assigned' | 'unassigned';
-        page?: number;
-        limit?: number;
-      } = {
-        page: currentPage,
-        limit: itemsPerPage,
-      };
+        status?: string;
+      } = {};
 
       if (categoryFilter) {
         const category = categories.find(cat => cat.name === categoryFilter);
         if (category) {
-          filters.category = category.id;
+          baseFilters.category = category.id;
         }
       }
-      if (tenantFilter) filters.tenantId = tenantFilter;
-      if (assignedFilter) {
-        filters.assigned = assignedFilter as 'assigned' | 'unassigned';
+      if (tenantFilter) baseFilters.tenantId = tenantFilter;
+      if (!fetchAllPages) {
+        if (assignedFilter === 'retired') {
+          baseFilters.status = 'retired';
+        } else if (assignedFilter === 'unassigned') {
+          baseFilters.assigned = 'unassigned';
+          baseFilters.status = 'available';
+        } else if (assignedFilter === 'assigned') {
+          baseFilters.assigned = 'assigned';
+        }
       }
 
-      const response = await assetApi.getSystemAssets(filters);
-      setAssets(response.items || []);
-      setTotalPages(response.totalPages || 1);
-      setTotalRecords(response.total || 0);
+      if (fetchAllPages) {
+        const first = await assetApi.getSystemAssets({
+          ...baseFilters,
+          page: 1,
+          limit: itemsPerPage,
+        });
+        const totalPagesFromApi = first.totalPages || 1;
+        const allItems = [...(first.items || [])];
+
+        if (totalPagesFromApi > 1) {
+          const rest = await Promise.all(
+            Array.from({ length: totalPagesFromApi - 1 }, (_, i) =>
+              assetApi.getSystemAssets({
+                ...baseFilters,
+                page: i + 2,
+                limit: itemsPerPage,
+              })
+            )
+          );
+          rest.forEach(r => allItems.push(...(r.items || [])));
+        }
+
+        setAssets(allItems);
+        setTotalPages(1);
+        setTotalRecords(first.total ?? allItems.length);
+      } else {
+        const response = await assetApi.getSystemAssets({
+          ...baseFilters,
+          page: currentPage,
+          limit: itemsPerPage,
+        });
+        setAssets(response.items || []);
+        setTotalPages(response.totalPages || 1);
+        setTotalRecords(response.total || 0);
+      }
     } catch {
       setAssets([]);
       setTotalPages(1);
@@ -171,6 +211,7 @@ const SystemAdminAssets: React.FC = () => {
     categories,
     currentPage,
     itemsPerPage,
+    searchTerm,
   ]);
 
   useEffect(() => {
@@ -185,7 +226,7 @@ const SystemAdminAssets: React.FC = () => {
 
   useEffect(() => {
     setCurrentPage(1);
-  }, [categoryFilter, tenantFilter, assignedFilter]);
+  }, [categoryFilter, tenantFilter, assignedFilter, searchTerm]);
 
   const categoryNames = useMemo(() => {
     const cats = new Set<string>();
@@ -215,39 +256,89 @@ const SystemAdminAssets: React.FC = () => {
   const filteredAssets = useMemo(() => {
     let filtered = assets;
 
-    if (searchTerm) {
-      const search = searchTerm.toLowerCase();
+    if (assignedFilter === 'assigned') {
+      filtered = filtered.filter(
+        asset => !!(asset.assigned_to || asset.assignedToUser)
+      );
+    } else if (assignedFilter === 'unassigned') {
+      filtered = filtered.filter(
+        asset => (asset.status || '').toLowerCase() === 'available'
+      );
+    } else if (assignedFilter === 'retired') {
+      filtered = filtered.filter(
+        asset => (asset.status || '').toLowerCase() === 'retired'
+      );
+    }
+
+    if (searchTerm.trim()) {
+      const search = searchTerm.trim().toLowerCase();
       filtered = filtered.filter(asset => {
         const extendedAsset = asset as ExtendedSystemAsset;
         const categoryId = extendedAsset.category_id;
-        const categoryName = categoryId
+        const categoryFromMap = categoryId
           ? categoryMap.get(categoryId) || ''
           : '';
+        const categoryName =
+          categoryFromMap || asset.category?.name || '';
         const subcategoryId = extendedAsset.subcategory_id;
-        const subcategoryName = subcategoryId
+        const subcategoryFromMap = subcategoryId
           ? subcategoryMap.get(subcategoryId) || ''
           : '';
+        const subcategoryName =
+          subcategoryFromMap || asset.subcategory?.name || '';
+
+        const nameMatch = (asset.name || '').toLowerCase().includes(search);
+        const categoryMatch = categoryName.toLowerCase().includes(search);
+        const subcategoryMatch = subcategoryName.toLowerCase().includes(search);
+        const tenantMatch = (asset.tenant?.name || '')
+          .toLowerCase()
+          .includes(search);
+        const assignedName =
+          asset.assignedToUser &&
+          `${asset.assignedToUser.first_name || ''} ${asset.assignedToUser.last_name || ''}`.trim();
+        const assignedMatch =
+          !!assignedName && assignedName.toLowerCase().includes(search);
+        const assignedEmailMatch =
+          !!asset.assignedToUser?.email &&
+          asset.assignedToUser.email.toLowerCase().includes(search);
 
         return (
-          asset.name.toLowerCase().includes(search) ||
-          categoryName.toLowerCase().includes(search) ||
-          subcategoryName.toLowerCase().includes(search) ||
-          asset.tenant?.name.toLowerCase().includes(search) ||
-          (asset.assignedToUser &&
-            `${asset.assignedToUser.first_name} ${asset.assignedToUser.last_name}`
-              .toLowerCase()
-              .includes(search))
+          nameMatch ||
+          categoryMatch ||
+          subcategoryMatch ||
+          tenantMatch ||
+          assignedMatch ||
+          assignedEmailMatch
         );
       });
     }
 
     return filtered;
-  }, [assets, searchTerm, categoryMap, subcategoryMap]);
+  }, [assets, searchTerm, categoryMap, subcategoryMap, assignedFilter]);
+
+  const isClientPagination =
+    (assignedFilter === 'retired' || assignedFilter === 'unassigned') &&
+    filteredAssets.length > 0;
+
+  const effectiveTotalPages = isClientPagination
+    ? Math.max(1, Math.ceil(filteredAssets.length / itemsPerPage))
+    : totalPages;
+
+  const displayedAssets = useMemo(() => {
+    if (!isClientPagination) return filteredAssets;
+    const start = (currentPage - 1) * itemsPerPage;
+    return filteredAssets.slice(start, start + itemsPerPage);
+  }, [
+    filteredAssets,
+    isClientPagination,
+    currentPage,
+    itemsPerPage,
+  ]);
 
   const handleClearFilters = () => {
     setCategoryFilter('');
     setTenantFilter('');
-    setAssignedFilter('');
+    setAssignedFilter('all');
     setSearchTerm('');
   };
 
@@ -692,7 +783,7 @@ const SystemAdminAssets: React.FC = () => {
               }}
             >
               <AppSearch
-                placeholder='Search assets...'
+                placeholder='Search by name, category, tenant, assigned user...'
                 value={searchTerm}
                 onChange={e => setSearchTerm(e.target.value)}
                 sx={{ borderRadius: 2 }}
@@ -758,7 +849,8 @@ const SystemAdminAssets: React.FC = () => {
                 options={[
                   { value: 'all', label: 'All Assets' },
                   { value: 'assigned', label: 'Assigned' },
-                  { value: 'unassigned', label: 'Unassigned' },
+                  { value: 'unassigned', label: 'Available' },
+                  { value: 'retired', label: 'Retired' },
                 ]}
               />
             </Box>
@@ -835,7 +927,7 @@ const SystemAdminAssets: React.FC = () => {
                 </Box>
               </TableCell>
             </TableRow>
-          ) : filteredAssets.length === 0 ? (
+          ) : displayedAssets.length === 0 ? (
             <TableRow>
               <TableCell
                 colSpan={6}
@@ -850,7 +942,7 @@ const SystemAdminAssets: React.FC = () => {
               </TableCell>
             </TableRow>
           ) : (
-            filteredAssets.map(asset => (
+            displayedAssets.map(asset => (
               <TableRow key={asset.id} hover>
                 <TableCell>
                   <Tooltip title={asset.name} placement='top'>
@@ -945,7 +1037,7 @@ const SystemAdminAssets: React.FC = () => {
                     </Box>
                   ) : (
                     <Typography variant='body2' color='text.secondary'>
-                      Unassigned
+                      Available
                     </Typography>
                   )}
                 </TableCell>
@@ -987,11 +1079,12 @@ const SystemAdminAssets: React.FC = () => {
           />
         </Box>
       )}
-      {!loading && filteredAssets.length > 0 && (
+      {!loading && displayedAssets.length > 0 && (
         <Box display='flex' justifyContent='center' pb={2}>
           <Typography variant='body2' color='textSecondary'>
-            Showing page {currentPage} of {totalPages} ({filteredAssets.length}{' '}
-            records on this page)
+            {searchTerm.trim()
+              ? `Showing all ${filteredAssets.length} matching result${filteredAssets.length !== 1 ? 's' : ''}`
+              : `Showing page ${currentPage} of ${effectiveTotalPages} (${displayedAssets.length} records on this page)`}
           </Typography>
         </Box>
       )}

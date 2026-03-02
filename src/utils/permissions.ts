@@ -202,12 +202,12 @@ const ROLE_SUBMENU_POLICIES: Record<
     assets: { allowOnly: ['assets overview'] },
     employees: { deny: ['employee list'] },
     teams: { deny: ['my tasks'] }, // Admins see Team Management and Manager Tasks only
-    attendance: { deny: ['leave request'] },
+    attendance: { deny: ['leave request', 'geofencing'] },
   },
   'network-admin': {
     employees: { deny: ['tenant employees'] },
     department: { deny: ['user list', 'policies', 'holidays'] },
-    attendance: { deny: ['reports', 'leave request'] },
+    attendance: { deny: ['reports', 'leave request', 'geofencing'] },
     benefits: { deny: ['benefits report', 'benefit details'] },
     'audit logs': { denyAll: true },
     assets: { deny: ['asset requests', 'assets overview'] },
@@ -221,13 +221,14 @@ const ROLE_SUBMENU_POLICIES: Record<
     assets: { deny: ['assets overview', 'asset requests'] },
     benefits: { deny: ['benefits report', 'benefit details'] },
     'leave-analytics': { deny: ['cross tenant leaves'] },
+    attendance: { deny: ['geofencing'] },
     teams: { deny: ['my tasks'] }, // Admins see Team Management and Manager Tasks only
   },
   admin: {
     employees: { deny: ['tenant employees'] },
     department: { deny: ['user list', 'policies', 'holidays'] },
     'leave-analytics': { deny: ['cross tenant leaves'] },
-    attendance: { deny: ['reports'] },
+    attendance: { deny: ['reports', 'geofencing'] },
     'audit logs': { denyAll: true },
     benefits: { deny: ['benefits report', 'benefit details'] },
     payroll: { deny: ['payroll reports', 'my salary'] },
@@ -308,6 +309,13 @@ export const isSubMenuVisibleForRole = (
 
   if (parentKey === 'assets' && subKey.includes('system assets overview')) {
     return r === 'system-admin';
+  }
+  if (
+    r === 'system-admin' &&
+    parentKey === 'payroll' &&
+    (subKey === 'payroll reports' || subKey.includes('payroll reports'))
+  ) {
+    return true;
   }
 
   const policy = ROLE_SUBMENU_POLICIES[r]?.[parentKey];
@@ -410,7 +418,6 @@ const DASHBOARD_ALLOWLIST_ENTRIES: Record<NormalizedRole, readonly string[]> = {
     'payroll-configuration',
     'payroll-records',
     'employee-salary',
-    'geofencing',
     'job-requisitions',
   ],
   admin: [
@@ -446,7 +453,6 @@ const DASHBOARD_ALLOWLIST_ENTRIES: Record<NormalizedRole, readonly string[]> = {
     'payroll-configuration',
     'payroll-records',
     'employee-salary',
-    'geofencing',
     'job-requisitions',
   ],
   manager: [
@@ -465,7 +471,6 @@ const DASHBOARD_ALLOWLIST_ENTRIES: Record<NormalizedRole, readonly string[]> = {
     'leaves',
     'UserProfile',
     'assets/requests',
-    'attendance-summary',
     'settings',
     'benefits',
     'benefits/assign',
@@ -528,6 +533,13 @@ export const isDashboardPathAllowedForRole = (
   const r = normalizeRole(role);
   const normalizedPath = (pathAfterDashboard || '').replace(/^\/+|\/+$/g, '');
   const allowedSet = DASHBOARD_ALLOWLIST[r];
+
+  if (normalizedPath === 'assets/system-admin') {
+    return r === 'system-admin';
+  }
+  if (normalizedPath === 'assets/requests') {
+    return allowedSet.has('assets/requests');
+  }
 
   if (allowedSet.has(normalizedPath)) {
     return true;

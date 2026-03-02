@@ -204,7 +204,7 @@ function DrawControl({
     const drawControl = new L.Control.Draw({
       position: 'topright',
       draw: {
-        rectangle: {},
+        rectangle: false,
         polygon: {},
         circle: {},
         marker: false,

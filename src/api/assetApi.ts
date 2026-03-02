@@ -674,6 +674,7 @@ class AssetApiService {
     category?: string;
     tenantId?: string;
     assigned?: 'assigned' | 'unassigned';
+    status?: string;
     page?: number;
     limit?: number;
   }) {
@@ -681,6 +682,7 @@ class AssetApiService {
     if (filters?.category) params.append('category', filters.category);
     if (filters?.tenantId) params.append('tenantId', filters.tenantId);
     if (filters?.assigned) params.append('assigned', filters.assigned);
+    if (filters?.status) params.append('status', filters.status);
     if (filters?.page !== undefined && filters.page !== null) {
       params.append('page', filters.page.toString());
     }

@@ -91,61 +91,50 @@ const AttendanceCheck = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const getRobustCurrentPosition = () =>
-    new Promise<GeolocationPosition>((resolve, reject) => {
-      // First attempt: High accuracy with increased timeout (20s) and allowed cache (5s)
+  // Try to get position; on failure we still hit API so backend can return e.g. "Turn on Your Location"
+  const tryGetPositionOnce = (): Promise<{ lat: number; lon: number } | null> =>
+    new Promise(resolve => {
+      if (!('geolocation' in navigator)) {
+        resolve(null);
+        return;
+      }
       navigator.geolocation.getCurrentPosition(
-        resolve,
-        error => {
-          // If high accuracy times out, try low accuracy as fallback
-          if (error.code === error.TIMEOUT) {
-            console.warn(
-              'High accuracy location timed out, falling back to low accuracy...'
-            );
-            navigator.geolocation.getCurrentPosition(resolve, reject, {
-              enableHighAccuracy: false,
-              timeout: 30000, // 30s timeout for fallback
-              maximumAge: 60000, // Accept up to 1 min old position for fallback
-            });
-          } else {
-            reject(error);
-          }
-        },
-        {
-          enableHighAccuracy: true,
-          timeout: 20000, // 20s
-          maximumAge: 5000, // 5s
-        }
+        pos =>
+          resolve({
+            lat: pos.coords.latitude,
+            lon: pos.coords.longitude,
+          }),
+        () => resolve(null),
+        { enableHighAccuracy: true, timeout: 12000, maximumAge: 10000 }
       );
     });
+
+  const tryGetPosition = async (): Promise<{ lat: number; lon: number } | null> => {
+    const first = await tryGetPositionOnce();
+    if (first) return first;
+    await new Promise(r => setTimeout(r, 800));
+    return tryGetPositionOnce();
+  };
 
   const handleCheckIn = async () => {
     setLoading(true);
     closeSnackbar();
 
-    // Request high-accuracy geolocation permission and position
-    if (!('geolocation' in navigator)) {
-      showError('Geolocation is not available on this device.');
-      setLoading(false);
-      return;
-    }
-
     try {
-      const pos = await getRobustCurrentPosition();
-      const lat = pos.coords.latitude;
-      const lon = pos.coords.longitude;
-
-      await attendanceApi.createAttendance({
+      const coords = await tryGetPosition();
+      const payload: { type: string; latitude?: number; longitude?: number } = {
         type: 'CHECK_IN',
-        latitude: lat,
-        longitude: lon,
-      });
+      };
+      if (coords) {
+        payload.latitude = coords.lat;
+        payload.longitude = coords.lon;
+      }
 
-      // Optimistically reflect UI: clear checkout and lock check-in
+      await attendanceApi.createAttendance(payload);
+
       setPunchOutTime(null);
       setStatus('Checked In');
       await fetchToday();
-      // Inform MyTimeCard that attendance has changed so it can refresh immediately
       setAttendanceRefreshToken(prev => prev + 1);
     } catch (err: unknown) {
       showError(err);
@@ -158,27 +147,20 @@ const AttendanceCheck = () => {
     setLoading(true);
     closeSnackbar();
 
-    if (!('geolocation' in navigator)) {
-      showError('Geolocation is not available on this device.');
-      setLoading(false);
-      return;
-    }
-
     try {
-      const pos = await getRobustCurrentPosition();
-      const lat = pos.coords.latitude;
-      const lon = pos.coords.longitude;
-
-      await attendanceApi.createAttendance({
+      const coords = await tryGetPosition();
+      const payload: { type: string; latitude?: number; longitude?: number } = {
         type: 'CHECK_OUT',
-        latitude: lat,
-        longitude: lon,
-      });
+      };
+      if (coords) {
+        payload.latitude = coords.lat;
+        payload.longitude = coords.lon;
+      }
 
-      // After checkout, both buttons become enabled again
+      await attendanceApi.createAttendance(payload);
+
       setStatus('Checked Out');
       await fetchToday();
-      // Also notify MyTimeCard on checkout in case it needs to update state
       setAttendanceRefreshToken(prev => prev + 1);
     } catch (err: unknown) {
       showError(err);

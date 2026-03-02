@@ -14,7 +14,7 @@ import {
 import AppTable from '../common/AppTable';
 import ReplayIcon from '@mui/icons-material/Replay';
 import { useOutletContext } from 'react-router-dom';
-import { AppOutletContext } from '../../types/outletContexts';
+import type { AppOutletContext } from '../../types/outletContexts';
 import { Icons } from '../../assets/icons';
 
 interface Employee {
@@ -153,7 +153,7 @@ const EmployeeList: React.FC<EmployeeListProps> = ({
               align={direction === 'rtl' ? 'right' : 'left'}
               sx={{ color: textColor, fontWeight: 'bold' }}
             >
-              {direction === 'rtl' ? 'الحالة' : 'Status'}
+              {direction === 'rtl' ? 'حالة الدعوة' : 'Invite Status'}
             </TableCell>
             {(onDelete || onEdit || onResendInvite || onView) && (
               <TableCell

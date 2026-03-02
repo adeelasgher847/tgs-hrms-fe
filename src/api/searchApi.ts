@@ -34,19 +34,27 @@ export interface SearchResponse {
 }
 
 export interface SearchParams {
+  /** Search query (optional). If provided, minimum 2 characters. */
   query?: string;
+  /** Limit search to a specific module. Default: all allowed modules. */
   module?: string;
+  /** Max results per module. Default: 10. */
   limit?: number;
+  /** Tenant filter (System Admin / Network Admin only). Omit for current user tenant; use for admin to search all tenants. */
   tenantId?: string;
 }
 
 class SearchApiService {
   private baseUrl = '/search';
 
+  /**
+   * Global search (tenant-scoped, RBAC-filtered).
+   * GET /search with query, module, limit, tenantId.
+   */
   async search(params: SearchParams = {}): Promise<SearchResponse> {
     const queryParams: Record<string, string | number> = {};
 
-    if (params.query && params.query.trim().length >= 2) {
+    if (params.query != null && params.query.trim().length >= 2) {
       queryParams.query = params.query.trim();
     }
 
@@ -54,7 +62,7 @@ class SearchApiService {
       queryParams.module = params.module;
     }
 
-    if (params.limit) {
+    if (params.limit != null) {
       queryParams.limit = params.limit;
     }
 
@@ -68,165 +76,6 @@ class SearchApiService {
 
     return response.data;
   }
-
-  async searchNetworkAdmin(params: SearchParams = {}): Promise<SearchResponse> {
-    const queryParams: Record<string, string | number> = {};
-
-    if (params.query && params.query.trim().length >= 2) {
-      queryParams.query = params.query.trim();
-    }
-
-    if (params.module) {
-      queryParams.module = params.module;
-    }
-
-    if (params.limit) {
-      queryParams.limit = params.limit;
-    }
-
-    if (params.tenantId) {
-      queryParams.tenantId = params.tenantId;
-    }
-
-    const response = await axiosInstance.get<SearchResponse>(
-      `${this.baseUrl}/network-admin`,
-      {
-        params: queryParams,
-      }
-    );
-
-    return response.data;
-  }
-
-  async searchSystemAdmin(params: SearchParams = {}): Promise<SearchResponse> {
-    const queryParams: Record<string, string | number> = {};
-
-    if (params.query && params.query.trim().length >= 2) {
-      queryParams.query = params.query.trim();
-    }
-
-    if (params.module) {
-      queryParams.module = params.module;
-    }
-
-    if (params.limit) {
-      queryParams.limit = params.limit;
-    }
-
-    if (params.tenantId) {
-      queryParams.tenantId = params.tenantId;
-    }
-
-    const response = await axiosInstance.get<SearchResponse>(
-      `${this.baseUrl}/system-admin`,
-      {
-        params: queryParams,
-      }
-    );
-
-    return response.data;
-  }
-
-  async searchAdmin(params: SearchParams = {}): Promise<SearchResponse> {
-    const queryParams: Record<string, string | number> = {};
-
-    if (params.query && params.query.trim().length >= 2) {
-      queryParams.query = params.query.trim();
-    }
-
-    if (params.module) {
-      queryParams.module = params.module;
-    }
-
-    if (params.limit) {
-      queryParams.limit = params.limit;
-    }
-
-    const response = await axiosInstance.get<SearchResponse>(
-      `${this.baseUrl}/admin`,
-      {
-        params: queryParams,
-      }
-    );
-
-    return response.data;
-  }
-
-  async searchHrAdmin(params: SearchParams = {}): Promise<SearchResponse> {
-    const queryParams: Record<string, string | number> = {};
-
-    if (params.query && params.query.trim().length >= 2) {
-      queryParams.query = params.query.trim();
-    }
-
-    if (params.module) {
-      queryParams.module = params.module;
-    }
-
-    if (params.limit) {
-      queryParams.limit = params.limit;
-    }
-
-    const response = await axiosInstance.get<SearchResponse>(
-      `${this.baseUrl}/hr-admin`,
-      {
-        params: queryParams,
-      }
-    );
-
-    return response.data;
-  }
-
-  async searchEmployee(params: SearchParams = {}): Promise<SearchResponse> {
-    const queryParams: Record<string, string | number> = {};
-
-    if (params.query && params.query.trim().length >= 2) {
-      queryParams.query = params.query.trim();
-    }
-
-    if (params.module) {
-      queryParams.module = params.module;
-    }
-
-    if (params.limit) {
-      queryParams.limit = params.limit;
-    }
-
-    const response = await axiosInstance.get<SearchResponse>(
-      `${this.baseUrl}/employee`,
-      {
-        params: queryParams,
-      }
-    );
-
-    return response.data;
-  }
-
-  async searchManager(params: SearchParams = {}): Promise<SearchResponse> {
-    const queryParams: Record<string, string | number> = {};
-
-    if (params.query && params.query.trim().length >= 2) {
-      queryParams.query = params.query.trim();
-    }
-
-    if (params.module) {
-      queryParams.module = params.module;
-    }
-
-    if (params.limit) {
-      queryParams.limit = params.limit;
-    }
-
-    const response = await axiosInstance.get<SearchResponse>(
-      `${this.baseUrl}/manager`,
-      {
-        params: queryParams,
-      }
-    );
-
-    return response.data;
-  }
 }
 
 export const searchApiService = new SearchApiService();
-

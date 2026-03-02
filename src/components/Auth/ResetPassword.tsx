@@ -67,7 +67,7 @@ const ResetPassword = () => {
     if (!formData.confirmPassword) {
       newErrors.confirmPassword = 'Please confirm your password';
     } else if (formData.password !== formData.confirmPassword) {
-      newErrors.confirmPassword = 'Passwords do not match';
+      newErrors.confirmPassword = 'Password do not match';
     }
 
     setErrors(newErrors);

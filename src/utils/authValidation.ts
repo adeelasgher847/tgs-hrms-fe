@@ -60,11 +60,16 @@ export function clearAuthData(): void {
 }
 
 /**
- * Redirects to login page and clears auth data
+ * Redirects to login page and clears auth data.
+ * Skips redirect when already on login page to avoid page reload (e.g. suspended tenant login).
  */
 export function forceLogout(): void {
   clearAuthData();
-  window.location.href = '/';
+  const path = window.location.pathname || '/';
+  const isLoginPage = path === '/' || path === '/forget' || path === '/reset-password' || path === '/confirm-password' || path === '/Signup';
+  if (!isLoginPage) {
+    window.location.href = '/';
+  }
 }
 
 /**

@@ -4,6 +4,7 @@ import { yupResolver } from '@hookform/resolvers/yup';
 import * as yup from 'yup';
 import AppFormModal, { type FormField } from '../common/AppFormModal';
 import AppInputField from '../common/AppInputField';
+import AppTextarea from '../common/AppTextarea';
 import AppDropdown from '../common/AppDropdown';
 
 export interface BenefitFormValues {
@@ -191,13 +192,12 @@ const BenefitFormModal: React.FC<BenefitFormModalProps> = ({
           name='description'
           control={control}
           render={({ field }) => (
-            <AppInputField
+            <AppTextarea
               {...field}
               value={field.value}
               onChange={e => field.onChange(e.target.value)}
               label='Description'
               placeholder='Provide a brief description of the benefit'
-              multiline
               rows={2}
               error={!!errors.description}
               helperText={errors.description?.message}

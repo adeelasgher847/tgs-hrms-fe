@@ -20,7 +20,8 @@ import { useTheme } from '@mui/material/styles';
 import { useOutletContext } from 'react-router-dom';
 import GenerateIcon from '@mui/icons-material/PlayCircleFilledRounded';
 import { payrollApi, type PayrollRecord } from '../../api/payrollApi';
-import { snackbar } from '../../utils/snackbar';
+import { useErrorHandler } from '../../hooks/useErrorHandler';
+import ErrorSnackbar from '../common/ErrorSnackbar';
 import { useIsDarkMode } from '../../theme';
 import AppTable from '../common/AppTable';
 import AppDropdown from '../common/AppDropdown';
@@ -57,6 +58,8 @@ const formatCurrency = (value: number | string | undefined) => {
 const PayrollGeneration: React.FC = () => {
   const theme = useTheme();
   const darkMode = useIsDarkMode();
+  const { snackbar, showSuccess, showError, showInfo, closeSnackbar } =
+    useErrorHandler();
   const { darkMode: outletDarkMode } = useOutletContext<{
     darkMode: boolean;
   }>();
@@ -122,14 +125,14 @@ const PayrollGeneration: React.FC = () => {
       });
       setRecords(response);
       if (response.length) {
-        snackbar.success('Payroll generated successfully');
+        showSuccess('Payroll generated successfully');
       } else {
-        snackbar.info(
+        showInfo(
           'No payroll records were generated for the selected period'
         );
       }
     } catch {
-      snackbar.error('Failed to generate payroll. Please try again.');
+      showError(new Error('Failed to generate payroll. Please try again.'));
     } finally {
       setLoading(false);
     }
@@ -755,6 +758,13 @@ const PayrollGeneration: React.FC = () => {
           )}
         </Box>
       </AppFormModal>
+      <ErrorSnackbar
+        open={snackbar.open}
+        message={snackbar.message}
+        severity={snackbar.severity}
+        onClose={closeSnackbar}
+        anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
+      />
     </Box>
   );
 };

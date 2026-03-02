@@ -13,7 +13,6 @@ import {
   TableCell,
   TableHead,
   TableRow,
-  TextField,
   Tooltip,
   Typography,
   Chip,
@@ -31,7 +30,8 @@ import {
   type PayrollRecord,
   type PayrollStatus,
 } from '../../api/payrollApi';
-import { snackbar } from '../../utils/snackbar';
+import { useErrorHandler } from '../../hooks/useErrorHandler';
+import ErrorSnackbar from '../common/ErrorSnackbar';
 import { useIsDarkMode } from '../../theme';
 import dayjsPluginLocalizedFormat from 'dayjs/plugin/localizedFormat';
 import { isSystemAdmin, isHRAdmin, isAdmin } from '../../utils/roleUtils';
@@ -43,6 +43,7 @@ import AppDropdown from '../common/AppDropdown';
 import AppFormModal from '../common/AppFormModal';
 import AppPageTitle from '../common/AppPageTitle';
 import AppInputField from '../common/AppInputField';
+import AppTextarea from '../common/AppTextarea';
 
 dayjs.extend(dayjsPluginLocalizedFormat);
 
@@ -98,6 +99,8 @@ const PayrollRecords: React.FC = () => {
   const outletDarkMode = outletContext?.darkMode;
   const effectiveDarkMode =
     typeof outletDarkMode === 'boolean' ? outletDarkMode : darkMode;
+  const { snackbar, showSuccess, showError, showInfo, closeSnackbar } =
+    useErrorHandler();
 
   const userContext = useUser();
   const user = userContext?.user;
@@ -395,7 +398,7 @@ const PayrollRecords: React.FC = () => {
         setTotalRecords(response.total || response.items?.length || 0);
       }
     } catch {
-      snackbar.error('Failed to load payroll records');
+      showError(new Error('Failed to load payroll records'));
       setRecords([]);
       setTotalPages(1);
       setTotalRecords(0);
@@ -497,10 +500,10 @@ const PayrollRecords: React.FC = () => {
           record.id === updated.id ? { ...record, ...updated } : record
         )
       );
-      snackbar.success('Payroll status updated successfully');
+      showSuccess('Payroll status updated successfully');
       closeStatusDialog();
     } catch {
-      snackbar.error('Failed to update payroll status');
+      showError(new Error('Failed to update payroll status'));
     } finally {
       setUpdatingStatus(false);
     }
@@ -588,7 +591,7 @@ const PayrollRecords: React.FC = () => {
 
   const handleGenerate = useCallback(async () => {
     if (!generateMonth || !generateYear) {
-      snackbar.error('Select both month and year to generate payroll');
+      showError(new Error('Select both month and year to generate payroll'));
       return;
     }
 
@@ -597,15 +600,19 @@ const PayrollRecords: React.FC = () => {
         emp => emp.id === generateEmployeeId
       );
       if (!selectedEmployee) {
-        snackbar.error(
-          'Selected employee is not available for payroll generation. The employee may already have a payroll record for this period or may not have an active salary structure for the selected month/year.'
+        showError(
+          new Error(
+            'Selected employee is not available for payroll generation. The employee may already have a payroll record for this period or may not have an active salary structure for the selected month/year.'
+          )
         );
         return;
       }
     } else {
       if (employeesForGenerateDialog.length === 0) {
-        snackbar.error(
-          'No employees available for payroll generation. All employees already have payroll records for the selected period or do not have active salary structures for the selected month/year.'
+        showError(
+          new Error(
+            'No employees available for payroll generation. All employees already have payroll records for the selected period or do not have active salary structures for the selected month/year.'
+          )
         );
         return;
       }
@@ -646,15 +653,15 @@ const PayrollRecords: React.FC = () => {
 
       if (newRecordsCount > previousRecordsCount) {
         const generatedCount = newRecordsCount - previousRecordsCount;
-        snackbar.success(
+        showSuccess(
           `Payroll generated successfully for ${generatedCount} employee(s)`
         );
       } else if (response && response.length > 0) {
-        snackbar.success(
+        showSuccess(
           `Payroll generated successfully for ${response.length} employee(s)`
         );
       } else {
-        snackbar.info(
+        showInfo(
           'No payroll records were generated for the selected period'
         );
       }
@@ -669,7 +676,7 @@ const PayrollRecords: React.FC = () => {
       setGenerateDialogOpen(false);
       setGenerateEmployeeId('');
     } catch {
-      snackbar.error('Failed to generate payroll. Please try again.');
+      showError(new Error('Failed to generate payroll. Please try again.'));
     } finally {
       setGenerating(false);
     }
@@ -1446,14 +1453,11 @@ const PayrollRecords: React.FC = () => {
                 },
               }}
             />
-            <TextField
+            <AppTextarea
               label='Remarks'
-              multiline
               minRows={3}
               value={statusRemarks}
-              onChange={(event: React.ChangeEvent<HTMLInputElement>) =>
-                setStatusRemarks(event.target.value)
-              }
+              onChange={e => setStatusRemarks(e.target.value)}
               placeholder='Optional remarks (e.g. payment method)'
             />
           </Stack>
@@ -1567,6 +1571,13 @@ const PayrollRecords: React.FC = () => {
           )}
         </Stack>
       </AppFormModal>
+      <ErrorSnackbar
+        open={snackbar.open}
+        message={snackbar.message}
+        severity={snackbar.severity}
+        onClose={closeSnackbar}
+        anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
+      />
     </Box>
   );
 };

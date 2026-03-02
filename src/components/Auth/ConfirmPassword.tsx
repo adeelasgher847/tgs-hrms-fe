@@ -60,7 +60,7 @@ const PasswordReset: React.FC = () => {
     }
 
     if (password !== confirmPassword) {
-      setError('Passwords do not match');
+      setError('Password do not match');
       return;
     }
 

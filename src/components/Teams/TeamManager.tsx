@@ -27,7 +27,8 @@ import type {
   TeamMember,
   AllTenantsTeamsResponse,
 } from '../../api/teamApi';
-import { snackbar } from '../../utils/snackbar';
+import { useErrorHandler } from '../../hooks/useErrorHandler';
+import ErrorSnackbar from '../common/ErrorSnackbar';
 import TeamList from './TeamList';
 import MyTeams from './MyTeams';
 import SystemAdminTenantTeams from './SystemAdminTenantTeams';
@@ -66,6 +67,7 @@ const TeamManager: React.FC<TeamManagerProps> = ({
 }) => {
   const { darkMode: outletDarkMode } = useOutletContext<AppOutletContext>();
   const darkMode = outletDarkMode ?? darkModeProp;
+  const { snackbar, showSuccess, closeSnackbar } = useErrorHandler();
 
   const [tabValue, setTabValue] = useState(0);
   const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
@@ -509,6 +511,13 @@ const TeamManager: React.FC<TeamManagerProps> = ({
           darkMode={darkMode}
         />
       )}
+      <ErrorSnackbar
+        open={snackbar.open}
+        message={snackbar.message}
+        severity={snackbar.severity}
+        onClose={closeSnackbar}
+        anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
+      />
     </Box>
   );
 };

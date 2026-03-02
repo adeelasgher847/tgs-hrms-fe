@@ -34,13 +34,22 @@ class BenefitsApiService {
     return response.data;
   }
 
-  async getBenefits(page: number | null = 1): Promise<BenefitResponse[]> {
-    const params: Record<string, unknown> = {};
-    // Only add page parameter if it's not null (for dropdowns, pass null to get all records)
-    if (page !== null) {
-      params.page = page;
-    }
-    const response = await axiosInstance.get(this.baseUrl, { params });
+  async getBenefits(params?: {
+    page?: number;
+    type?: string;
+    status?: string;
+  }): Promise<
+    | BenefitResponse[]
+    | { items: BenefitResponse[]; total?: number; totalPages?: number }
+  > {
+    const query: Record<string, string | number> = {};
+    if (params?.page != null) query.page = String(params.page);
+    if (params?.type && params.type.trim() !== '') query.type = params.type;
+    if (params?.status && params.status.trim() !== '')
+      query.status = params.status;
+    const response = await axiosInstance.get(this.baseUrl, {
+      params: Object.keys(query).length ? query : { page: '1' },
+    });
     return response.data;
   }
 
@@ -64,6 +73,21 @@ class BenefitsApiService {
 
   async getBenefitSummary(): Promise<BenefitSummaryResponse> {
     const response = await axiosInstance.get('/employee-benefits/summary');
+    return response.data;
+  }
+
+  /** Export benefits (CSV). Admin side. */
+  async exportBenefits(params?: {
+    type?: string;
+    status?: string;
+  }): Promise<Blob> {
+    const query: Record<string, string> = {};
+    if (params?.type?.trim()) query.type = params.type.trim();
+    if (params?.status?.trim()) query.status = params.status.trim();
+    const response = await axiosInstance.get(`${this.baseUrl}/export`, {
+      params: query,
+      responseType: 'blob',
+    });
     return response.data;
   }
 }

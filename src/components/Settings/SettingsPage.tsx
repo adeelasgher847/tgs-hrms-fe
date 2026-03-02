@@ -20,12 +20,15 @@ import AppCard from '../common/AppCard';
 import AppFormModal from '../common/AppFormModal';
 import AppInputField from '../common/AppInputField';
 import AppPageTitle from '../common/AppPageTitle';
+import ErrorSnackbar from '../common/ErrorSnackbar';
 import { Icons } from '../../assets/icons';
+import { useErrorHandler } from '../../hooks/useErrorHandler';
 
 const SettingsPage: React.FC = () => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const darkMode = useIsDarkMode();
+  const { snackbar, showSuccess, showError, closeSnackbar } = useErrorHandler();
   const { user } = useUser();
   const {
     companyDetails: contextCompanyDetails,
@@ -108,12 +111,13 @@ const SettingsPage: React.FC = () => {
 
       await refreshCompanyDetails();
 
+      showSuccess('Company details updated successfully.');
       setIsEditing(false);
       setCompanyModalOpen(false);
       setSelectedLogoFile(null); // clear after saving
       setError(null);
-    } catch {
-      setError('Failed to update company details');
+    } catch (err) {
+      showError(err);
     } finally {
       setEditLoading(false);
     }
@@ -122,6 +126,8 @@ const SettingsPage: React.FC = () => {
     selectedLogoFile,
     contextCompanyDetails,
     refreshCompanyDetails,
+    showSuccess,
+    showError,
   ]);
 
   const handleLogoUpload = useCallback(
@@ -582,6 +588,13 @@ const SettingsPage: React.FC = () => {
           </Typography>
         )}
       </AppFormModal>
+
+      <ErrorSnackbar
+        open={snackbar.open}
+        message={snackbar.message}
+        severity={snackbar.severity}
+        onClose={closeSnackbar}
+      />
     </Box>
   );
 };
