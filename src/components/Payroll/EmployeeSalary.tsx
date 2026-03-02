@@ -14,6 +14,7 @@ import {
   Alert,
   Stack,
   Pagination,
+  Tooltip,
 } from '@mui/material';
 import type { SelectChangeEvent } from '@mui/material/Select';
 import { useTheme } from '@mui/material/styles';
@@ -31,7 +32,8 @@ import {
 } from '../../api/payrollApi';
 import { getCurrentUser, getUserRole } from '../../utils/auth';
 import { normalizeRole } from '../../utils/permissions';
-import { snackbar } from '../../utils/snackbar';
+import { useErrorHandler } from '../../hooks/useErrorHandler';
+import ErrorSnackbar from '../common/ErrorSnackbar';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
@@ -44,6 +46,7 @@ import AppFormModal from '../common/AppFormModal';
 import AppPageTitle from '../common/AppPageTitle';
 import AppButton from '../common/AppButton';
 import AppInputField from '../common/AppInputField';
+import AppTextarea from '../common/AppTextarea';
 
 const monthOptions = [
   { label: 'January', value: 1 },
@@ -89,6 +92,7 @@ const EmployeeSalaryPage: React.FC = () => {
   const darkMode = useIsDarkMode();
   const currentUser = getCurrentUser();
   const role = normalizeRole(getUserRole());
+  const { snackbar, showSuccess, showError, closeSnackbar } = useErrorHandler();
 
   const [loading, setLoading] = useState(false);
   const [employees, setEmployees] = useState<EmployeeSalaryListItem[]>([]);
@@ -173,7 +177,7 @@ const EmployeeSalaryPage: React.FC = () => {
       setTotalPages(response.totalPages || 1);
       setTotalRecords(response.total || 0);
     } catch {
-      snackbar.error('Failed to load employee salaries');
+      showError(new Error('Failed to load employee salaries'));
     } finally {
       setLoading(false);
     }
@@ -197,7 +201,7 @@ const EmployeeSalaryPage: React.FC = () => {
         'response' in error &&
         (error as { response?: { status?: number } }).response?.status !== 404
       ) {
-        snackbar.error('Failed to load salary information');
+        showError(new Error('Failed to load salary information'));
       }
     } finally {
       setMySalaryLoading(false);
@@ -453,20 +457,20 @@ const EmployeeSalaryPage: React.FC = () => {
       }
       setEditModalOpen(true);
     } catch {
-      snackbar.error('Failed to load salary information');
+      showError(new Error('Failed to load salary information'));
     }
   };
 
   const handleSaveSalary = async () => {
     try {
       if (!selectedEmployeeId && !currentEmployeeId) {
-        snackbar.error('Please select an employee');
+        showError(new Error('Please select an employee'));
         return;
       }
 
       const employeeId = selectedEmployeeId || currentEmployeeId;
       if (!employeeId) {
-        snackbar.error('Employee ID is required');
+        showError(new Error('Employee ID is required'));
         return;
       }
 
@@ -507,7 +511,7 @@ const EmployeeSalaryPage: React.FC = () => {
         const p = Number(a.percentage || 0);
         const ppercent = Math.abs(p) <= 1 ? p * 100 : p;
         if (ppercent > 100) {
-          snackbar.error(`Allowance "${a.type}" percentage cannot exceed 100%`);
+          showError(new Error(`Allowance "${a.type}" percentage cannot exceed 100%`));
           return;
         }
       }
@@ -515,7 +519,7 @@ const EmployeeSalaryPage: React.FC = () => {
         const p = Number(d.percentage || 0);
         const ppercent = Math.abs(p) <= 1 ? p * 100 : p;
         if (ppercent > 100) {
-          snackbar.error(`Deduction "${d.type}" percentage cannot exceed 100%`);
+          showError(new Error(`Deduction "${d.type}" percentage cannot exceed 100%`));
           return;
         }
       }
@@ -551,13 +555,13 @@ const EmployeeSalaryPage: React.FC = () => {
 
       if (selectedSalary) {
         await payrollApi.updateEmployeeSalary(employeeId, salaryData);
-        snackbar.success('Salary structure updated successfully');
+        showSuccess('Salary structure updated successfully');
       } else {
         await payrollApi.createEmployeeSalary({
           employee_id: employeeId,
           ...salaryData,
         });
-        snackbar.success('Salary structure created successfully');
+        showSuccess('Salary structure created successfully');
       }
 
       setEditModalOpen(false);
@@ -569,7 +573,7 @@ const EmployeeSalaryPage: React.FC = () => {
         loadMySalary();
       }
     } catch {
-      snackbar.error('Failed to save salary structure');
+      showError(new Error('Failed to save salary structure'));
     }
   };
 
@@ -1319,25 +1323,29 @@ const EmployeeSalaryPage: React.FC = () => {
                     <Stack direction='row' spacing={1}>
                       {item.salary ? (
                         <>
-                          <IconButton
-                            size='small'
-                            onClick={() => handleViewSalary(item)}
-                            sx={{ color: theme.palette.text.primary }}
-                          >
-                            <IoEyeOutline size={20} />
-                          </IconButton>
-                          <IconButton
-                            size='small'
-                            onClick={() => handleEditSalary(item)}
-                            sx={{ color: theme.palette.primary.main }}
-                          >
-                            <Box
-                              component='img'
-                              src={Icons.edit}
-                              alt='Edit'
-                              sx={{ width: 20, height: 20 }}
-                            />
-                          </IconButton>
+                          <Tooltip title='View'>
+                            <IconButton
+                              size='small'
+                              onClick={() => handleViewSalary(item)}
+                              sx={{ color: theme.palette.text.primary }}
+                            >
+                              <IoEyeOutline size={20} />
+                            </IconButton>
+                          </Tooltip>
+                          <Tooltip title='Edit'>
+                            <IconButton
+                              size='small'
+                              onClick={() => handleEditSalary(item)}
+                              sx={{ color: theme.palette.primary.main }}
+                            >
+                              <Box
+                                component='img'
+                                src={Icons.edit}
+                                alt='Edit'
+                                sx={{ width: 20, height: 20 }}
+                              />
+                            </IconButton>
+                          </Tooltip>
                         </>
                       ) : (
                         <AppButton
@@ -1368,7 +1376,7 @@ const EmployeeSalaryPage: React.FC = () => {
                               setNotes('');
                               setEditModalOpen(true);
                             } catch {
-                              snackbar.error('Failed to load salary defaults');
+                              showError(new Error('Failed to load salary defaults'));
                             }
                           }}
                         >
@@ -1919,7 +1927,7 @@ const EmployeeSalaryPage: React.FC = () => {
                         setNotes('');
                       }
                     } catch {
-                      snackbar.error('Failed to load salary information');
+                      showError(new Error('Failed to load salary information'));
                     }
                   }
                 }}
@@ -2088,16 +2096,13 @@ const EmployeeSalaryPage: React.FC = () => {
                       <CloseIcon />
                     </IconButton>
                   </Box>
-                  <AppInputField
-                    fullWidth
+                  <AppTextarea
                     label='Description'
                     value={allowance.description || ''}
-                    onChange={val =>
-                      handleUpdateAllowance(index, 'description', val)
+                    onChange={e =>
+                      handleUpdateAllowance(index, 'description', e.target.value)
                     }
-                    multiline
                     rows={2}
-                    darkMode={darkMode}
                   />
                 </Paper>
               ))}
@@ -2193,16 +2198,13 @@ const EmployeeSalaryPage: React.FC = () => {
                       <CloseIcon />
                     </IconButton>
                   </Box>
-                  <AppInputField
-                    fullWidth
+                  <AppTextarea
                     label='Description'
                     value={deduction.description || ''}
-                    onChange={val =>
-                      handleUpdateDeduction(index, 'description', val)
+                    onChange={e =>
+                      handleUpdateDeduction(index, 'description', e.target.value)
                     }
-                    multiline
                     rows={2}
-                    darkMode={darkMode}
                   />
                 </Paper>
               ))}
@@ -2289,17 +2291,22 @@ const EmployeeSalaryPage: React.FC = () => {
             />
 
             {/* Notes */}
-            <AppInputField
+            <AppTextarea
               label='Notes (Optional)'
               value={notes}
-              onChange={val => setNotes(val)}
-              multiline
+              onChange={e => setNotes(e.target.value)}
               rows={3}
-              darkMode={darkMode}
             />
           </Box>
         </Box>
       </AppFormModal>
+      <ErrorSnackbar
+        open={snackbar.open}
+        message={snackbar.message}
+        severity={snackbar.severity}
+        onClose={closeSnackbar}
+        anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
+      />
     </Box>
   );
 };

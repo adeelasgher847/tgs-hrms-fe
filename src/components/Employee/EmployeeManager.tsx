@@ -197,6 +197,13 @@ const EmployeeManager: React.FC = () => {
   const borderColor = darkMode ? '#333' : '#ddd';
   // Match Designation page dropdown background (AppDropdown default)
   const controlBg = theme.palette.background.paper;
+  
+  const designationsForSelectedDepartment = useMemo(() => {
+    if (!departmentFilter || departmentFilter === 'all') return [];
+    return designationList.filter(
+      des => des.departmentId === departmentFilter
+    );
+  }, [departmentFilter, designationList]);
 
   const loadDepartmentsAndDesignations = useCallback(async () => {
     try {
@@ -958,7 +965,9 @@ const EmployeeManager: React.FC = () => {
     );
 
   const token = localStorage.getItem('token');
-  const filters = { page: '1' };
+  const filters: Record<string, string> = {};
+  if (departmentFilter && departmentFilter !== 'all') filters.department_id = departmentFilter;
+  if (designationFilter && designationFilter !== 'all') filters.designation_id = designationFilter;
 
   // Build absolute media URL from backend path
   const API_BASE_URL = env.apiBaseUrl;
@@ -1034,11 +1043,15 @@ const EmployeeManager: React.FC = () => {
             }}
           />
 
-          {/* Designation Filter */}
+          {/* Designation Filter - options based on selected department */}
           <AppDropdown
             label={getLabel('Designation', 'المسمى الوظيفي')}
             showLabel={false}
-            placeholder={getLabel('All Designations', 'كل المسميات')}
+            placeholder={
+              departmentFilter && departmentFilter !== 'all'
+                ? getLabel('All Designations', 'كل المسميات')
+                : getLabel('Select department first', 'اختر القسم أولاً')
+            }
             inputBackgroundColor={controlBg}
             value={designationFilter === '' ? 'all' : designationFilter}
             onChange={e => setDesignationFilter(String(e.target.value))}
@@ -1047,11 +1060,12 @@ const EmployeeManager: React.FC = () => {
                 value: 'all',
                 label: getLabel('All Designations', 'كل المسميات'),
               },
-              ...designationList.map(des => ({
+              ...designationsForSelectedDepartment.map(des => ({
                 value: des.id,
                 label: des.title,
               })),
             ]}
+            disabled={!departmentFilter || departmentFilter === 'all'}
             containerSx={{
               width: isMobile ? '100%' : isTablet ? '22%' : 190,
               my: 0.5,

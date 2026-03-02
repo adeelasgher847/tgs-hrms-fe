@@ -2,7 +2,6 @@ import { useEffect, useState } from 'react';
 import {
   Box,
   Typography,
-  Alert,
   CircularProgress,
   LinearProgress,
   Card,
@@ -51,13 +50,20 @@ function FitGeofence({ geofence }: { geofence: Geofence }) {
   useEffect(() => {
     if (!geofence) return;
 
-    if (geofence.type === 'circle' && geofence.radius) {
+    if (geofence.type === 'circle' && geofence.radius && geofence.center) {
+      const [lat, lon] = geofence.center;
+      if (!Number.isFinite(lat) || !Number.isFinite(lon)) return;
       const threshold = geofence.threshold_enabled
         ? Number(geofence.threshold_distance)
         : 0;
-      const bounds = L.circle(geofence.center, {
-        radius: geofence.radius + threshold,
-      }).getBounds();
+      const r = geofence.radius + threshold;
+      // Compute bounds from center + radius (L.circle().getBounds() fails when circle is not on map)
+      const latDelta = r / 111320;
+      const lonDelta = r / (111320 * Math.cos((lat * Math.PI) / 180));
+      const bounds = L.latLngBounds(
+        [lat - latDelta, lon - lonDelta],
+        [lat + latDelta, lon + lonDelta]
+      );
       map.fitBounds(bounds, { padding: [40, 40] });
     }
 
@@ -133,19 +139,25 @@ const EmployeeGeofenceStatus = () => {
     let positionBuffer: GeolocationPosition[] = [];
     const bufferSize = 3;
     let updateTimeout: NodeJS.Timeout | null = null;
+    let retryIntervalId: ReturnType<typeof setInterval> | null = null;
+    let cancelled = false;
+
+    const clearRetry = () => {
+      if (retryIntervalId !== null) {
+        clearInterval(retryIntervalId);
+        retryIntervalId = null;
+      }
+    };
 
     (async () => {
       try {
         const list = await geofencingApi.getGeofences();
+        if (cancelled) return;
 
-        // Use user's team ID if available to find the correct geofence
         const userStr = localStorage.getItem('user');
         const userObj = userStr ? JSON.parse(userStr) : null;
         const userTeamId = userObj?.team_id || userObj?.teamId;
 
-        console.log('User team ID for geofencing:', userTeamId);
-
-        // Find active geofence for the user's team, or fallback to any active one if no team assigned
         const active = userTeamId
           ? list.find(g => g.isActive && g.teamId === userTeamId)
           : list.find(g => g.isActive);
@@ -181,6 +193,14 @@ const EmployeeGeofenceStatus = () => {
           setIsInside(inside);
         };
 
+        const applyPosition = (lat: number, lon: number) => {
+          const current: LatLngTuple = [lat, lon];
+          setPosition(current);
+          updateDistance(current);
+          setLoading(false);
+          clearRetry();
+        };
+
         const processPosition = () => {
           if (positionBuffer.length === 0) return;
 
@@ -191,30 +211,37 @@ const EmployeeGeofenceStatus = () => {
             positionBuffer.reduce((sum, p) => sum + p.coords.longitude, 0) /
             positionBuffer.length;
 
-          const current: LatLngTuple = [avgLat, avgLon];
-          setPosition(current);
-          updateDistance(current);
-          setLoading(false);
+          applyPosition(avgLat, avgLon);
           positionBuffer = [];
+        };
+
+        const tryGetPosition = () => {
+          if (!('geolocation' in navigator) || cancelled) return;
+          navigator.geolocation.getCurrentPosition(
+            pos => {
+              if (cancelled) return;
+              applyPosition(pos.coords.latitude, pos.coords.longitude);
+            },
+            () => {},
+            { enableHighAccuracy: true, timeout: 8000, maximumAge: 5000 }
+          );
         };
 
         watchId = navigator.geolocation.watchPosition(
           pos => {
+            if (cancelled) return;
             positionBuffer.push(pos);
             if (positionBuffer.length > bufferSize) {
               positionBuffer.shift();
             }
-
-            if (updateTimeout) {
-              clearTimeout(updateTimeout);
-            }
+            if (updateTimeout) clearTimeout(updateTimeout);
             updateTimeout = setTimeout(processPosition, 2000);
           },
-          (err: unknown) => {
-            console.warn('Geolocation watch error:', err);
-            const errorResult = extractErrorMessage(err);
-            setError(errorResult.message);
-            setLoading(false);
+          () => {
+            if (cancelled) return;
+            clearRetry();
+            retryIntervalId = setInterval(tryGetPosition, 3000);
+            tryGetPosition();
           },
           {
             enableHighAccuracy: true,
@@ -222,20 +249,25 @@ const EmployeeGeofenceStatus = () => {
             maximumAge: 10000,
           }
         );
+
+        tryGetPosition();
+        retryIntervalId = setInterval(tryGetPosition, 3000);
       } catch (err) {
-        const errorResult = extractErrorMessage(err);
-        setError(errorResult.message);
-        setLoading(false);
+        if (!cancelled) {
+          const errorResult = extractErrorMessage(err);
+          setError(errorResult.message);
+          setLoading(false);
+        }
       }
     })();
 
     return () => {
+      cancelled = true;
       if (watchId !== null) {
         navigator.geolocation.clearWatch(watchId);
       }
-      if (updateTimeout) {
-        clearTimeout(updateTimeout);
-      }
+      if (updateTimeout) clearTimeout(updateTimeout);
+      clearRetry();
     };
   }, []);
 
@@ -268,20 +300,19 @@ const EmployeeGeofenceStatus = () => {
             : 'Live location tracking is active automatically'}
         </Typography>
 
-        {error && (
-          <Alert severity='warning' sx={{ mb: 2 }}>
-            {error}
-          </Alert>
-        )}
-
         {loading && (
           <Box
             display='flex'
+            flexDirection='column'
             justifyContent='center'
             alignItems='center'
             minHeight={300}
+            gap={2}
           >
-            <CircularProgress />
+            <CircularProgress size={48} />
+            <Typography variant='body2' color='text.secondary'>
+              Loading geofence and your location…
+            </Typography>
           </Box>
         )}
 

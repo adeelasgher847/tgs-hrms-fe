@@ -94,17 +94,28 @@ const BenefitReport: React.FC = () => {
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
 
-  // ------------------- Fetch Summary -------------------
   useEffect(() => {
     const fetchSummary = async () => {
       try {
-        const data = await benefitsApi.getBenefitSummary();
-        setSummary({
-          tenant_id: isSystemAdmin ? selectedTenant || 'all' : 'current',
-          totalActiveBenefits: data.totalActiveBenefits ?? 0,
-          mostCommonBenefitType: data.mostCommonBenefitType ?? '-',
-          totalEmployeesCovered: data.totalEmployeesCovered ?? 0,
-        });
+        if (isSystemAdmin) {
+          const data = await employeeBenefitApi.getSystemAdminBenefitSummary(
+            selectedTenant || undefined
+          );
+          setSummary({
+            tenant_id: data.tenant_id ?? selectedTenant ?? 'all',
+            totalActiveBenefits: data.totalActiveBenefits ?? 0,
+            mostCommonBenefitType: data.mostCommonBenefitType ?? '-',
+            totalEmployeesCovered: data.totalEmployeesCovered ?? 0,
+          });
+        } else {
+          const data = await benefitsApi.getBenefitSummary();
+          setSummary({
+            tenant_id: 'current',
+            totalActiveBenefits: data.totalActiveBenefits ?? 0,
+            mostCommonBenefitType: data.mostCommonBenefitType ?? '-',
+            totalEmployeesCovered: data.totalEmployeesCovered ?? 0,
+          });
+        }
       } catch (error) {
         console.error('Error fetching summary data:', error);
       }
@@ -119,8 +130,7 @@ const BenefitReport: React.FC = () => {
       try {
         const data = await systemEmployeeApiService.getAllTenants(true);
         setTenants(data || []);
-        if ((data || []).length > 0)
-          setSelectedTenant(prev => prev || data[0].id);
+        // Keep initial selection as "All" (''); do not auto-select first tenant
       } catch (error) {
         console.error('Error fetching tenants:', error);
         setTenants([]);
@@ -129,34 +139,93 @@ const BenefitReport: React.FC = () => {
     fetchTenants();
   }, [isSystemAdmin]);
 
+  // When tenant changes, clear department and designation filters (system admin)
+  useEffect(() => {
+    if (isSystemAdmin) {
+      setSelectedDepartment('');
+      setSelectedDesignation('');
+    }
+  }, [isSystemAdmin, selectedTenant]);
+
   // ------------------- Fetch Departments -------------------
   useEffect(() => {
+    if (isSystemAdmin && !selectedTenant) {
+      setDepartments([]);
+      return;
+    }
     const fetchDepartments = async () => {
       try {
-        const data = await departmentApiService.getAllDepartments();
-        setDepartments(data || []);
+        if (isSystemAdmin) {
+          const res = await departmentApiService.getAllTenantsWithDepartments(
+            selectedTenant || undefined
+          );
+          const list = res?.tenants ?? [];
+          const tenantEntry = selectedTenant
+            ? list.find(t => t.tenant_id === selectedTenant)
+            : list[0];
+          const depts = tenantEntry?.departments ?? [];
+          setDepartments(
+            depts.map((d: { id: string; name: string }) => ({ id: d.id, name: d.name }))
+          );
+        } else {
+          const data = await departmentApiService.getAllDepartments();
+          setDepartments(data || []);
+        }
       } catch (error) {
         console.error('Error fetching departments:', error);
         setDepartments([]);
       }
     };
     fetchDepartments();
-  }, []);
+  }, [isSystemAdmin, selectedTenant]);
 
   // ------------------- Fetch Designations -------------------
   useEffect(() => {
+    if (isSystemAdmin && !selectedTenant) {
+      setDesignations([]);
+      return;
+    }
     const fetchDesignations = async () => {
       try {
-        if (selectedDepartment) {
-          const response =
-            await designationApiService.getDesignationsByDepartment(
-              selectedDepartment,
-              null
+        if (isSystemAdmin) {
+          const res =
+            await designationApiService.getAllTenantsWithDesignations(
+              selectedTenant || undefined
             );
-          setDesignations(response.items || []);
+          const list = res?.tenants ?? [];
+          const tenantEntry = selectedTenant
+            ? list.find(t => t.tenant_id === selectedTenant)
+            : list[0];
+          const deptList = tenantEntry?.departments ?? [];
+          let items: Designation[] = [];
+          for (const dept of deptList) {
+            const designations = dept.designations ?? [];
+            for (const des of designations) {
+              items.push({ id: des.id, title: des.title });
+            }
+          }
+          if (selectedDepartment) {
+            const deptMatch = deptList.find(
+              (d: { department_id: string }) => d.department_id === selectedDepartment
+            );
+            const fromDept = (deptMatch?.designations ?? []).map(
+              (des: { id: string; title: string }) => ({ id: des.id, title: des.title })
+            );
+            if (fromDept.length > 0) items = fromDept;
+          }
+          setDesignations(items);
         } else {
-          const all = await designationApiService.getAllDesignations();
-          setDesignations(all || []);
+          if (selectedDepartment) {
+            const response =
+              await designationApiService.getDesignationsByDepartment(
+                selectedDepartment,
+                null
+              );
+            setDesignations(response.items || []);
+          } else {
+            const all = await designationApiService.getAllDesignations();
+            setDesignations(all || []);
+          }
         }
       } catch (error) {
         console.error('Error fetching designations:', error);
@@ -164,7 +233,7 @@ const BenefitReport: React.FC = () => {
       }
     };
     fetchDesignations();
-  }, [selectedDepartment]);
+  }, [isSystemAdmin, selectedTenant, selectedDepartment]);
 
   // ------------------- Fetch Employee Benefits -------------------
   useEffect(() => {
@@ -184,6 +253,8 @@ const BenefitReport: React.FC = () => {
               tenant_id: selectedTenant || undefined,
               page,
               limit: ITEMS_PER_PAGE,
+              department_id: selectedDepartment || undefined,
+              designation_id: selectedDesignation || undefined,
             });
 
           const tenants: TenantEmployeeWithBenefits[] =
@@ -274,15 +345,38 @@ const BenefitReport: React.FC = () => {
   );
 
   // ------------------- CSV Export -------------------
+  const [exportLoading, setExportLoading] = useState(false);
   const csvEscape = (value: unknown) =>
     value == null ? '' : `"${String(value).replace(/"/g, '""')}"`;
-  const handleDownload = () => {
+  const handleDownload = async () => {
+    if (isSystemAdmin) {
+      setExportLoading(true);
+      try {
+        const blob = await employeeBenefitApi.exportAllTenantsEmployeeBenefits({
+          tenant_id: selectedTenant || undefined,
+          department_id: selectedDepartment || undefined,
+          designation_id: selectedDesignation || undefined,
+        });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.setAttribute('download', 'BenefitReport_AllTenants.csv');
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      } catch {
+        alert('Export failed. Please try again.');
+      } finally {
+        setExportLoading(false);
+      }
+      return;
+    }
     if (!filteredData.length) {
       alert('No data to download.');
       return;
     }
     const csvHeader = [
-      ...(isSystemAdmin ? ['Tenant'] : []),
       'Department',
       'Designation',
       'Employee Name',
@@ -291,9 +385,6 @@ const BenefitReport: React.FC = () => {
     ];
     const rows = filteredData.map(row =>
       [
-        ...(isSystemAdmin
-          ? [csvEscape(row.tenantName ?? row.tenantId ?? '')]
-          : []),
         csvEscape(row.department),
         csvEscape(row.designation),
         csvEscape(row.employeeName),
@@ -312,13 +403,6 @@ const BenefitReport: React.FC = () => {
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
   };
-
-  if (tableLoading)
-    return (
-      <Box display='flex' justifyContent='center' mt={4}>
-        <CircularProgress />
-      </Box>
-    );
 
   // ------------------- Render -------------------
   return (
@@ -426,6 +510,7 @@ const BenefitReport: React.FC = () => {
               setSelectedDepartment(e.target.value as string);
               setPage(1);
             }}
+            disabled={isSystemAdmin && !selectedTenant}
             containerSx={{ width: { xs: '100%', sm: 220 }, maxWidth: 420 }}
             sx={{ width: '100%' }}
             size='small'
@@ -435,14 +520,14 @@ const BenefitReport: React.FC = () => {
             label='Designation'
             options={[
               { value: '', label: 'All' },
-              ...designations.map(d => ({ value: d.title, label: d.title })),
+              ...designations.map(d => ({ value: d.id, label: d.title })),
             ]}
             value={selectedDesignation}
             onChange={e => {
               setSelectedDesignation(e.target.value as string);
               setPage(1);
             }}
-            disabled={!designations.length}
+            disabled={!designations.length || (isSystemAdmin && !selectedTenant)}
             containerSx={{ width: { xs: '100%', sm: 220 }, maxWidth: 420 }}
             sx={{ width: '100%' }}
             size='small'
@@ -458,6 +543,7 @@ const BenefitReport: React.FC = () => {
               variant='contained'
               variantType='primary'
               onClick={handleDownload}
+              disabled={exportLoading}
               sx={{
                 borderRadius: '6px',
                 minWidth: 0,
@@ -466,14 +552,20 @@ const BenefitReport: React.FC = () => {
               }}
               aria-label='Download CSV'
             >
-              <FileDownloadIcon aria-hidden='true' />
+              {exportLoading ? (
+                <CircularProgress size={20} color='inherit' />
+              ) : (
+                <FileDownloadIcon aria-hidden='true' />
+              )}
             </AppButton>
           ) : (
             <Tooltip title='Download CSV'>
-              <IconButton
-                color='primary'
-                onClick={handleDownload}
-                sx={{
+              <span>
+                <IconButton
+                  color='primary'
+                  onClick={handleDownload}
+                  disabled={exportLoading}
+                  sx={{
                   backgroundColor: 'primary.main',
                   color: 'white',
                   borderRadius: '6px',
@@ -481,8 +573,13 @@ const BenefitReport: React.FC = () => {
                   '&:hover': { backgroundColor: 'primary.dark' },
                 }}
               >
-                <FileDownloadIcon />
+                {exportLoading ? (
+                  <CircularProgress size={20} color='inherit' />
+                ) : (
+                  <FileDownloadIcon />
+                )}
               </IconButton>
+              </span>
             </Tooltip>
           )}
         </Box>
@@ -503,7 +600,13 @@ const BenefitReport: React.FC = () => {
           </TableRow>
         </TableHead>
         <TableBody>
-          {paginatedData.length === 0 ? (
+          {tableLoading ? (
+            <TableRow>
+              <TableCell colSpan={isSystemAdmin ? 6 : 5} align='center'>
+                <CircularProgress sx={{ color: 'var(--primary-dark-color)' }} />
+              </TableCell>
+            </TableRow>
+          ) : paginatedData.length === 0 ? (
             <TableRow>
               <TableCell colSpan={isSystemAdmin ? 6 : 5} align='center'>
                 No data available
@@ -540,12 +643,7 @@ const BenefitReport: React.FC = () => {
 
       <Box textAlign='center' mb={2}>
         <Typography variant='body2' color='text.secondary'>
-          Showing{' '}
-          {filteredData.length === 0
-            ? 0
-            : Math.min((page - 1) * ITEMS_PER_PAGE + 1, filteredData.length)}
-          –{Math.min(page * ITEMS_PER_PAGE, filteredData.length)} of{' '}
-          {filteredData.length} records
+          Showing page {page} of {totalPages} ({paginatedData.length} records)
         </Typography>
       </Box>
     </Box>

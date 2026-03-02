@@ -218,6 +218,10 @@ const AppDropdown = React.forwardRef<HTMLDivElement, AppDropdownProps>(
                 !selected ||
                 (Array.isArray(selected) && selected.length === 0)
               ) {
+                const emptyOption = options.find(
+                  opt => opt.value === selected || opt.value === ''
+                );
+                if (emptyOption) return emptyOption.label;
                 const allOption = options.find(opt => opt.value === 'all');
                 return allOption ? allOption.label : placeholder || '';
               }

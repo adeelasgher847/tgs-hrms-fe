@@ -389,6 +389,7 @@ export default function DesignationManager() {
       options: departmentOptions,
       value: departmentId,
       error: errors.departmentId,
+      disabled: !!editingDesignation,
       onChange: value => {
         setDepartmentId(value as string);
         if (errors.departmentId)
@@ -474,7 +475,7 @@ export default function DesignationManager() {
         setDesignations(prev =>
           prev.filter(d => d.id !== designationToDelete.id)
         );
-        showSuccess('Designation deleted successfully');
+        showError(new Error('Designation deleted successfully'));
       } catch (error: unknown) {
         showError(error, { operation: 'delete', resource: 'designation' });
       }
@@ -992,13 +993,12 @@ export default function DesignationManager() {
         ) : null;
       })()}
 
-      {(isServerSidePagination ? totalRecords : filteredDesignations.length) >
-        0 && (
+      {paginatedData.length > 0 && (
         <Box display='flex' justifyContent='center' mt={1}>
           <Typography variant='body2' color='textSecondary'>
             {getText(
-              `Showing page ${currentPage} of ${isServerSidePagination ? Math.ceil(totalRecords / itemsPerPage) : Math.ceil(filteredDesignations.length / itemsPerPage)} (${isServerSidePagination ? totalRecords : filteredDesignations.length} total records)`,
-              `عرض الصفحة ${currentPage} من ${isServerSidePagination ? Math.ceil(totalRecords / itemsPerPage) : Math.ceil(filteredDesignations.length / itemsPerPage)} (${isServerSidePagination ? totalRecords : filteredDesignations.length} سجل إجمالي)`
+              `Showing page ${currentPage} of ${isServerSidePagination ? Math.ceil(totalRecords / itemsPerPage) : Math.ceil(filteredDesignations.length / itemsPerPage)} (${paginatedData.length} records)`,
+              `عرض الصفحة ${currentPage} من ${isServerSidePagination ? Math.ceil(totalRecords / itemsPerPage) : Math.ceil(filteredDesignations.length / itemsPerPage)} (${paginatedData.length} سجل)`
             )}
           </Typography>
         </Box>

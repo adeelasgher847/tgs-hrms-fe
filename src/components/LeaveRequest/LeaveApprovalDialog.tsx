@@ -5,9 +5,9 @@ import {
   DialogContent,
   DialogActions,
   Typography,
-  TextField,
 } from '@mui/material';
 import AppButton from '../common/AppButton';
+import AppTextarea from '../common/AppTextarea';
 
 interface LeaveApprovalDialogProps {
   open: boolean;
@@ -49,14 +49,12 @@ const LeaveApprovalDialog = ({
           Are you sure you want to {actionLower} this leave request?
         </Typography>
         {showCommentField && (
-          <TextField
+          <AppTextarea
             label={action === 'rejected' ? 'Rejection Reason' : commentLabel}
             value={reason}
             onChange={e => setReason(e.target.value)}
-            fullWidth
-            multiline
             minRows={2}
-            sx={{ mt: 2 }}
+            containerSx={{ mt: 2 }}
             required={action === 'rejected'}
           />
         )}

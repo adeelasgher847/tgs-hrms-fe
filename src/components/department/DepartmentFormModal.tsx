@@ -17,6 +17,7 @@ import { Close as CloseIcon } from '@mui/icons-material';
 // useOutletContext removed (darkMode not used)
 import type { SxProps, Theme } from '@mui/material/styles';
 import AppButton from '../common/AppButton';
+import AppTextarea from '../common/AppTextarea';
 import type {
   Department,
   DepartmentFormData,
@@ -201,36 +202,23 @@ export const DepartmentFormModal: React.FC<DepartmentFormModalProps> = ({
       />
 
       {/* Description */}
-      <TextField
-        fullWidth
+      <AppTextarea
         label={isRtl ? 'الوصف (اختياري)' : 'Description (Optional)'}
+        name='description'
         value={formData.description || ''}
         onChange={handleInputChange('description')}
         error={!!errors.description}
-        helperText={errors.description}
-        multiline
+        helperText={
+          errors.description ??
+          `${(formData.description || '').length}/${VALIDATION_LIMITS.MAX_DESCRIPTION_LENGTH}`
+        }
         rows={3}
-        InputLabelProps={{
-          sx: { color: theme.palette.text.secondary },
-        }}
-        InputProps={{
-          sx: {
-            color: theme.palette.text.primary,
-          },
-        }}
-        sx={{
-          '& .MuiOutlinedInput-root': {
-            '& fieldset': {
-              borderColor: theme.palette.divider,
-            },
-            '&:hover fieldset': {
-              borderColor: theme.palette.divider,
-            },
-            '&.Mui-focused fieldset': {
-              borderColor: theme.palette.primary.main,
-            },
-          },
-        }}
+        inputProps={{ maxLength: VALIDATION_LIMITS.MAX_DESCRIPTION_LENGTH }}
+        inputBackgroundColor={
+          theme.palette.mode === 'dark'
+            ? theme.palette.background.default
+            : '#F8F8F8'
+        }
       />
 
       {Object.keys(errors).length > 0 && (

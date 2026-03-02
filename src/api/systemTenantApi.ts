@@ -1,6 +1,6 @@
 import axiosInstance from './axiosInstance';
 import type { AxiosResponse } from 'axios';
-// env not used here; remove unused import to satisfy linter
+import { env } from '../config/env';
 
 export interface SystemTenant {
   id: string;
@@ -117,8 +117,7 @@ export const SystemTenantApi = {
         await axiosInstance.get(`/system/tenants/${id}`);
 
       const detail = response.data;
-      const baseURL =
-        import.meta.env.VITE_API_BASE_URL || 'http://localhost:5173';
+      const baseURL = env.apiBaseUrl;
 
       const getFullLogoUrl = (
         logoPath: string | undefined | null

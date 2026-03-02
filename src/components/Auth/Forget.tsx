@@ -53,10 +53,27 @@ const Forget = () => {
     setEmailError('');
 
     try {
-      const response = await authApi.forgotPassword({ email });
+      const response = await authApi.forgotPassword({ email }) as {
+        message?: string;
+        errors?: unknown[];
+        statusCode?: number;
+      };
+
+      // API returns error body (e.g. 400 "In Valid email address") when email doesn't exist
+      const statusCode = response?.statusCode;
+      if (
+        response &&
+        (statusCode === 400 || statusCode === 404 || statusCode === 422)
+      ) {
+        setEmailError(
+          response.message ||
+            (lang === 'ar' ? 'البريد الإلكتروني غير صالح' : 'Invalid email address')
+        );
+        return;
+      }
 
       if (response && response.errors) {
-        setEmailError(response.message || 'Invalid email address');
+        setEmailError(response.message || (lang === 'ar' ? 'البريد الإلكتروني غير صالح' : 'Invalid email address'));
         return;
       }
 
@@ -76,13 +93,12 @@ const Forget = () => {
           apiError.response.status === 404 ||
           apiError.response.status === 422
         ) {
-          if (apiError.response.status === 404) {
-            setEmailError('Email address not found');
-          } else {
-            setEmailError(
-              apiError.response.data?.message || 'Invalid email address'
-            );
-          }
+          setEmailError(
+            apiError.response.data?.message ||
+              (lang === 'ar' ? 'البريد الإلكتروني غير صالح' : 'Invalid email address')
+          );
+        } else {
+          showError(apiError.response.data?.message || 'Something went wrong.');
         }
       } else {
         showError('Network error. Please check your connection and try again.');
@@ -320,7 +336,7 @@ const Forget = () => {
                       disabled={loading}
                       error={Boolean(emailError)}
                       helperText={emailError}
-                      placeholder='Waleed@xyz.com'
+                      placeholder={lang === 'ar' ? 'أدخل بريدك الإلكتروني' : 'Enter your email'}
                     />
                   </Box>
 

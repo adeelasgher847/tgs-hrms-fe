@@ -370,6 +370,7 @@ export const DepartmentList: React.FC = () => {
       label: isRtl ? 'الوصف (اختياري)' : 'Description (Optional)',
       type: 'textarea',
       placeholder: 'Description',
+      maxLength: VALIDATION_LIMITS.MAX_DESCRIPTION_LENGTH,
       value: formData.description || '',
       error: errors.description,
       onChange: value => {
@@ -388,7 +389,7 @@ export const DepartmentList: React.FC = () => {
       setDepartments(prev => prev.filter(d => d.id !== selectedDepartment.id));
       setSelectedDepartment(null);
       setIsDeleteModalOpen(false);
-      showSuccess('Department deleted successfully');
+      showError(new Error('Department deleted successfully'));
     } catch (error: unknown) {
       showError(error, { operation: 'delete', resource: 'department' });
     }

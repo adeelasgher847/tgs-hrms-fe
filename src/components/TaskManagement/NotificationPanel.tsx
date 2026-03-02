@@ -57,6 +57,7 @@ export default function NotificationPanel() {
 
   const open = Boolean(anchorEl);
   const id = open ? 'notification-popover' : undefined;
+  const unreadList = notifications.filter(n => !n.read);
 
   const handleNotificationClick = (notificationId: string) => {
     markAsRead(notificationId);
@@ -115,13 +116,11 @@ export default function NotificationPanel() {
             <Typography variant='h6' fontWeight={600}>
               Notifications
             </Typography>
-            {notifications.length > 0 && (
+            {unreadList.length > 0 && (
               <Box display='flex' gap={1}>
-                {unreadCount > 0 && (
-                  <Button size='small' onClick={markAllAsRead}>
-                    Mark all read
-                  </Button>
-                )}
+                <Button size='small' onClick={markAllAsRead}>
+                  Mark all read
+                </Button>
                 <Button
                   size='small'
                   color='error'
@@ -133,7 +132,7 @@ export default function NotificationPanel() {
             )}
           </Box>
 
-          {notifications.length === 0 ? (
+          {unreadList.length === 0 ? (
             <Box py={4} textAlign='center'>
               <Typography color='text.secondary'>
                 No notifications yet
@@ -141,7 +140,7 @@ export default function NotificationPanel() {
             </Box>
           ) : (
             <List sx={{ p: 0 }}>
-              {notifications.map((notification, index) => (
+              {unreadList.map((notification, index) => (
                 <React.Fragment key={notification.id}>
                   {index > 0 && <Divider />}
                   <ListItem

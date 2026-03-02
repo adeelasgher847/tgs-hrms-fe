@@ -51,6 +51,14 @@ export interface UpdateGeofencePayload {
 class GeofencingApiService {
   // Map backend geofence to frontend Geofence type
   private mapFromBackend(item: GeofenceResponse): Geofence {
+    const lat = Number(item.latitude);
+    const lng = Number(item.longitude);
+    const center: [number, number] = [
+      Number.isFinite(lat) ? lat : 0,
+      Number.isFinite(lng) ? lng : 0,
+    ];
+    const radiusVal =
+      item.radius !== null && item.radius !== undefined ? Number(item.radius) : undefined;
     return {
       id: item.id,
       tenantId: item.tenant_id,
@@ -58,8 +66,8 @@ class GeofencingApiService {
       name: item.name,
       description: item.description ?? '',
       type: (item.type as 'circle' | 'polygon' | 'rectangle') ?? 'circle',
-      center: [parseFloat(item.latitude), parseFloat(item.longitude)],
-      radius: item.radius !== null && item.radius !== undefined ? Number(item.radius) : undefined,
+      center,
+      radius: Number.isFinite(radiusVal) ? radiusVal : undefined,
       coordinates: item.coordinates ?? undefined,
       isActive: item.status === 'active',
       threshold_enabled: item.threshold_enabled ?? false,

@@ -18,18 +18,21 @@ import {
   Pagination,
   Button,
   Tooltip,
+  useTheme,
 } from '@mui/material';
 import {
   Add as AddIcon,
   Search as SearchIcon,
   Delete as DeleteIcon,
   CheckCircle as CheckCircleIcon,
+  ArrowBack as ArrowBackIcon,
 } from '@mui/icons-material';
 import AppTable from '../common/AppTable';
 import AppButton from '../common/AppButton';
 import Icon from '../common/Icon';
 import AppDropdown from '../common/AppDropdown';
 import AppFormModal from '../common/AppFormModal';
+import AppTextarea from '../common/AppTextarea';
 import { useForm, Controller } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import * as yup from 'yup';
@@ -589,44 +592,6 @@ const AssetRequests: React.FC = () => {
     [currentUserId, transformApiRequests, showError, viewMode]
   );
 
-  // Fetch comments for team requests
-  React.useEffect(() => {
-    const fetchCommentsForRequests = async () => {
-      if (viewMode !== 'team_requests' || requests.length === 0) return;
-
-      const commentsMap: Record<string, string> = {};
-
-      // We only need to fetch comments for pending requests or requests where we want to distinctively show them
-      // For optimization, we can fetch only for visible requests.
-      // However, iterating all requests on current page is fine.
-
-      const promises = requests.map(async (request) => {
-        try {
-          const response = await assetApi.getAssetRequestComments(request.id);
-          if (Array.isArray(response) && response.length > 0) {
-            // Assuming we want the latest comment or just the first one. 
-            // The API returns an array. Let's take the last one or simply the first found if multiple.
-            // Based on the user request "show in Manager Remarks that comments putt by manager", 
-            // we'll take the most recent one if multiple, or just the first one.
-            // Sorting by created_at descending just in case.
-            const sorted = response.sort((a: { created_at: string }, b: { created_at: string }) =>
-              new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
-            );
-            commentsMap[request.id] = sorted[0].comment;
-          }
-        } catch (error) {
-          // Ignore errors for individual comment fetches to not break the page
-          console.error(`Failed to fetch comments for request ${request.id}`, error);
-        }
-      });
-
-      await Promise.all(promises);
-      setRequestComments(prev => ({ ...prev, ...commentsMap }));
-    };
-
-    fetchCommentsForRequests();
-  }, [requests, viewMode]);
-
   // Re-transform requests when categories are loaded to update category names
   React.useEffect(() => {
     if (categories.length > 0 && rawApiRequests.length > 0) {
@@ -836,9 +801,11 @@ const AssetRequests: React.FC = () => {
       // Refresh the current page to update counts (not initial load)
       fetchRequests(pagination.page, pagination.limit, false);
 
-      // Show success snackbar
-      showSuccess(
-        `Asset request for "${requestToCancel.category.name}" has been deleted successfully`
+      // Show success in same red alert style as other deletes
+      showError(
+        new Error(
+          `Asset request for "${requestToCancel.category.name}" has been deleted successfully`
+        )
       );
 
       setIsCancelDialogOpen(false);
@@ -1042,8 +1009,23 @@ const AssetRequests: React.FC = () => {
     </TableRow>
   );
 
+  const theme = useTheme();
+
   return (
     <Box>
+      {/* Back arrow when on Team Asset Requests (manager only) - like Timesheet */}
+      {roleIsManager() && viewMode === 'team_requests' && (
+        <IconButton
+          sx={{ p: 0, mb: 2, color: theme.palette.text.primary }}
+          onClick={() => {
+            setViewMode('my_requests');
+            setPagination(prev => ({ ...prev, page: 1 }));
+          }}
+          aria-label='Back to my requests'
+        >
+          <ArrowBackIcon />
+        </IconButton>
+      )}
       <Box
         sx={{
           display: 'flex',
@@ -1062,7 +1044,12 @@ const AssetRequests: React.FC = () => {
           Asset Requests
         </Typography>
         <Box
-          sx={{ display: 'flex', gap: 1, width: { xs: '100%', sm: 'auto' } }}
+          sx={{
+            display: 'flex',
+            gap: 1,
+            width: { xs: '100%', sm: 'auto' },
+            flexWrap: 'wrap',
+          }}
         >
           {(!roleIsManager() || viewMode === 'my_requests') && (
             <AppButton
@@ -1078,40 +1065,22 @@ const AssetRequests: React.FC = () => {
               }}
             />
           )}
+          {roleIsManager() && (
+            <AppButton
+              variant={viewMode === 'team_requests' ? 'contained' : 'outlined'}
+              variantType='primary'
+              onClick={() => {
+                setViewMode('team_requests');
+                setPagination(prev => ({ ...prev, page: 1 }));
+              }}
+              text='Team Asset Requests'
+              sx={{
+                width: { xs: '100%', sm: 'auto' },
+              }}
+            />
+          )}
         </Box>
       </Box>
-
-      {/* View Mode Toggles for Manager */}
-      {roleIsManager() && (
-        <Box
-          sx={{
-            display: 'flex',
-            justifyContent: 'flex-end',
-            mb: 3,
-            gap: 1,
-            flexWrap: 'wrap',
-          }}
-        >
-          <AppButton
-            variant={viewMode === 'my_requests' ? 'contained' : 'outlined'}
-            variantType='primary'
-            onClick={() => {
-              setViewMode('my_requests');
-              setPagination(prev => ({ ...prev, page: 1 }));
-            }}
-            text='My Asset Requests'
-          />
-          <AppButton
-            variant={viewMode === 'team_requests' ? 'contained' : 'outlined'}
-            variantType='primary'
-            onClick={() => {
-              setViewMode('team_requests');
-              setPagination(prev => ({ ...prev, page: 1 }));
-            }}
-            text='Team Asset Requests'
-          />
-        </Box>
-      )}
 
       {/* Statistics Cards */}
       <Box sx={{ mb: 3, display: 'flex', gap: 1, flexWrap: 'wrap' }}>
@@ -1471,11 +1440,9 @@ const AssetRequests: React.FC = () => {
                 name='remarks'
                 control={control}
                 render={({ field }) => (
-                  <TextField
+                  <AppTextarea
                     {...field}
-                    fullWidth
                     label='Remarks (Optional)'
-                    multiline
                     rows={3}
                     placeholder='Please provide details about why you need this asset...'
                     disabled={loading}

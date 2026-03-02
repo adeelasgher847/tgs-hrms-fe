@@ -9,7 +9,6 @@ import {
   Link,
   Divider,
   Checkbox,
-  FormControlLabel,
   Select,
   MenuItem,
   FormControl,
@@ -28,6 +27,7 @@ import { persistAuthSession } from '../../utils/authSession';
 import type { UserProfile } from '../../api/profileApi';
 import AppInputField from '../common/AppInputField';
 import AuthSidebar from '../common/AuthSidebar';
+import { env } from '../../config/env';
 import { Icons } from '../../assets/icons';
 import { IoEyeOffOutline, IoEyeOutline } from 'react-icons/io5';
 import AppPageTitle from '../common/AppPageTitle';
@@ -155,9 +155,7 @@ const Login: React.FC = () => {
           return;
         }
         window.google.accounts.id.initialize({
-          client_id:
-            (import.meta.env.VITE_GOOGLE_CLIENT_ID as string) ||
-            '723870948758-ks4h9v6svagoptgt5vqj5hfbhacvcfn7.apps.googleusercontent.com',
+          client_id: env.googleClientId,
           callback: async (response: { credential: string }) => {
             try {
               const idToken = response.credential;
@@ -521,7 +519,7 @@ const Login: React.FC = () => {
                   disabled={isLoading}
                   error={Boolean(emailError)}
                   helperText={emailError}
-                  placeholder='Waleed@xyz.com'
+                  placeholder={lang === 'ar' ? 'أدخل بريدك الإلكتروني' : 'Enter your email'}
                 />
               </Box>
               <Box
@@ -582,30 +580,36 @@ const Login: React.FC = () => {
                   justifyContent: 'space-between',
                 }}
               >
-                <FormControlLabel
-                  control={
-                    <Checkbox
-                      checked={rememberMe}
-                      onChange={e => setRememberMe(e.target.checked)}
-                      sx={{
-                        color: 'var(--dark-grey-color)',
-                        '&.Mui-checked': {
-                          color: 'var(--primary-dark-color)',
-                        },
-                      }}
-                    />
-                  }
-                  label={
-                    <Typography
-                      className='label'
-                      sx={{
-                        fontSize: { xs: '12px', sm: 'var(--body-font-size)' },
-                      }}
-                    >
-                      {lang === 'ar' ? 'تذكرني' : 'Remember me'}
-                    </Typography>
-                  }
-                />
+                <Box
+                  component='span'
+                  sx={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 0.5,
+                  }}
+                >
+                  <Checkbox
+                    checked={rememberMe}
+                    onChange={e => setRememberMe(e.target.checked)}
+                    sx={{
+                      color: 'var(--dark-grey-color)',
+                      padding: '4px',
+                      '&.Mui-checked': {
+                        color: 'var(--primary-dark-color)',
+                      },
+                    }}
+                  />
+                  <Typography
+                    component='span'
+                    className='label'
+                    sx={{
+                      fontSize: { xs: '12px', sm: 'var(--body-font-size)' },
+                      pointerEvents: 'none',
+                    }}
+                  >
+                    {lang === 'ar' ? 'تذكرني' : 'Remember me'}
+                  </Typography>
+                </Box>
                 <Link
                   component={RouterLink}
                   to='/forget'

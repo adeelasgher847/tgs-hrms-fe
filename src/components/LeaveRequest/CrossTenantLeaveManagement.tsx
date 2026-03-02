@@ -35,6 +35,7 @@ import type {
   SystemLeaveResponse,
   SystemLeaveSummary,
 } from '../../api/TenantLeaveApi';
+import { departmentApiService } from '../../api/departmentApi';
 import { SystemTenantApi } from '../../api/systemTenantApi';
 import type { SystemTenant } from '../../api/systemTenantApi';
 import { useUser } from '../../hooks/useUser';
@@ -253,23 +254,32 @@ const CrossTenantLeaveManagement: React.FC = () => {
       }
 
       try {
-        const tenantDetails = await SystemTenantApi.getById(tenantId);
         const tenantIdStr = String(tenantId).trim();
+        const res = await departmentApiService.getAllTenantsWithDepartments(
+          tenantIdStr
+        );
 
-        if (
-          tenantDetails?.departments &&
-          tenantDetails.departments.length > 0
-        ) {
-          const normalizedDepartments: DepartmentOption[] =
-            tenantDetails.departments
-              .filter((dept): dept is { id: string; name: string } => {
-                return Boolean(dept && dept.id && dept.name);
-              })
-              .map(dept => ({
-                id: String(dept.id).trim(),
-                name: String(dept.name).trim(),
-                tenant_id: tenantIdStr,
-              }));
+        const tenantData = res?.tenants?.find(
+          t => t.tenant_id === tenantIdStr || String(t.tenant_id) === tenantIdStr
+        );
+
+        const deptList = tenantData?.departments ?? [];
+
+        if (deptList.length > 0) {
+          const normalizedDepartments: DepartmentOption[] = deptList
+            .filter(
+              dept =>
+                dept &&
+                dept.id &&
+                dept.name &&
+                String(dept.id).trim() !== '' &&
+                String(dept.name).trim() !== ''
+            )
+            .map(dept => ({
+              id: String(dept.id).trim(),
+              name: String(dept.name).trim(),
+              tenant_id: tenantIdStr,
+            }));
 
           setDepartments(normalizedDepartments);
         } else {
@@ -409,32 +419,46 @@ const CrossTenantLeaveManagement: React.FC = () => {
         };
       });
 
-      if (apiFilters.departmentId && apiFilters.departmentId.trim() !== '') {
-        const departmentIdToFilter = apiFilters.departmentId.trim();
+      // If a department is selected, ensure only that department's records are shown in the table
+      const hasDepartmentFilter =
+        apiFilters.departmentId && apiFilters.departmentId.trim() !== '';
+      if (hasDepartmentFilter) {
+        const departmentIdToFilter = apiFilters.departmentId!.trim();
         mappedLeaves = mappedLeaves.filter(
-          leave => leave.departmentId === departmentIdToFilter
+          leave => String(leave.departmentId).trim() === departmentIdToFilter
         );
       }
 
       setLeaves(mappedLeaves);
 
-      // Backend returns 25 records per page (fixed page size)
-      // If we get 25 records, there might be more pages
-      // If we get less than 25, it's the last page
-      const hasMorePages = mappedLeaves.length === itemsPerPage;
-
-      // Use backend pagination info if available, otherwise estimate
-      if (response.totalPages && response.total) {
-        setTotalPages(response.totalPages);
-        setTotalRecords(response.total);
-      } else {
-        // Fallback: estimate based on current page and records received
-        setTotalPages(hasMorePages ? currentPage + 1 : currentPage);
-        setTotalRecords(
-          hasMorePages
-            ? currentPage * itemsPerPage
-            : (currentPage - 1) * itemsPerPage + mappedLeaves.length
+      // Pagination:
+      // - Normal case (no department filter): trust backend totals
+      // - Department filter active: use filtered count so UI pages/records match what user sees
+      if (hasDepartmentFilter) {
+        const totalFiltered = mappedLeaves.length;
+        const pages = Math.max(
+          1,
+          Math.ceil(totalFiltered / (itemsPerPage || 1))
         );
+        setTotalRecords(totalFiltered);
+        setTotalPages(pages);
+      } else {
+        // Backend returns 25 records per page (fixed page size)
+        const hasMorePages = mappedLeaves.length === itemsPerPage;
+
+        // Use backend pagination info if available, otherwise estimate
+        if (response.totalPages && response.total) {
+          setTotalPages(response.totalPages);
+          setTotalRecords(response.total);
+        } else {
+          // Fallback: estimate based on current page and records received
+          setTotalPages(hasMorePages ? currentPage + 1 : currentPage);
+          setTotalRecords(
+            hasMorePages
+              ? currentPage * itemsPerPage
+              : (currentPage - 1) * itemsPerPage + mappedLeaves.length
+          );
+        }
       }
 
       hasLoadedDataOnce.current = true;
@@ -714,24 +738,6 @@ const CrossTenantLeaveManagement: React.FC = () => {
             Clear Filters
           </AppButton>
         </Stack>
-        {tableLoading && (
-          <Box
-            sx={{
-              position: 'absolute',
-              top: 0,
-              left: 0,
-              right: 0,
-              bottom: 0,
-              display: 'flex',
-              justifyContent: 'center',
-              alignItems: 'center',
-              backgroundColor: 'rgba(255, 255, 255, 0.8)',
-              zIndex: 1,
-            }}
-          >
-            <CircularProgress />
-          </Box>
-        )}
         <AppTable>
           <TableHead>
             <TableRow>
@@ -747,12 +753,23 @@ const CrossTenantLeaveManagement: React.FC = () => {
           </TableHead>
 
           <TableBody>
-            {leaves.length > 0 ? (
+            {tableLoading ? (
+              <TableRow>
+                <TableCell colSpan={8} align='center'>
+                  <CircularProgress sx={{ color: 'var(--primary-dark-color)' }} />
+                </TableCell>
+              </TableRow>
+            ) : leaves.length > 0 ? (
               leaves.map(leave => (
                 <TableRow key={leave.id}>
                   <TableCell>{leave.employeeName}</TableCell>
                   <TableCell>{leave.departmentName || '-'}</TableCell>
-                  <TableCell>{leave.leaveType}</TableCell>
+                  <TableCell>
+                    {leave.leaveType
+                      ? leave.leaveType.charAt(0).toUpperCase() +
+                        leave.leaveType.slice(1)
+                      : '-'}
+                  </TableCell>
                   <TableCell>{formatDate(leave.startDate)}</TableCell>
                   <TableCell>{formatDate(leave.endDate)}</TableCell>
                   <TableCell>{leave.totalDays}</TableCell>
@@ -767,7 +784,6 @@ const CrossTenantLeaveManagement: React.FC = () => {
                                 leave.status === 'cancelled'
                               ? '#607d8b'
                               : '#ff9800',
-                      fontWeight: 600,
                     }}
                   >
                     {leave.status === 'cancelled' ? 'withdrawn' : leave.status}
@@ -834,7 +850,7 @@ const CrossTenantLeaveManagement: React.FC = () => {
         {leaves.length > 0 && (
           <Box display='flex' justifyContent='center' mt={1}>
             <Typography variant='body2' color='textSecondary'>
-              Showing page {currentPage} of {totalPages} ({totalRecords} total
+              Showing page {currentPage} of {totalPages} ({leaves.length}{' '}
               records)
             </Typography>
           </Box>

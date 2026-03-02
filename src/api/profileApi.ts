@@ -1,3 +1,4 @@
+import { AxiosError } from 'axios';
 import axiosInstance from './axiosInstance';
 
 export interface UserProfile {
@@ -57,8 +58,12 @@ class ProfileApiService {
         }
       );
       return response.data;
-    } catch {
-      throw new Error('Failed to upload profile picture');
+    } catch (err) {
+      const message =
+        err instanceof AxiosError && err.response?.data?.message
+          ? err.response.data.message
+          : 'Failed to upload profile picture';
+      throw new Error(message);
     }
   }
 
