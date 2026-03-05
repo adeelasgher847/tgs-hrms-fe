@@ -294,6 +294,10 @@ const RequestManagement: React.FC = () => {
           subcategoryId: subcategoryId || undefined,
           subcategoryName: subcategoryName || undefined,
           remarks: apiRequest.remarks,
+          managerRemarks:
+            Array.isArray(apiRequest.comments) && apiRequest.comments.length > 0
+              ? apiRequest.comments[apiRequest.comments.length - 1]?.comment
+              : undefined,
           status: normalizeRequestStatus(apiRequest.status),
           requestedDate: apiRequest.requested_date,
           processedDate: apiRequest.approved_date || undefined,
@@ -1338,6 +1342,10 @@ const RequestManagement: React.FC = () => {
                 requestedItem: subcategoryName || apiRequest.asset_category,
               },
             remarks: apiRequest.remarks,
+            managerRemarks:
+              Array.isArray(apiRequest.comments) && apiRequest.comments.length > 0
+                ? apiRequest.comments[apiRequest.comments.length - 1]?.comment
+                : undefined,
             status: normalizeRequestStatus(apiRequest.status),
             requestedDate: apiRequest.requested_date,
             processedDate: apiRequest.approved_date || undefined,
@@ -1778,10 +1786,15 @@ const RequestManagement: React.FC = () => {
       </TableCell>
       {canViewManagerRemarks && (
         <TableCell align='center'>
-          {requestComments[request.id] && (
-            <Typography variant='body2' color='text.primary'>
-              {requestComments[request.id]}
-            </Typography>
+          {(request.managerRemarks || requestComments[request.id]) && (
+            <Tooltip
+              title={request.managerRemarks || requestComments[request.id] || ''}
+              arrow
+            >
+              <Typography variant='body2' color='text.primary'>
+                {request.managerRemarks || requestComments[request.id]}
+              </Typography>
+            </Tooltip>
           )}
         </TableCell>
       )}
