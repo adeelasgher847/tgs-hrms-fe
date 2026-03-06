@@ -2,6 +2,7 @@
 export * from './asset';
 export * from './availability';
 export * from './benefits';
+export * from './candidate';
 export * from './chart';
 export * from './context';
 export * from './interview';

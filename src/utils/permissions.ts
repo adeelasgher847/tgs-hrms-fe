@@ -363,6 +363,8 @@ const DASHBOARD_ALLOWLIST_ENTRIES: Record<NormalizedRole, readonly string[]> = {
     'payroll-reports',
     'benefit-report',
     'job-requisitions',
+    'candidate-tracker',
+    'candidate-onboarding',
   ],
   'network-admin': [
     '',
@@ -387,6 +389,8 @@ const DASHBOARD_ALLOWLIST_ENTRIES: Record<NormalizedRole, readonly string[]> = {
     'benefits-list',
     'employee-benefit',
     'job-requisitions',
+    'candidate-tracker',
+    'candidate-onboarding',
   ],
   'hr-admin': [
     'departments',
@@ -419,6 +423,8 @@ const DASHBOARD_ALLOWLIST_ENTRIES: Record<NormalizedRole, readonly string[]> = {
     'payroll-records',
     'employee-salary',
     'job-requisitions',
+    'candidate-tracker',
+    'candidate-onboarding',
   ],
   admin: [
     '',
@@ -454,6 +460,8 @@ const DASHBOARD_ALLOWLIST_ENTRIES: Record<NormalizedRole, readonly string[]> = {
     'payroll-records',
     'employee-salary',
     'job-requisitions',
+    'candidate-tracker',
+    'candidate-onboarding',
   ],
   manager: [
     'EmployeeManager',
@@ -481,6 +489,8 @@ const DASHBOARD_ALLOWLIST_ENTRIES: Record<NormalizedRole, readonly string[]> = {
     'my-salary',
     'EmployeeProfileView',
     'job-requisitions',
+    'candidate-tracker',
+    'candidate-onboarding',
   ],
   employee: [
     'AttendanceCheck',
@@ -495,6 +505,7 @@ const DASHBOARD_ALLOWLIST_ENTRIES: Record<NormalizedRole, readonly string[]> = {
     'benefit-details',
     'my-salary',
     'job-requisitions',
+    'candidate-tracker',
   ],
   user: [
     'AttendanceCheck',
@@ -512,8 +523,9 @@ const DASHBOARD_ALLOWLIST_ENTRIES: Record<NormalizedRole, readonly string[]> = {
     'my-benefits',
     'my-salary',
     'job-requisitions',
+    'candidate-tracker',
   ],
-  unknown: [],
+  unknown: ['candidate-tracker', 'candidate-onboarding'],
 };
 
 const DASHBOARD_ALLOWLIST: Record<NormalizedRole, Set<string>> = Object.entries(
