@@ -280,7 +280,7 @@ const Login: React.FC = () => {
         localStorage.removeItem('rememberedLogin');
       }
 
-      if(authPayload.signupSessionId) {
+      if (authPayload.signupSessionId) {
         localStorage.setItem('signupSessionId', authPayload.signupSessionId);
         try {
           sessionStorage.setItem(
@@ -297,7 +297,7 @@ const Login: React.FC = () => {
           navigate('/signup/company-details');
         }, 2000);
         return;
-    }
+      }
 
       persistAuthSession(authPayload);
 
